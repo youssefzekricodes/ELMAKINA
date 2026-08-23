@@ -1,0 +1,6 @@
+# Supabase CLI project config (only what ELMAKINA needs). `npx supabase link --project-ref <ref>` then
+# `npm run supabase:deploy` pushes the migration and the `game` Edge Function.
+project_id = "elmakina"
+
+[functions.game]
+verify_jwt = true

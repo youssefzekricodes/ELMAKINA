@@ -1,0 +1,26 @@
+# Netlify hosts ONLY the static client (client/dist). The game backend — Edge Function `game`,
+# Postgres, and the Realtime channels that carry both game state and WebRTC voice signalling —
+# lives on Supabase and is deployed with the Supabase CLI (see README "Deploy").
+[build]
+  command = "npm run build"
+  publish = "client/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Single-page app: every route falls back to index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Long-cache the fingerprinted assets; never cache the HTML shell.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

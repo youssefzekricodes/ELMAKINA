@@ -1,0 +1,81 @@
+/* Tiny external store: the socket layer writes here, React reads it with useStore(). */
+import { useSyncExternalStore } from 'react';
+import type { ActionDef } from '../theme';
+
+export interface Profile { avatar: string; avatarData: string | null; color: string | null }
+export interface RoomPlayer { id: string; name: string; ready: boolean; connected: boolean; isHost: boolean; isBot?: boolean; avatar?: string; avatarData?: string | null; color?: string | null }
+export interface Room { code: string; you: string; hostId: string; players: RoomPlayer[]; phase: string; minPlayers: number; maxPlayers: number; canStart: boolean }
+export interface GPlayer { id: string; name: string; coins: number; cardCount: number; alive: boolean; connected: boolean; isBot?: boolean; avatar?: string; color?: string }
+export interface LogEntry { id: number; t: number; kind: string; key?: string; params?: any; text?: string }
+export interface GameState {
+  phase: 'playing' | 'ended' | string;
+  players: GPlayer[];
+  you?: { cards: string[] } | null;
+  turnPlayerId?: string | null;
+  winnerId?: string | null;
+  deckSize: number;
+  maxCoins: number;
+  timings: Record<string, number>;
+  pending?: { stage: string; actorId: string; action?: any; deadline?: number; logStart?: number; window?: any } | null;
+  log: LogEntry[];
+  events?: any[];
+  serverTime: number;
+}
+
+export interface Snapshot {
+  screen: 'home' | 'lobby' | 'game';
+  connected: boolean;
+  room: Room | null;
+  state: GameState | null;
+  me: string | null;
+  lang: string;
+  soundOn: boolean;
+  profile: Profile;
+  name: string;
+  autoJoinCode: string | null;
+  targeting: ActionDef | null;
+  targetId: string | null;
+  logOpen: boolean;
+  logCollapsed: boolean;
+  unread: number;
+  banner: { text: string; id: number } | null;
+  modal: 'rules' | 'avatar' | 'chars' | null;
+  tick: number; // bumps when language changes so every text re-renders
+}
+
+const loadProfile = (): Profile => { try { return Object.assign({ avatar: 'boy-1', avatarData: null, color: null }, JSON.parse(localStorage.getItem('mekina.profile') || '{}')); } catch { return { avatar: 'boy-1', avatarData: null, color: null }; } };
+
+let snap: Snapshot = {
+  screen: 'home', connected: false, room: null, state: null, me: null,
+  lang: localStorage.getItem('mekina.lang') || 'en', soundOn: localStorage.getItem('mekina.sound') !== 'off',
+  profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
+  targeting: null, targetId: null, logOpen: false, logCollapsed: localStorage.getItem('mekina.logCollapsed') === '1', unread: 0, banner: null, modal: null, tick: 0,
+};
+const listeners = new Set<() => void>();
+
+export const store = {
+  get: () => snap,
+  set(partial: Partial<Snapshot> | ((s: Snapshot) => Partial<Snapshot>)) {
+    const p = typeof partial === 'function' ? partial(snap) : partial;
+    snap = { ...snap, ...p };
+    listeners.forEach((l) => l());
+  },
+  subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; },
+};
+
+export function useStore(): Snapshot {
+  return useSyncExternalStore(store.subscribe, store.get, store.get);
+}
+
+export const session = {
+  load(): { code: string; playerId: string; token: string } | null { try { return JSON.parse(localStorage.getItem('mekina.session') || 'null'); } catch { return null; } },
+  save(s: unknown) { localStorage.setItem('mekina.session', JSON.stringify(s)); },
+  clear() { localStorage.removeItem('mekina.session'); },
+};
+
+export const saveProfile = (p: Profile) => localStorage.setItem('mekina.profile', JSON.stringify(p));
+
+/** Custom avatar data URLs received in room payloads (by player id). */
+export const customAvatars: Record<string, string> = {};
+export const avatarSrc = (p?: { id?: string; avatar?: string; avatarData?: string | null } | null) =>
+  p && p.avatar === 'custom' ? (customAvatars[p.id || ''] || p.avatarData || '') : `/img/avatars/${(p && p.avatar) || 'boy-1'}.webp`;

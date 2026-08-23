@@ -1,0 +1,44 @@
+{
+  "name": "el-mekina",
+  "version": "1.0.0",
+  "description": "ELMAKINA — real-time online hidden-role bluffing game for 2–6 players (Supabase serverless: Edge Function + Postgres + Realtime; React + HeroUI client)",
+  "main": "supabase/functions/_shared/engine.mjs",
+  "scripts": {
+    "build": "vite build --config client/vite.config.ts",
+    "dev": "vite --config client/vite.config.ts",
+    "start": "vite preview --config client/vite.config.ts",
+    "typecheck": "tsc -p client/tsconfig.json",
+    "test": "node test/engine.test.mjs && node test/flow.test.mjs",
+    "test:engine": "node test/engine.test.mjs",
+    "test:flow": "node test/flow.test.mjs",
+    "supabase:link": "supabase link",
+    "supabase:deploy": "supabase db push && supabase functions deploy game",
+    "supabase:serve": "supabase functions serve game --env-file .env",
+    "assets": "node scripts/build-assets.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
+    "@heroui/react": "^3.2.4",
+    "@heroui/styles": "^3.2.4",
+    "@supabase/supabase-js": "^2.112.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "sharp": "^0.35.3",
+    "supabase": "^2.115.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "@fontsource-variable/oswald": "^5.3.0"
+  }
+}

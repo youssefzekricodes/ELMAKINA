@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0a08" />
+  <title>ELMAKINA</title>
+  <link rel="icon" href="img/favicon.png" />
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Cairo:wght@700;900&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ambient background slideshow -->
+  <div id="bg" class="bg" aria-hidden="true">
+    <div class="bg-layer"></div>
+    <div class="bg-layer"></div>
+    <div class="bg-vignette"></div>
+  </div>
+
+  <div id="app">
+    <header class="topbar">
+      <div class="brand" id="brand">
+        <img class="brand-mark" src="img/machine-sm.webp" alt="" />
+        <span class="brand-word">ELMAKINA</span>
+      </div>
+      <div class="topbar-right">
+        <span id="roomcode-pill" class="code-pill hidden" title="Room code"></span>
+        <button id="btn-log" class="iconbtn hidden" title="Log" aria-label="Open log">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M5 3h14a1 1 0 0 1 1 1v16l-3-2-3 2-3-2-3 2-3-2V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h7v-2H7z"/></svg>
+          <span id="log-badge" class="badge-dot hidden"></span>
+        </button>
+        <button id="btn-lang" class="iconbtn lang" title="Switch language" aria-label="Switch language">تونسي</button>
+        <button id="btn-sound" class="iconbtn" title="Sound on/off" aria-label="Toggle sound">
+          <svg class="ic-on" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+          <svg class="ic-off" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3zm13.6 3 2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4-2.7-2.7z"/></svg>
+        </button>
+        <button id="btn-rules" class="iconbtn" title="How to play" aria-label="How to play">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 15.5a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zM13 13h-2v-.5c0-1.4.8-2 1.7-2.6.7-.5 1.3-.9 1.3-1.9 0-1.1-.9-2-2-2s-2 .9-2 2H8a4 4 0 1 1 6.6 3c-.9.7-1.6 1.2-1.6 2.1v-.1z"/></svg>
+        </button>
+        <span id="conn" class="lamp" title="Connection"></span>
+        <button id="btn-leave" class="key grey small hidden" data-i18n="top.leave">Leave</button>
+      </div>
+    </header>
+
+    <!-- HOME -->
+    <section id="screen-home" class="screen">
+      <div class="hero">
+        <div class="wordmark"><span class="gear">✺</span><h1>ELMAKINA</h1><p class="tagline" data-i18n="home.tagline">Identity &nbsp;•&nbsp; Deception &nbsp;•&nbsp; Deduction</p></div>
+        <div class="ticket">
+          <div class="ticket-head" data-i18n="home.ticket">PLAYER TICKET</div>
+          <label class="field"><span data-i18n="home.name">Your name</span><input id="name" maxlength="16" placeholder="e.g. Salah" data-i18n-ph="home.name.ph" autocomplete="off" /></label>
+          <div class="profile-row">
+            <span class="avatar lg" id="home-avatar"><img alt="" /></span>
+            <div class="profile-meta"><span class="field-label" data-i18n="profile.title">Your look</span><button id="btn-avatar" class="key grey small" data-i18n="profile.change">Change look</button></div>
+          </div>
+          <button id="btn-create" class="key orange block" data-i18n="home.create">Create a room</button>
+          <button id="btn-solo" class="key dark block" data-i18n="home.solo">Play solo vs the machine</button>
+          <p id="join-hint" class="join-hint hidden"></p>
+          <div class="or"><span data-i18n="home.or">or join a friend</span></div>
+          <div class="row">
+            <input id="code" maxlength="4" placeholder="CODE" data-i18n-ph="home.code.ph" class="code-input" autocomplete="off" autocapitalize="characters" />
+            <button id="btn-join" class="key grey" data-i18n="home.join">Join</button>
+          </div>
+        </div>
+        <p class="hero-foot" data-i18n="home.foot">2–6 players • 7 characters • trust no one</p>
+      </div>
+    </section>
+
+    <!-- LOBBY -->
+    <section id="screen-lobby" class="screen hidden">
+      <div class="lobby">
+        <div class="ticket lobby-ticket">
+          <div class="ticket-head" data-i18n="lobby.code">ROOM CODE</div>
+          <div class="lobby-code" id="lobby-code">----</div>
+          <button id="btn-copy" class="key grey small" data-i18n="lobby.copy">Copy invite link</button>
+        </div>
+        <ul id="lobby-players" class="tv-grid"></ul>
+        <p id="lobby-hint" class="hint"></p>
+        <div class="row center"><button id="btn-avatar-lobby" class="key grey small" data-i18n="profile.change">Change look</button></div>
+        <div class="row center bot-row hidden" id="bot-row">
+          <button id="btn-addbot" class="key grey small" data-i18n="lobby.addBot">+ Add a bot</button>
+          <button id="btn-removebot" class="key grey small" data-i18n="lobby.removeBot">− Remove bot</button>
+        </div>
+        <div class="row center">
+          <button id="btn-ready" class="key green" data-i18n="lobby.ready">I'm ready</button>
+          <button id="btn-start" class="key orange hidden" data-i18n="lobby.start">Start the machine</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="screen-game" class="screen hidden">
+      <div class="game-grid">
+        <div class="table-area" id="table">
+          <div class="felt">
+            <img class="table-logo" src="img/machine-sm.webp" alt="" draggable="false" />
+            <div class="deck" id="deck"><div class="cardback lg"></div><div class="cardback lg"></div><div class="cardback lg"></div><span class="deck-n" id="deck-n"></span></div>
+            <div class="bank" id="bank"><div class="pile"><img src="img/coin.webp" alt="" /><img src="img/coin.webp" alt="" /><img src="img/coin.webp" alt="" /><img src="img/coin.webp" alt="" /><img src="img/coin.webp" alt="" /><img src="img/coin.webp" alt="" /></div><span class="bank-lbl" id="bank-lbl">Bank</span></div>
+          </div>
+          <div id="seats" class="seats"></div>
+          <div id="seat-me" class="seat me"></div>
+          <div id="banner" class="banner hidden"></div>
+        </div>
+        <aside class="log-area" id="log-area">
+          <div class="log-head"><span data-i18n="game.logHead">Machine log</span><button class="iconbtn" id="btn-log-close" aria-label="Close log">✕</button></div>
+          <div id="log" class="log receipt" aria-live="polite"></div>
+        </aside>
+        <div class="console" id="me"></div>
+      </div>
+      <div id="prompt" class="prompt hidden"></div>
+    </section>
+
+    <!-- RULES -->
+    <div id="rules" class="modal hidden">
+      <div class="modal-card dossier">
+        <div class="modal-head"><h2 data-i18n="rules.title">CASE FILE · HOW TO PLAY</h2><button class="key grey small" id="btn-rules-close" data-i18n="rules.close">Close</button></div>
+        <div class="modal-body" id="rules-body"></div>
+      </div>
+    </div>
+
+    <!-- AVATAR PICKER -->
+    <div id="avatar-modal" class="modal hidden">
+      <div class="modal-card picker">
+        <div class="modal-head"><h2 data-i18n="profile.pick">Pick an avatar</h2><button class="key grey small" id="btn-avatar-done" data-i18n="profile.done">Done</button></div>
+        <div class="modal-body">
+          <div class="picker-top"><span class="avatar xl" id="picker-preview"><img alt="" /></span>
+            <div class="picker-colors"><div class="field-label" data-i18n="profile.color">Background colour</div><div id="color-row" class="color-row"></div></div></div>
+          <div id="avatar-grid" class="avatar-grid"></div>
+          <input type="file" id="avatar-file" accept="image/*" class="hidden" />
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <div id="fx" class="fx-root" aria-hidden="true"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/shared/messages.js"></script>
+  <script src="theme.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
