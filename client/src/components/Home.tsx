@@ -30,7 +30,7 @@ export function Home() {
         <div className="home-hero">
           <div className="home-emblem"><img src={IMG.machineSmall} alt="" draggable={false} /></div>
           <div className="wordmark">
-            <h1>ELMAKINA</h1>
+            <h1>ELMEKINA</h1>
             <Html as="p" className="tagline" html={t('home.tagline')} />
           </div>
         </div>

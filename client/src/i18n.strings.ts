@@ -223,7 +223,7 @@ export const UI: Record<string, Record<string, string>> = {
     "guide.chars.t": "The characters",
     "guide.chars.b": "Six roles, each with its own power. You can reopen this list any time from the Characters button.",
     "guide.win.t": "Win the machine",
-    "guide.win.b": "Outlast everyone with smart bluffs and sharp reads. The last player still holding a card wins ELMAKINA.",
+    "guide.win.b": "Outlast everyone with smart bluffs and sharp reads. The last player still holding a card wins ELMEKINA.",
     "end.nobody": "Nobody",
     "end.you": "You outlasted everyone. Respect.",
     "end.them": "Better bluffs next time.",

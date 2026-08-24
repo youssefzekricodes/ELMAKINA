@@ -4,7 +4,7 @@ export type CharacterId = 'taxman' | 'businesswoman' | 'police' | 'terrorist' | 
 export const CHARACTERS: CharacterId[] = ['taxman', 'businesswoman', 'police', 'terrorist', 'colonel', 'politician', 'thief'];
 
 export const THEME = {
-  brand: { name: 'ELMAKINA', tagline: 'Identity • Deception • Deduction' },
+  brand: { name: 'ELMEKINA', tagline: 'Identity • Deception • Deduction' },
   slideshowMs: 5000,
   img: {
     bg: ['/assets/background-lobby.png'],

@@ -34,15 +34,23 @@ function Tile({ a, coins, targets, onPick }: { a: ActionDef; coins: number; targ
   );
 }
 
-/** Basic (non-claim) actions: safe moves nobody can challenge — shown as bold, icon-forward buttons. */
+/** Art + colour identity for the safe "default" moves — each gets a mini action-card instead of a plain icon. */
+const BASIC_ART: Record<string, { icon: string; color: string }> = {
+  income: { icon: 'wallet-money', color: '#C9962B' },  // pocket 1 coin — brass/gold
+  loan: { icon: 'coins', color: '#2F7D6B' },           // foreign aid +2 — teal
+  paidkill: { icon: 'danger-triangle', color: '#B3261E' }, // pay 7 to strike — oxblood
+};
+
+/** Basic (non-claim) actions: safe moves nobody can challenge — shown as bold, art-forward action cards. */
 function BasicTile({ a, coins, targets }: { a: ActionDef; coins: number; targets: string[] | null }) {
   const canAfford = coins >= a.cost;
   const ok = canAfford && (!targets || targets.length > 0);
   const why = !canAfford ? t('game.needCoins', { n: a.cost }) : targets && !targets.length ? t('game.noTarget') : '';
+  const art = BASIC_ART[a.type] || { icon: a.type, color: 'var(--accent)' };
   return (
     <Tooltip delay={400}>
-      <Button variant="outline" isDisabled={!ok} onPress={() => pressAction(a.type)} className={`basic-tile ${a.type}`}>
-        <span className="bt-ic"><Icon name={a.type} className="size-5" /></span>
+      <Button variant="outline" isDisabled={!ok} onPress={() => pressAction(a.type)} className={`basic-tile ${a.type}`} style={{ '--c': art.color } as any}>
+        <span className="bt-art"><Icon name={art.icon} className="size-5" /></span>
         <span className="bt-txt">
           <span className="bt-t">{actionName(a.type)}</span>
           <span className={`bt-d ${why ? 'blocked' : ''}`}>{why || t(`action.${a.type}.tag`)}</span>
@@ -63,7 +71,7 @@ export function Console() {
   const [preview, setPreview] = useState<ActionDef | null>(null); // guided mode: show a character's rule before claiming
   const first = useRef(true);
   useEffect(() => { if (first.current) { first.current = false; return; } setAnimKey(handKey); sfx.play('deal'); }, [handKey]);
-  if (!you || !meP) return <Card id="console" className="console light p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
+  if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
   const myTurn = st.phase === 'playing' && st.pending && st.pending.stage === 'turn' && st.pending.actorId === me && meP.alive;
   const selfPick = !!(s.targeting && s.targeting.type === 'police' && s.targetId === me);
   const ring = st.pending?.stage === 'turn' ? <Ring deadline={st.pending.deadline} total={st.timings.turn} tick={myTurn} /> : null;
@@ -74,7 +82,7 @@ export function Console() {
   else if (!meP.alive) status = <div className="status-line">{t('game.eliminated')}</div>;
 
   return (
-    <Card id="console" className="console light gap-2.5 p-3">
+    <Card id="console" className="console gap-2.5 p-3">
       <div className="console-top">
         <div className="ct-meta">
           <span className="ct-title">{t('game.yourhand')}</span>
@@ -105,7 +113,7 @@ export function Console() {
       </div>
       {preview && (
         <div className="claim-preview-backdrop" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>
-          <div className="claim-preview light" onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.type as keyof typeof CH]?.color }}>
+          <div className="claim-preview" onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.type as keyof typeof CH]?.color }}>
             <GameCard c={preview.type} w={104} />
             <div className="cp-body">
               <h3 className="cp-name">{actionName(preview.type)}</h3>

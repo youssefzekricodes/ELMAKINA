@@ -22,7 +22,7 @@ class Boundary extends React.Component<{ children: React.ReactNode }, { err: any
     if (this.state.err) {
       return (
         <div style={{ padding: 24, fontFamily: 'system-ui', color: '#fff', background: '#18181b', minHeight: '100vh' }}>
-          <h2 style={{ margin: 0 }}>ELMAKINA — something broke in the UI</h2>
+          <h2 style={{ margin: 0 }}>ELMEKINA — something broke in the UI</h2>
           <p>Reload the page. If it keeps happening, copy this and report it:</p>
           <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, opacity: 0.8 }}>{String(this.state.err && (this.state.err.stack || this.state.err.message || this.state.err))}</pre>
         </div>

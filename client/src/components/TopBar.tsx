@@ -27,7 +27,7 @@ export function TopBar() {
     <header className="topbar">
       <div className="flex items-center gap-2.5">
         <img className="size-8 object-contain drop-shadow" src={IMG.machineSmall} alt="" />
-        <span className="brand-word">ELMAKINA</span>
+        <span className="brand-word">ELMEKINA</span>
       </div>
       <div className="topbar-right flex items-center gap-1.5">
         {s.room && s.screen !== 'home' && <Chip variant="secondary" className="room-code font-semibold tracking-[.2em] tabular-nums ltr" dir="ltr">{s.room.code}</Chip>}

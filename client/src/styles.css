@@ -351,8 +351,8 @@
   .flip .face.front { transform: rotateY(180deg); background: #fff; }
   .flip .face img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* console — frosted-white glass on the dark stage (`.light` re-scopes child tokens to dark ink) */
-  .console { grid-area: console; position: relative; background: rgba(255,255,255,.82); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border: 1px solid rgba(255,255,255,.6); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 20px 50px rgba(0,0,0,.4); color: var(--foreground); }
+  /* console — smokey dark glass on the dark stage */
+  .console { grid-area: console; position: relative; background: rgba(22,16,11,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,240,214,.09); box-shadow: 0 20px 50px rgba(0,0,0,.45); color: var(--foreground); }
   /* brass rivets in the console corners */
   .console .act-label { color: var(--muted); }
   .status-line { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; flex-wrap: wrap; }
@@ -367,8 +367,8 @@
   .hand-row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
   /* the hand sits on a felt dock — makes "these are the cards in your grip" unmistakable */
   .hand { display: flex; gap: 12px; align-items: flex-end; padding: 12px 14px 10px; border-radius: 16px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--foreground) 4%, transparent), color-mix(in srgb, var(--foreground) 8%, transparent));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -10px 22px -14px rgba(26,25,24,.4); }
+    background: linear-gradient(180deg, rgba(0,0,0,.14), rgba(0,0,0,.24));
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.06), inset 0 -12px 24px -16px rgba(0,0,0,.6); }
   .hand.picking { padding-bottom: 12px; }
   /* each held card carries an ink name-plate in its own character colour */
   .hand-card { --c: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 7px; }
@@ -383,12 +383,16 @@
   .act-label svg { opacity: .7; }
   .act-grid { display: grid; gap: 7px; justify-content: start; }
   .act-grid.basic, .act-grid.claims { grid-template-columns: repeat(auto-fill, minmax(150px, 184px)); }
-  /* basic actions: bold, icon-forward row */
+  /* basic actions: bold, art-forward row — each safe move gets a colour-coded mini action-card */
   .basic-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
-  .basic-tile { height: auto; min-height: 52px; padding: 8px 10px; justify-content: flex-start; text-align: start; gap: 9px; position: relative; border-radius: var(--radius-lg); border-color: var(--border); background: var(--surface); transition: border-color .15s, background .15s, transform .12s; }
-  .basic-tile:not([data-disabled]):not([disabled]):hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); transform: translateY(-1px); }
-  .basic-tile .bt-ic { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-soft-foreground); }
-  .basic-tile.paidkill .bt-ic { background: var(--danger-soft); color: var(--danger); }
+  .basic-tile { --c: var(--accent); height: auto; min-height: 52px; padding: 8px 10px; justify-content: flex-start; text-align: start; gap: 10px; position: relative; border-radius: var(--radius-lg); border-color: var(--border); background: var(--surface); transition: border-color .15s, background .15s, transform .12s, box-shadow .15s; }
+  .basic-tile:not([data-disabled]):not([disabled]):hover { border-color: color-mix(in srgb, var(--c) 55%, var(--border)); background: color-mix(in srgb, var(--c) 8%, var(--surface)); transform: translateY(-1px); box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--c) 55%, transparent); }
+  /* mini action-card: card-shaped chip in the move's own colour with a white glyph */
+  .basic-tile .bt-art { width: 30px; height: 42px; border-radius: 7px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #fff;
+    background: linear-gradient(155deg, color-mix(in srgb, var(--c) 78%, #fff) 0%, var(--c) 55%, color-mix(in srgb, var(--c) 72%, #000) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.14), 0 3px 8px -2px color-mix(in srgb, var(--c) 55%, transparent); }
+  .basic-tile:not([data-disabled]):not([disabled]):hover .bt-art { transform: translateY(-1px) rotate(-2deg); }
+  .basic-tile .bt-art svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); transition: transform .15s var(--ease); }
   .basic-tile .bt-txt { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
   .basic-tile .bt-t { font-size: 13px; font-weight: 800; line-height: 1.2; color: var(--foreground); }
   .basic-tile .bt-d { font-size: 10.5px; color: var(--muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
@@ -402,11 +406,9 @@
   /* hand cards lift like they're held */
   .hand-row .hand .gcard { transition: transform .18s var(--ease), filter .18s; }
   .hand-row .hand .gcard:hover { transform: translateY(-8px) rotate(-1.5deg); filter: drop-shadow(0 12px 20px rgba(0,0,0,.5)); z-index: 2; }
-  /* claim tiles: each carries its character's colour as a left spine so the seven claims read apart at a glance */
-  .act-tile { width: 100%; height: auto; min-height: 54px; padding: 8px 10px 8px 14px; justify-content: flex-start; text-align: start; gap: 10px; font-weight: 500; position: relative; overflow: hidden; border-radius: var(--radius-lg); border-color: var(--border); transition: border-color .15s, background .15s, transform .12s, box-shadow .15s; }
-  .act-tile::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; width: 4px; background: var(--c); opacity: .9; transition: width .15s; }
+  /* claim tiles: the character card thumbnail carries the colour identity (no left spine) */
+  .act-tile { width: 100%; height: auto; min-height: 54px; padding: 8px 10px; justify-content: flex-start; text-align: start; gap: 10px; font-weight: 500; position: relative; border-radius: var(--radius-lg); border-color: var(--border); transition: border-color .15s, background .15s, transform .12s, box-shadow .15s; }
   .act-tile:not([data-disabled]):not([disabled]):hover { border-color: color-mix(in srgb, var(--c) 60%, var(--border)); background: color-mix(in srgb, var(--c) 8%, var(--surface)); transform: translateY(-1px); box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--c) 60%, transparent); }
-  .act-tile:not([data-disabled]):not([disabled]):hover::before { width: 6px; }
   .act-tile .thumb { width: 32px; height: 46px; border-radius: 6px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,.22), 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent); background: #fff; display: flex; align-items: center; justify-content: center; }
   .act-tile .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .act-tile .thumb.icon { width: 40px; height: 46px; border-radius: var(--radius-lg); background: var(--accent-soft); color: var(--accent-soft-foreground); box-shadow: none; }
@@ -418,7 +420,7 @@
   .act-tile .cost img { width: 12px; height: 12px; margin-inline-start: 3px; }
 
   /* log */
-  .log-area { grid-area: log; display: flex; flex-direction: column; min-height: 0; max-height: calc(100dvh - 100px - var(--sat)); overflow: hidden; border: 1px solid rgba(255,255,255,.6); background: rgba(255,255,255,.82); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 20px 50px rgba(0,0,0,.4); color: var(--foreground); }
+  .log-area { grid-area: log; display: flex; flex-direction: column; min-height: 0; max-height: calc(100dvh - 100px - var(--sat)); overflow: hidden; border: 1px solid rgba(255,240,214,.09); background: rgba(22,16,11,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,.45); color: var(--foreground); }
   .log-head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 14px; background: transparent; border: none; border-bottom: 1px solid var(--separator); cursor: pointer; color: var(--foreground); text-align: start; transition: background .12s; }
   .log-head:hover { background: var(--surface-secondary); }
   .log-head-ic { color: var(--muted); flex-shrink: 0; }
@@ -463,14 +465,12 @@
   .log-drawer .log { max-height: calc(100dvh - 80px); }
 
   /* prompt */
-  .prompt { position: fixed; left: 50%; bottom: calc(16px + var(--sab)); transform: translateX(-50%); width: min(620px, calc(100vw - 24px)); z-index: 40; padding: 0; gap: 0; overflow: hidden; animation: rise .25s var(--ease); color: var(--foreground); background: rgba(255,255,255,.86); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); border: 1px solid rgba(255,255,255,.65); box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 -4px 20px rgba(0,0,0,.18), 0 24px 60px rgba(0,0,0,.55); }
+  .prompt { position: fixed; left: 50%; bottom: calc(16px + var(--sab)); transform: translateX(-50%); width: min(620px, calc(100vw - 24px)); z-index: 40; padding: 0; gap: 0; overflow: hidden; animation: rise .25s var(--ease); color: var(--foreground); background: rgba(22,16,11,.82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,240,214,.1); box-shadow: inset 0 1px 0 rgba(255,240,214,.06), 0 -4px 20px rgba(0,0,0,.2), 0 24px 60px rgba(0,0,0,.6); }
   @keyframes rise { from { transform: translate(-50%, 24px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
   .prompt.urgent { box-shadow: var(--overlay-shadow), 0 0 0 2px var(--danger); }
-  /* White cards on the dark stage: these panels carry the `light` class so their child tokens
-     re-scope to the light palette (dark ink); the panel background is frosted white glass. */
-  .log-drawer { color: var(--foreground); background: rgba(255,255,255,.9); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); border-inline-start: 1px solid rgba(255,255,255,.65); }
+  .log-drawer { color: var(--foreground); background: rgba(20,14,9,.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-inline-start: 1px solid rgba(255,240,214,.1); }
   /* these panels are HeroUI Cards whose Tailwind backdrop utility clobbers the shorthand — force the frost */
-  .console, .log-area, .prompt { backdrop-filter: blur(16px) saturate(1.3) !important; -webkit-backdrop-filter: blur(16px) saturate(1.3) !important; }
+  .console, .log-area, .prompt { backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; }
   .p-strip { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--separator); background: color-mix(in srgb, var(--surface-secondary) 60%, transparent); }
   .strip-note { font-size: 12px; font-weight: 600; flex: 1; margin-inline-start: 6px; }
   /* stamped progress rail: Claim › React › Result */
@@ -509,8 +509,8 @@
   .claim-card { --c: var(--brass-hi); position: relative; border-radius: 16px; padding: 15px 15px 13px; overflow: hidden;
     background: linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, var(--surface)) 0%, var(--surface) 52%);
     border: 1px solid color-mix(in srgb, var(--c) 40%, var(--border));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 22px rgba(0,0,0,.14); }
-  .claim-card.urgent { border-color: color-mix(in srgb, var(--danger) 55%, transparent); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 0 0 1px color-mix(in srgb, var(--danger) 40%, transparent), 0 12px 30px rgba(220,59,51,.16); }
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.05), 0 10px 26px rgba(0,0,0,.42); }
+  .claim-card.urgent { border-color: color-mix(in srgb, var(--danger) 55%, transparent); box-shadow: inset 0 1px 0 rgba(255,240,214,.05), 0 0 0 1px color-mix(in srgb, var(--danger) 45%, transparent), 0 14px 34px rgba(0,0,0,.5); }
   /* timer rail pinned to the card's top edge */
   .timerbar { position: absolute; top: 0; inset-inline: 0; height: 3px; background: color-mix(in srgb, var(--foreground) 10%, transparent); z-index: 2; }
   /* the remaining-time bar follows the claimed card's own colour (--c set on the claim-card) */
