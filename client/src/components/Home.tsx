@@ -41,38 +41,40 @@ export function Home() {
           </Alert>
         )}
 
-        <button type="button" className="home-avatar" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')} title={t('profile.change')}>
-          <PlayerAvatar p={mePreview} size="xl" />
-          <span className="home-avatar-edit"><Icon name="gallery-add" className="size-4" /></span>
-        </button>
+        <div className="home-card">
+          <button type="button" className="home-avatar" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')} title={t('profile.change')}>
+            <PlayerAvatar p={mePreview} size="xl" />
+            <span className="home-avatar-edit"><Icon name="gallery-add" className="size-4" /></span>
+          </button>
 
-        <input
-          className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
-          placeholder={t('home.name.ph')} maxLength={16} autoComplete="off" aria-label={t('home.name')}
-          autoFocus={!!s.autoJoinCode}
-          onKeyDown={(e) => { if (e.key === 'Enter') go(code ? 'join' : 'create'); }}
-        />
-
-        <div className="home-actions">
-          <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'create'} onPress={() => go('create')}>
-            <Icon name="users-room" className="size-5" />{t('home.create')}
-          </Button>
-          <Button fullWidth size="lg" variant="secondary" isPending={busy === 'solo'} onPress={() => go('solo')}>
-            <Icon name="robot" className="size-5" />{t('home.solo')}
-          </Button>
-        </div>
-
-        <div className="home-or">{t('home.or')}</div>
-        <div className="home-join">
           <input
-            className="home-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder={t('home.code.ph')} maxLength={4} autoCapitalize="characters" autoComplete="off"
-            aria-label={t('home.code.ph')} dir="ltr"
-            onKeyDown={(e) => { if (e.key === 'Enter') go('join'); }}
+            className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
+            placeholder={t('home.name.ph')} maxLength={16} autoComplete="off" aria-label={t('home.name')}
+            autoFocus={!!s.autoJoinCode}
+            onKeyDown={(e) => { if (e.key === 'Enter') go(code ? 'join' : 'create'); }}
           />
-          <Button size="lg" variant="primary" className="home-join-go" isPending={busy === 'join'} onPress={() => go('join')}>
-            <Icon name="login-2" className="size-4" />{t('home.join')}
-          </Button>
+
+          <div className="home-actions">
+            <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'create'} onPress={() => go('create')}>
+              <Icon name="users-room" className="size-5" />{t('home.create')}
+            </Button>
+            <Button fullWidth size="lg" variant="secondary" isPending={busy === 'solo'} onPress={() => go('solo')}>
+              <Icon name="robot" className="size-5" />{t('home.solo')}
+            </Button>
+          </div>
+
+          <div className="home-or">{t('home.or')}</div>
+          <div className="home-join">
+            <input
+              className="home-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder={t('home.code.ph')} maxLength={4} autoCapitalize="characters" autoComplete="off"
+              aria-label={t('home.code.ph')} dir="ltr"
+              onKeyDown={(e) => { if (e.key === 'Enter') go('join'); }}
+            />
+            <Button size="lg" variant="primary" className="home-join-go" isPending={busy === 'join'} onPress={() => go('join')}>
+              <Icon name="login-2" className="size-4" />{t('home.join')}
+            </Button>
+          </div>
         </div>
 
         <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>
