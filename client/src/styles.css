@@ -841,6 +841,8 @@
     .act-tile { min-height: 56px; padding: 8px; }
     .act-tile .d { font-size: 10.5px; }
     .prompt { width: calc(100vw - 12px); bottom: calc(6px + var(--sab)); }
+    /* the three verdict buttons (Pass / Block / Call liar) don't fit one row on phones — stack them */
+    .cl-btns { flex-direction: column; }
     .p-cards .gcard { width: 78px !important; }
     .p-title { font-size: 15px; }
     .p-actions .key { min-width: 0; }
