@@ -56,7 +56,7 @@ export function Tour() {
   return (
     <div className="tour-layer" aria-live="polite">
       <div className="tour-spot" style={{ left: rect.left - pad, top: rect.top - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }} />
-      <div className="tour-card" style={{ top: cardTop, left: cardLeft, width: cardW }}>
+      <div className="tour-card light" style={{ top: cardTop, left: cardLeft, width: cardW }}>
         <div className="tour-card-head">
           <span className="tour-step">{idx + 1}/{TIPS.length}</span>
           <button type="button" className="tour-skip" onClick={skip}>{t('guide.skip')}</button>

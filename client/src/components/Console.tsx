@@ -63,7 +63,7 @@ export function Console() {
   const [preview, setPreview] = useState<ActionDef | null>(null); // guided mode: show a character's rule before claiming
   const first = useRef(true);
   useEffect(() => { if (first.current) { first.current = false; return; } setAnimKey(handKey); sfx.play('deal'); }, [handKey]);
-  if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
+  if (!you || !meP) return <Card id="console" className="console light p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
   const myTurn = st.phase === 'playing' && st.pending && st.pending.stage === 'turn' && st.pending.actorId === me && meP.alive;
   const selfPick = !!(s.targeting && s.targeting.type === 'police' && s.targetId === me);
   const ring = st.pending?.stage === 'turn' ? <Ring deadline={st.pending.deadline} total={st.timings.turn} tick={myTurn} /> : null;
@@ -74,7 +74,7 @@ export function Console() {
   else if (!meP.alive) status = <div className="status-line">{t('game.eliminated')}</div>;
 
   return (
-    <Card id="console" className="console gap-2.5 p-3">
+    <Card id="console" className="console light gap-2.5 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold">{t('game.yourhand')}</span>
@@ -99,7 +99,7 @@ export function Console() {
       </div>
       {preview && (
         <div className="claim-preview-backdrop" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>
-          <div className="claim-preview" onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.type as keyof typeof CH]?.color }}>
+          <div className="claim-preview light" onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.type as keyof typeof CH]?.color }}>
             <GameCard c={preview.type} w={104} />
             <div className="cp-body">
               <h3 className="cp-name">{actionName(preview.type)}</h3>

@@ -32,7 +32,7 @@ export function Guide() {
   const practice = () => { const name = s.name.trim(); setI(0); store.set({ modal: null, tour: true }); goFullscreen(); playSolo(name || 'Player', true); };
   return (
     <div className="guide-backdrop" role="dialog" aria-modal="true" aria-label={t('guide.title')}>
-      <div className="guide-card">
+      <div className="guide-card light">
         <div className="guide-top">
           <span className="guide-kicker">{t('guide.title')} · {t('guide.step', { n: i + 1, total: STEPS.length })}</span>
           <button type="button" className="guide-skip" onClick={close}>{t('guide.skip')}</button>

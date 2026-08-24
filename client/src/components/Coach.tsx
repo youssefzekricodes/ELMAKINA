@@ -21,7 +21,7 @@ export function Coach() {
   ];
   return (
     <div className="coach-backdrop" role="dialog" aria-modal="true" aria-label={t('coach.title')} onClick={dismiss}>
-      <div className="coach-card" onClick={(e) => e.stopPropagation()}>
+      <div className="coach-card light" onClick={(e) => e.stopPropagation()}>
         <div className="coach-head">
           <span className="coach-kicker">{t('coach.title')}</span>
           <h2 className="coach-h2">{t('coach.sub')}</h2>
