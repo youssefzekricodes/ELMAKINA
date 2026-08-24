@@ -802,30 +802,35 @@
     /* the page scrolls as one column so the actions below the fold are always reachable */
     .game-screen { padding: 8px 8px calc(8px + var(--sab)); }
     .game-grid, .game-grid.log-collapsed { min-height: 0; }
-    .table-area { min-height: 0; height: auto; padding: 14px 12px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; gap: 16px; }
-    /* a proper little table: taller felt so the deck + bank read as the centre of play */
-    .felt { position: relative; left: auto; top: auto; transform: none; width: 100%; height: 128px; border-radius: 28px; margin: 0; gap: 22px; }
-    .felt::before { inset: 12px; }
+    .table-area { min-height: 0; height: auto; padding: 10px 10px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; gap: 10px; }
+    /* compact centre strip so the opponents + your actions stay above the fold with 6 players */
+    .felt { position: relative; left: auto; top: auto; transform: none; width: 100%; height: 92px; border-radius: 24px; margin: 0; gap: 16px; }
+    .felt::before { inset: 10px; }
     .table-area::after { display: none; }
-    .table-logo { width: 58px; height: 58px; }
-    .deck { width: 50px; height: 80px; } .deck .cardback { width: 50px; }
-    .bank .pile { width: 62px; height: 48px; } .bank .pile img { width: 30px; height: 30px; }
-    /* opponents as clean, separated cards */
-    .seats { position: relative; inset: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px; }
-    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; gap: 6px; padding: 10px 8px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
+    .table-logo { width: 42px; height: 42px; }
+    .deck { width: 40px; height: 62px; } .deck .cardback { width: 40px; }
+    .bank .pile { width: 50px; height: 38px; } .bank .pile img { width: 24px; height: 24px; }
+    /* opponents as small, dense cards — 3 across so up to 5 fit in two short rows */
+    .seats { position: relative; inset: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; gap: 3px; padding: 8px 5px 7px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
     .seat.targetable:hover { transform: none; }
     .seat.turn { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
-    .seat .nm { font-size: 11.5px; max-width: 100%; }
-    .seat .coins { font-size: 11px; }
-    .seat .hand { min-height: 0; gap: 3px; }
-    .seat .hand .cardback { width: 24px; }
+    .seat .av-wrap { margin-bottom: 8px; }
+    .seat .pavatar { width: 42px !important; height: 42px !important; }
+    .seat .nm { font-size: 10.5px; max-width: 100%; }
+    .seat .coins { font-size: 10px; padding: 1px 6px 1px 4px; }
+    .seat .bot-chip { display: none; }
+    .seat .hand { min-height: 0; gap: 2px; }
+    .seat .hand .cardback { width: 15px; }
+    .seat .lamp { width: 9px; height: 9px; }
     .seat .status { min-height: 0; }
     .seat.me { display: none; }
     .banner { position: fixed; font-size: 40px; }
-    /* stack the console: hand on top, full-width actions below — no more side-by-side squeeze/overflow */
-    .hand-row { flex-direction: column; align-items: stretch; gap: 14px; }
+    /* stack the console with the ACTIONS on top (column-reverse) so new players see the buttons first,
+       not their own hand — the hand sits just below and is a short scroll away */
+    .hand-row { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
     .hand { justify-content: center; gap: 8px; }
-    .hand .gcard { width: min(26vw, 104px) !important; }
+    .hand .gcard { width: min(22vw, 88px) !important; }
     .actions { width: 100%; }
     .act-grid.claims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .basic-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -850,7 +855,9 @@
     .ivc { min-width: 34px; height: 46px; font-size: 27px; }
   }
   @media (max-width: 420px) {
-    .seats { grid-template-columns: repeat(2, 1fr); }
+    .seats { gap: 6px; }                       /* keep 3 compact columns even on small phones */
+    .seat .pavatar { width: 38px !important; height: 38px !important; }
+    .seat .hand .cardback { width: 13px; }
     .hand .gcard { width: min(40vw, 100px) !important; }
     .brand-word { display: none; }
   }
