@@ -174,8 +174,8 @@ await test('business woman with reactive tax man; thief steal; tax man wealth ta
   g.block(c.id);                 // c skims too → everyone reacted → the BW may now call the bluff on each
   assert.equal(g.pending.window.bwMulti, true, 'BW multi-challenge window');
   assert.equal(g.pending.window.targets.length, 2, 'both Tax Men listed at once');
-  assert.deepEqual(g.pending.window.challengeEligible, [a.id]);
-  g.pass(a.id);                  // a lets both keep the coin → payout
+  assert.ok(g.pending.window.challengeEligible.includes(a.id), 'anyone alive may challenge a skim');
+  for (const p of g.players) g.pass(p.id);   // nobody challenges → both keep the coin → payout
   assert.equal(g.player(a.id).coins, 4); assert.equal(g.player(b.id).coins, 3); assert.equal(g.player(c.id).coins, 3);
   const who = g.active; const victim = g.players.find((p) => p.id !== who.id && p.coins > 0);
   giveCard(g, who.id, 'thief');
@@ -209,8 +209,8 @@ await test('business woman: the BW claim can still be called after someone taxed
   g.challenge(z.id);                   // wrong call → z loses a card, BW proven; collection reopens without the claim
   assert.equal(g.pending.window.type, 'reaction'); assert.equal(g.pending.window.claim, null, 'proven: only tax remains');
   g.block(y.id);                       // y skims → x may now call the bluff on y
-  assert.deepEqual(g.pending.window.challengeEligible, [x.id]);
-  g.pass(x.id);                        // x lets it through → payout
+  assert.ok(g.pending.window.challengeEligible.includes(x.id), 'anyone alive may challenge a skim');
+  for (const p of g.players) g.pass(p.id);   // nobody challenges → payout
   assert.equal(g.player(x.id).coins, 5, 'x kept 3 of the 4 (2 + 3)'); assert.equal(g.player(y.id).coins, 3);
 });
 
@@ -232,7 +232,7 @@ await test('business woman concurrent multi-challenge: call bluff on several Tax
   assert.equal(g.pending.window.bwMulti, true); assert.equal(g.pending.window.targets.length, 2, 'c resolved, b & d remain');
   g.challengeTarget(a.id, d.id);                  // caught → d loses a card too
   assert.equal(g.pending.window.bwMulti, true); assert.equal(g.pending.window.targets.length, 1, 'only b remains');
-  g.pass(a.id);                                   // let the honest Tax Man (b) keep the coin → payout
+  for (const p of g.players) g.pass(p.id);        // nobody challenges b → honest Tax Man keeps the coin → payout
   assert.equal(g.player(c.id).cards.length, cCards - 1, 'c lost a card');
   assert.equal(g.player(d.id).cards.length, dCards - 1, 'd lost a card');
   assert.equal(g.player(b.id).cards.length, bCards, 'honest b kept his cards');

@@ -344,10 +344,12 @@ export class Game {
     if (!actor || !actor.alive) return this.bwPayout();
     const targets = bw.taxers.filter((id) => !bw.resolved.includes(id) && (() => { const p = this.player(id); return p && p.alive; })());
     if (targets.length === 0) return this.bwPayout();
+    // Anyone alive may call the bluff on a skimming Tax Man (a player can't challenge their own skim).
+    const everyone = this.alivePlayers().map((p) => p.id);
     const w = {
       type: 'reaction', bwMulti: true, claim: null, block: null,
       targets: targets.map((id) => ({ id, character: 'taxman' })),
-      challengeEligible: [actor.id], blockEligible: [], eligible: [actor.id], passed: [], taxers: [],
+      challengeEligible: everyone.slice(), blockEligible: [], eligible: everyone.slice(), passed: [], taxers: [],
       challengerId: null, blockerId: null,
       cb: { onProceed: { k: 'bwPayout' }, onFail: null, onBlocked: null },
     };
@@ -487,7 +489,9 @@ export class Game {
     const w = this.pending && this.pending.window;
     if (!w || w.type !== 'reaction' || !w.bwMulti) throw new GameError('Nothing to challenge right now');
     const bw = this.pending.bw;
-    if (!bw || playerId !== bw.claim.claimerId) throw new GameError('Only the Business Woman may call this bluff');
+    if (!bw) throw new GameError('Nothing to challenge right now');
+    if (playerId === targetId) throw new GameError('You cannot challenge your own skim');
+    if (!w.challengeEligible || !w.challengeEligible.includes(playerId)) throw new GameError('You cannot challenge this');
     const idx = w.targets.findIndex((t) => t.id === targetId);
     if (idx < 0) throw new GameError('That player is not skimming');
     const taxer = this.player(targetId);

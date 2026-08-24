@@ -2,15 +2,16 @@
 import { useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
-import { store } from '../lib/store';
+import { store, useStore } from '../lib/store';
 import { Icon } from './ui';
 
 const KEY = 'mekina.coachSeen';
 const seen = () => { try { return localStorage.getItem(KEY) === '1'; } catch { return true; } };
 
 export function Coach() {
+  const tour = useStore().tour;
   const [open, setOpen] = useState(!seen());
-  if (!open) return null;
+  if (!open || tour) return null; // the guided tour is its own tutorial — don't double up
   const dismiss = () => { try { localStorage.setItem(KEY, '1'); } catch { /* ignore */ } setOpen(false); };
   const tips: [string, string][] = [
     ['users-room', t('coach.hand')],
@@ -31,7 +32,7 @@ export function Coach() {
           ))}
         </ul>
         <div className="coach-actions">
-          <Button variant="tertiary" onPress={() => { dismiss(); store.set({ modal: 'rules' }); }}>{t('coach.rules')}</Button>
+          <Button variant="tertiary" onPress={() => { dismiss(); store.set({ modal: 'guide' }); }}>{t('coach.rules')}</Button>
           <Button variant="primary" onPress={dismiss}><Icon name="check-circle" className="size-4" />{t('coach.got')}</Button>
         </div>
       </div>

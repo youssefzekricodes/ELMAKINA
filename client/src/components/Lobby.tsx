@@ -1,4 +1,4 @@
-import { Button, Chip, Tooltip } from '@heroui/react';
+import { Button, Tooltip } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { addBot, copyInvite, leaveRoom, removeBot, startGame, toggleReady } from '../lib/net';
@@ -22,74 +22,62 @@ export function Lobby() {
     <section className="screen lobby-screen">
       <div className="lobby-shell">
         {/* header */}
-        <div className="lobby-head">
+        <header className="lobby-head">
           <div className="lobby-head-main">
             <span className="lobby-kicker">{t('lobby.waitingRoom')}</span>
             <h1 className="lobby-title">{t('lobby.title')}</h1>
           </div>
           <div className="lobby-head-right">
-            <div className="lobby-gauge" aria-label={`${n}/${cap}`}>
-              <div className="lobby-pips">
-                {Array.from({ length: cap }, (_, i) => <span key={i} className={`lpip ${i < n ? (i < readyCount ? 'ready' : 'on') : ''}`} />)}
-              </div>
-              <span className="lobby-gauge-n"><b>{n}</b>/{cap} · {t('lobby.players')}</span>
-            </div>
+            <span className="lobby-count" aria-label={`${n}/${cap}`}><b>{n}</b><i>/{cap}</i></span>
             <Button variant="outline" size="sm" className="lobby-leave" onPress={leaveRoom}>
-              <Icon name="logout-2" className="size-4" />{t('lobby.leave')}
+              <Icon name="logout-2" className="size-4" /><span className="lobby-leave-tx">{t('lobby.leave')}</span>
             </Button>
           </div>
-        </div>
+        </header>
 
-        {/* invite card */}
+        {/* invite band */}
         <div className="invite-card">
           <div className="invite-main">
             <span className="invite-label">{t('lobby.code')}</span>
             <div className="invite-code" dir="ltr">
               {room.code.split('').map((ch, i) => <span key={i} className="ivc">{ch}</span>)}
             </div>
-            <span className="invite-share">{t('lobby.share')}</span>
           </div>
           <Button variant="primary" size="lg" className="invite-copy" onPress={() => copyInvite(room.code)}>
             <Icon name="link-round-angle" className="size-5" />{t('lobby.copy')}
           </Button>
         </div>
 
-        {/* seats */}
-        <ul className="seat-list">
+        {/* seats — place-cards around the table */}
+        <ul className="seat-grid">
           {room.players.map((p, i) => {
             const ready = p.ready || p.isHost || p.isBot;
             const talking = speakingOf(p.id);
             return (
-              <li key={p.id} className={`seat-row ${ready ? 'ready' : ''} ${p.connected ? '' : 'off'} ${p.id === room.you ? 'me' : ''}`}>
-                <span className="seat-num">{i + 1}</span>
-                <span className={`seat-av ${inCall(p.id) ? 'in-call' : ''} ${talking ? 'speaking' : ''}`}>
-                  <PlayerAvatar p={p} size="md" />
+              <li key={p.id} className={`pcard ${ready ? 'ready' : 'waiting'} ${p.connected ? '' : 'off'} ${p.id === room.you ? 'me' : ''}`}>
+                <span className="pcard-num">{i + 1}</span>
+                {ready && <span className="pcard-stamp">{t('lobby.readyTag')}</span>}
+                <span className={`pcard-av ${inCall(p.id) ? 'in-call' : ''} ${talking ? 'speaking' : ''}`}>
+                  <PlayerAvatar p={p} size="lg" />
                   {inCall(p.id) && <span className="seat-mic"><Icon name={p.id in v.peers && v.peers[p.id].muted ? 'microphone-off' : 'microphone'} className="size-3" /></span>}
                 </span>
-                <div className="seat-body">
-                  <div className="seat-name">{p.name}</div>
-                  <div className="seat-tags">
-                    {p.isHost && <Chip size="sm" variant="soft" color="warning"><Icon name="crown" className="size-3" />{t('lobby.host')}</Chip>}
-                    {p.isBot && <Chip size="sm" variant="soft" color="accent"><Icon name="cpu-bolt" className="size-3" />{t('seat.bot')}</Chip>}
-                    {p.id === room.you && <Chip size="sm" variant="soft" color="accent">{t('lobby.you')}</Chip>}
-                  </div>
+                <div className="pcard-name">{p.name}</div>
+                <div className="pcard-tags">
+                  {p.isHost && <span className="ptag host"><Icon name="crown" className="size-3" />{t('lobby.host')}</span>}
+                  {p.isBot && <span className="ptag bot"><Icon name="cpu-bolt" className="size-3" />{t('seat.bot')}</span>}
+                  {p.id === room.you && <span className="ptag you">{t('lobby.you')}</span>}
+                  {!ready && <span className="ptag wait">{t('lobby.notreadyTag')}</span>}
                 </div>
-                <span className={`seat-state ${ready ? 'ready' : ''}`}>
-                  <Icon name={ready ? 'check-circle' : 'hourglass'} className="size-4" />
-                  <span className="seat-state-txt">{ready ? t('lobby.readyTag') : t('lobby.notreadyTag')}</span>
-                </span>
               </li>
             );
           })}
           {Array.from({ length: empties }, (_, k) => {
             const canAdd = isHost && n < room.maxPlayers;
             return (
-              <li key={'e' + k} className={`seat-row empty ${canAdd ? 'addable' : ''}`} onClick={canAdd ? addBot : undefined} role={canAdd ? 'button' : undefined}>
-                <span className="seat-num">{n + k + 1}</span>
-                <span className="seat-av empty"><Icon name={canAdd ? 'user-plus-rounded' : 'sleeping-square'} className="size-5" /></span>
-                <div className="seat-body">
-                  <div className="seat-name muted">{canAdd ? t('lobby.addSeat') : t('lobby.seatOpen')}</div>
-                </div>
+              <li key={'e' + k} className={`pcard empty ${canAdd ? 'addable' : ''}`} onClick={canAdd ? addBot : undefined} role={canAdd ? 'button' : undefined}>
+                <span className="pcard-num">{n + k + 1}</span>
+                <span className="pcard-av empty"><Icon name={canAdd ? 'user-plus-rounded' : 'sleeping-square'} className="size-6" /></span>
+                <div className="pcard-name muted">{canAdd ? t('lobby.addSeat') : t('lobby.seatOpen')}</div>
               </li>
             );
           })}

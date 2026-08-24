@@ -17,6 +17,8 @@ import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
 import { VoiceDock } from './components/VoiceDock';
 import { Coach } from './components/Coach';
+import { Guide } from './components/Guide';
+import { Tour } from './components/Tour';
 
 export default function App() {
   const s = useStore();
@@ -53,12 +55,14 @@ export default function App() {
             </div>
             <Prompt />
             <Coach />
+            <Tour />
           </section>
         )}
       </div>
       {s.room && <VoiceDock />}
       <RulesModal />
       <CharactersModal />
+      <Guide />
       <AvatarPicker />
       <Toast.Provider placement="top" maxVisibleToasts={3} />
       <div id="fx" className="fx-root" aria-hidden="true" />

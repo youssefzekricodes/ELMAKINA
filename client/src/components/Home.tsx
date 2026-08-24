@@ -15,6 +15,7 @@ export function Home() {
   const need = () => { if (!name) { notify(t('toast.name')); return false; } return true; };
   const go = async (what: 'create' | 'join' | 'solo') => {
     if (!need()) return;
+    store.set({ tour: false }); // a normal game is not the guided tour
     if (what === 'join') { const c = code.trim().toUpperCase(); if (c.length !== 4) return notify(t('toast.code')); setBusy(what); await joinRoom(name, c); setBusy(null); return; }
     if (what === 'solo') goFullscreen(); // solo jumps straight into the game — grab fullscreen within this click gesture
     setBusy(what);
@@ -73,6 +74,10 @@ export function Home() {
             <Icon name="login-2" className="size-4" />{t('home.join')}
           </Button>
         </div>
+
+        <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>
+          <Icon name="question-circle" className="size-4" />{t('coach.rules')}
+        </button>
 
         <p className="hero-foot">{t('home.foot')}</p>
       </div>

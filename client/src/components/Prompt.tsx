@@ -103,7 +103,7 @@ export function Prompt() {
                 <div className="cl-who"><PlayerAvatar p={pl(tg.id)} size="xs" /><Html as="span" html={i18n.html('prompt.bw.claimer', { name: pname(tg.id) })} /></div>
               </div>
             </div>
-            {canAct && <div className="cl-btns"><button type="button" className="rx call" onClick={() => challengeTarget(tg.id)}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button></div>}
+            {canAct && tg.id !== me && <div className="cl-btns"><button type="button" className="rx call" onClick={() => challengeTarget(tg.id)}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button></div>}
           </div>
         ))}
         {canAct ? <button type="button" className="rx keep" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.bw.keep')}</span></button>
@@ -215,7 +215,7 @@ export function Prompt() {
   useEffect(() => { if (key && key !== lastKey.current) { lastKey.current = key; if (urgent) sfx.play('alert'); } });
   if (!body) return null;
   return (
-    <Card className={`prompt shadow-overlay ${urgent ? 'urgent' : ''}`} key={key}>
+    <Card className={`prompt light shadow-overlay ${urgent ? 'urgent' : ''}`} key={key}>
       {head && <div className="p-strip">{head}</div>}
       <div className="p-body">{body}</div>
     </Card>

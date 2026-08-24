@@ -10,7 +10,7 @@ import { sfx } from '../lib/sfx';
 
 export function Icon({ name, className = 'size-5' }: { name: string; className?: string }) {
   const body = ICONS[name] || ICONS.system;
-  return <svg viewBox="0 0 24 24" className={className} aria-hidden="true" dangerouslySetInnerHTML={{ __html: body }} />;
+  return <svg viewBox="0 0 24 24" className={className} data-icon={name} aria-hidden="true" dangerouslySetInnerHTML={{ __html: body }} />;
 }
 
 export function PlayerAvatar({ p, size = 'md', className = '' }: { p: any; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {

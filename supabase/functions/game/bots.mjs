@@ -87,9 +87,10 @@ function react(g, botId) {
   const w = v.pending && v.pending.window; if (!w || w.type !== 'reaction') return;
   const hand = v.you.cards, action = v.pending.action || {};
   const targetedAtMe = action.targetId === botId;
-  if (w.bwMulti) { // Business Woman: maybe call the bluff on one skimming Tax Man, else keep the rest
-    if (Array.isArray(w.targets) && w.targets.length && Math.random() < 0.28) {
-      const t = w.targets[rnd(w.targets.length)];
+  if (w.bwMulti) { // anyone may call the bluff on a skimming Tax Man (never on your own skim), else pass
+    const others = Array.isArray(w.targets) ? w.targets.filter((t) => t.id !== botId) : [];
+    if (others.length && Math.random() < 0.28) {
+      const t = others[rnd(others.length)];
       try { return g.challengeTarget(botId, t.id); } catch (e) { if (!(e instanceof GameError)) throw e; }
     }
     return g.pass(botId);

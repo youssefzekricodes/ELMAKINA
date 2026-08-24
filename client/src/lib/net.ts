@@ -50,7 +50,7 @@ function roomFromLobby(l: any): Room | null {
 
 function applyRoom(l: any) {
   const room = roomFromLobby(l);
-  if (!room) { unsubscribe(); voiceOnRoomGone(); store.set({ room: null, state: null, me: uid, screen: 'home' }); return; }
+  if (!room) { unsubscribe(); voiceOnRoomGone(); store.set({ room: null, state: null, me: uid, screen: 'home', tour: false }); return; }
   store.set((s) => ({ room, me: uid, screen: room.phase === 'lobby' ? 'lobby' : (s.state ? 'game' : s.screen) }));
   if (room.phase === 'lobby') { resetEvents(); store.set({ state: null, targeting: null, targetId: null, screen: 'lobby' }); }
   subscribe(room.code);
@@ -159,8 +159,8 @@ async function afterJoin(res: any) {
 }
 export async function createRoom(name: string) { return afterJoin(await emit('create_room', { name, profile: profileOf() })); }
 export async function joinRoom(name: string, code: string) { const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) clearInviteParam(); return r; }
-export async function playSolo(name: string) { return afterJoin(await emit('solo', { name, bots: 3, profile: profileOf() })); }
-export async function leaveRoom() { await emit('leave_room'); unsubscribe(); resetEvents(); voiceOnRoomGone(); store.set({ room: null, state: null, screen: 'home' }); }
+export async function playSolo(name: string, guided = false) { return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
+export async function leaveRoom() { await emit('leave_room'); unsubscribe(); resetEvents(); voiceOnRoomGone(); store.set({ room: null, state: null, screen: 'home', tour: false }); }
 export const toggleReady = () => emit('toggle_ready');
 export const startGame = () => emit('start_game');
 export const addBot = () => emit('add_bot');

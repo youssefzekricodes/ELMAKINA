@@ -29,8 +29,8 @@ export function TopBar() {
         <img className="size-8 object-contain drop-shadow" src={IMG.machineSmall} alt="" />
         <span className="brand-word">ELMAKINA</span>
       </div>
-      <div className="flex items-center gap-1.5">
-        {s.room && s.screen !== 'home' && <Chip variant="secondary" className="font-semibold tracking-[.2em] tabular-nums ltr" dir="ltr">{s.room.code}</Chip>}
+      <div className="topbar-right flex items-center gap-1.5">
+        {s.room && s.screen !== 'home' && <Chip variant="secondary" className="room-code font-semibold tracking-[.2em] tabular-nums ltr" dir="ltr">{s.room.code}</Chip>}
         {inGame && (
           <Badge.Anchor className="lg:hidden">
             <IconButton label={t('top.log')} icon="document-text" onPress={() => store.set({ logOpen: !s.logOpen, unread: 0 })} />
@@ -42,12 +42,17 @@ export function TopBar() {
           <Tooltip.Content>{t('top.lang.title')}</Tooltip.Content>
         </Tooltip>
         <IconButton label={t('top.sound')} icon={s.soundOn ? 'volume-loud' : 'volume-cross'} onPress={toggleSound} />
-        <IconButton label={t('top.chars')} icon="card-recive" onPress={() => store.set({ modal: 'chars' })} />
-        <IconButton label={t('top.rules')} icon="question-circle" onPress={() => store.set({ modal: 'rules' })} />
+        <Tooltip delay={400}>
+          <Button variant="outline" size="sm" onPress={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} className="guide-btn">
+            <Icon name="card-recive" className="size-4" /><span className="guide-btn-tx">{t('top.chars')}</span>
+          </Button>
+          <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
+        </Tooltip>
+        <IconButton label={t('top.rules')} icon="question-circle" onPress={() => store.set({ modal: 'guide' })} />
         <span className={`lamp ${s.connected ? 'on' : 'off'}`} title="Connection" />
         {inGame && (
           <Button variant="outline" size="sm" onPress={onLeave}>
-            <Icon name="logout-2" className="size-4" />{t('top.leave')}
+            <Icon name="logout-2" className="size-4" /><span className="leave-tx">{t('top.leave')}</span>
           </Button>
         )}
       </div>

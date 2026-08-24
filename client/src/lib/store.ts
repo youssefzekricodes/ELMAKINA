@@ -39,7 +39,8 @@ export interface Snapshot {
   logCollapsed: boolean;
   unread: number;
   banner: { text: string; id: number } | null;
-  modal: 'rules' | 'avatar' | 'chars' | null;
+  modal: 'rules' | 'avatar' | 'chars' | 'guide' | null;
+  tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews
   tick: number; // bumps when language changes so every text re-renders
 }
 
@@ -49,7 +50,7 @@ let snap: Snapshot = {
   screen: 'home', connected: false, room: null, state: null, me: null,
   lang: localStorage.getItem('mekina.lang') || 'en', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
-  targeting: null, targetId: null, logOpen: false, logCollapsed: localStorage.getItem('mekina.logCollapsed') === '1', unread: 0, banner: null, modal: null, tick: 0,
+  targeting: null, targetId: null, logOpen: false, logCollapsed: localStorage.getItem('mekina.logCollapsed') === '1', unread: 0, banner: null, modal: null, tour: false, tick: 0,
 };
 const listeners = new Set<() => void>();
 

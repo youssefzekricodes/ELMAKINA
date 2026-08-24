@@ -4,18 +4,73 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0E0B08" />
-    <meta name="description" content="ELMAKINA — a real-time online hidden-role bluffing game. Identity, deception, deduction." />
+
+    <!-- ── Primary SEO ── -->
+    <title>ELMAKINA — Online Card Game of Bluffing, Deduction &amp; Deception</title>
+    <meta name="description" content="Play ELMAKINA (ELMEKINA) — a free real-time online card game of bluffing, deduction and investigation for 2–6 players. Claim hidden roles, call bluffs, and outwit your friends. No download — plays in your browser." />
+    <meta name="keywords" content="ELMAKINA, ELMEKINA, El Makina, El Mekina, Mekina, الماكينة, card game, online card game, bluffing game, social deduction game, deduction game, investigation game, hidden role game, party game, multiplayer card game, free browser game, Coup-like game" />
+    <meta name="author" content="ELMAKINA" />
+    <meta name="application-name" content="ELMAKINA" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://elmekina.com/" />
+
+    <!-- ── Open Graph (Facebook, WhatsApp, Discord, LinkedIn) ── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ELMAKINA" />
+    <meta property="og:title" content="ELMAKINA — Online Card Game of Bluffing &amp; Deduction" />
+    <meta property="og:description" content="A free real-time online card game of bluffing, deduction and investigation for 2–6 players. Claim hidden roles, call bluffs, outwit your friends — in your browser." />
+    <meta property="og:url" content="https://elmekina.com/" />
+    <meta property="og:image" content="https://elmekina.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ELMAKINA — bluff, deduce, survive" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ar_TN" />
+
+    <!-- ── Twitter / X ── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ELMAKINA — Online Card Game of Bluffing &amp; Deduction" />
+    <meta name="twitter:description" content="A free real-time online card game of bluffing, deduction and investigation for 2–6 players. Plays in your browser." />
+    <meta name="twitter:image" content="https://elmekina.com/og-image.png" />
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ELMAKINA" />
-    <title>ELMAKINA</title>
     <link rel="icon" href="/img/favicon.png" />
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- ── Structured data: helps Google show a rich Game result ── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "ELMAKINA",
+      "alternateName": ["ELMEKINA", "El Makina", "El Mekina", "Mekina", "الماكينة"],
+      "url": "https://elmekina.com/",
+      "image": "https://elmekina.com/og-image.png",
+      "description": "A free real-time online card game of bluffing, deduction and investigation for 2–6 players. Claim hidden roles, call bluffs, and outwit your friends. Plays in any browser.",
+      "genre": ["Card Game", "Social Deduction", "Bluffing", "Strategy", "Party Game"],
+      "playMode": "MultiPlayer",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web browser (iOS, Android, Windows, macOS)",
+      "gamePlatform": ["Web browser", "Progressive Web App"],
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 2, "maxValue": 6 },
+      "inLanguage": ["en", "ar"],
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
+    }
+    </script>
   </head>
   <body class="bg-background text-foreground">
     <div id="root"></div>
+    <noscript>
+      <main style="max-width:720px;margin:40px auto;padding:0 20px;font-family:system-ui,sans-serif;color:#f3e9d6">
+        <h1>ELMAKINA — Online Card Game of Bluffing &amp; Deduction</h1>
+        <p>ELMAKINA (also written ELMEKINA or Mekina) is a free real-time online card game of bluffing, deduction and investigation for 2–6 players. Claim hidden character roles, bluff your way to power, call out your opponents' lies, and be the last one standing. It plays right in your browser — no download — with live voice chat and solo play against bots.</p>
+        <p>Enable JavaScript to play ELMAKINA.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

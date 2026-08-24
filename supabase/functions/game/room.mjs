@@ -141,7 +141,7 @@ async function createRoom(ctx, body, solo) {
   if (solo) {
     const n = Math.max(1, Math.min(MAX_PLAYERS - 1, Number(body.bots) || 3));
     for (let i = 0; i < n; i++) r.pushBot();
-    r.start();
+    r.start({ guided: !!body.guided });
   }
   await r.commit();
   return { ok: true, code, room: lobbyView(r.room), view: r.game ? r.viewFor(uid) : null };
@@ -269,7 +269,7 @@ class RoomOps {
     const idx = this.room.players.map((p) => p.isBot).lastIndexOf(true); if (idx < 0) throw fail('No bot to remove');
     this.room.players.splice(idx, 1); return this.done();
   }
-  start() {
+  start(opts = {}) {
     const room = this.room;
     if (this.game && this.game.phase === 'playing') throw fail('Game already running');
     this.refreshPresence();
@@ -278,7 +278,9 @@ class RoomOps {
     room.players = seated; pickHost(room);
     for (const p of room.players) applyDefaults(room.players, p);
     this.sched = {};
-    this.game = new Game(room.players.map((p) => ({ id: p.id, name: p.name, connected: p.connected, isBot: !!p.isBot, avatar: p.avatar, color: p.color })), { now: () => this.now });
+    // Guided (tutorial) games give beginners much longer windows so they can read the coach-marks.
+    const timings = opts.guided ? { turn: 120000, challenge: 45000, block: 45000, decision: 60000, resultPause: 5000, turnPause: 3500 } : undefined;
+    this.game = new Game(room.players.map((p) => ({ id: p.id, name: p.name, connected: p.connected, isBot: !!p.isBot, avatar: p.avatar, color: p.color })), { now: () => this.now, timings });
     this.game.start();
     this.runBots();
   }

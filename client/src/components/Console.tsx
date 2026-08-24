@@ -14,14 +14,14 @@ const pressAction = (type: string) => { sfx.play('lever'); startAction(type); };
 const actionName = (type: string) => (CH[type as keyof typeof CH] ? i18n.charName(type) : t(`action.${type}.name`));
 const actionDesc = (type: string) => t(`action.${type}.desc`);
 
-function Tile({ a, coins, targets }: { a: ActionDef; coins: number; targets: string[] | null }) {
+function Tile({ a, coins, targets, onPick }: { a: ActionDef; coins: number; targets: string[] | null; onPick?: (a: ActionDef) => void }) {
   const canAfford = coins >= a.cost;
   const ok = canAfford && (!targets || targets.length > 0);
   const why = !canAfford ? t('game.needCoins', { n: a.cost }) : targets && !targets.length ? t('game.noTarget') : '';
   const th = CH[a.type as keyof typeof CH];
   return (
     <Tooltip delay={400}>
-      <Button variant="outline" isDisabled={!ok} onPress={() => pressAction(a.type)} className={`act-tile ${a.kind}`} style={{ '--c': th ? th.color : 'var(--muted)' } as any}>
+      <Button variant="outline" isDisabled={!ok} onPress={() => (onPick ? onPick(a) : pressAction(a.type))} className={`act-tile ${a.kind}`} style={{ '--c': th ? th.color : 'var(--muted)' } as any}>
         {th ? <span className="thumb"><img src={th.cardSm} alt="" /></span> : <span className="thumb icon"><Icon name={a.type} className="size-5" /></span>}
         <span className="txt">
           <span className="t">{actionName(a.type)}</span>
@@ -60,9 +60,10 @@ export function Console() {
   const meP = st.players.find((p) => p.id === me); const you = st.you;
   const handKey = JSON.stringify(you?.cards || []);
   const [animKey, setAnimKey] = useState(handKey);
+  const [preview, setPreview] = useState<ActionDef | null>(null); // guided mode: show a character's rule before claiming
   const first = useRef(true);
   useEffect(() => { if (first.current) { first.current = false; return; } setAnimKey(handKey); sfx.play('deal'); }, [handKey]);
-  if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
+  if (!you || !meP) return <Card id="console" className="console light p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
   const myTurn = st.phase === 'playing' && st.pending && st.pending.stage === 'turn' && st.pending.actorId === me && meP.alive;
   const selfPick = !!(s.targeting && s.targeting.type === 'police' && s.targetId === me);
   const ring = st.pending?.stage === 'turn' ? <Ring deadline={st.pending.deadline} total={st.timings.turn} tick={myTurn} /> : null;
@@ -73,7 +74,7 @@ export function Console() {
   else if (!meP.alive) status = <div className="status-line">{t('game.eliminated')}</div>;
 
   return (
-    <Card id="console" className="console gap-2.5 p-3">
+    <Card id="console" className="console light gap-2.5 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold">{t('game.yourhand')}</span>
@@ -92,10 +93,26 @@ export function Console() {
         {myTurn && (
           <div className="actions">
             <div className="act-group"><div className="act-label"><Icon name="bolt" className="size-3.5" />{t('actions.basic')}</div><div className="basic-row">{ACTIONS.filter((a) => a.kind === 'default').map((a) => <BasicTile key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} />)}</div></div>
-            <div className="act-group"><div className="act-label"><Icon name="hand-stars" className="size-3.5" />{t('actions.claims')}</div><div className="act-grid claims">{ACTIONS.filter((a) => a.kind === 'claim').map((a) => <Tile key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} />)}</div></div>
+            <div className="act-group"><div className="act-label"><Icon name="hand-stars" className="size-3.5" />{t('actions.claims')}</div><div className="act-grid claims">{ACTIONS.filter((a) => a.kind === 'claim').map((a) => <Tile key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} onPick={s.tour ? setPreview : undefined} />)}</div></div>
           </div>
         )}
       </div>
+      {preview && (
+        <div className="claim-preview-backdrop" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>
+          <div className="claim-preview" onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.type as keyof typeof CH]?.color }}>
+            <GameCard c={preview.type} w={104} />
+            <div className="cp-body">
+              <h3 className="cp-name">{actionName(preview.type)}</h3>
+              <p className="cp-desc">{actionDesc(preview.type)}</p>
+              {preview.cost ? <span className="cp-cost">{t('preview.cost', { n: preview.cost })}<img src={IMG.coin} alt="" /></span> : null}
+            </div>
+            <div className="cp-actions">
+              <Button variant="tertiary" onPress={() => setPreview(null)}>{t('preview.cancel')}</Button>
+              <Button variant="primary" onPress={() => { const a = preview; setPreview(null); pressAction(a.type); }}><Icon name="hand-stars" className="size-4" />{t('preview.use')}</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
