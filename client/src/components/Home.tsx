@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { createRoom, joinRoom, playSolo, notify, isConfigured } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
+import { IMG } from '../theme';
 import { Html, Icon, PlayerAvatar } from './ui';
 
 export function Home() {
@@ -25,10 +26,13 @@ export function Home() {
   const mePreview = { id: 'me', avatar: s.profile.avatar, avatarData: s.profile.avatarData, color: s.profile.color };
   return (
     <section className="screen home-screen">
-      <div className="home-menu">
-        <div className="wordmark">
-          <h1>ELMAKINA</h1>
-          <Html as="p" className="tagline" html={t('home.tagline')} />
+      <div className="home-stage">
+        <div className="home-hero">
+          <div className="home-emblem"><img src={IMG.machineSmall} alt="" draggable={false} /></div>
+          <div className="wordmark">
+            <h1>ELMAKINA</h1>
+            <Html as="p" className="tagline" html={t('home.tagline')} />
+          </div>
         </div>
 
         {!isConfigured && (
@@ -41,47 +45,53 @@ export function Home() {
           </Alert>
         )}
 
-        <div className="home-card">
-          <button type="button" className="home-avatar" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')} title={t('profile.change')}>
-            <PlayerAvatar p={mePreview} size="xl" />
-            <span className="home-avatar-edit"><Icon name="gallery-add" className="size-4" /></span>
+        {/* player badge — you assume an identity before you sit down */}
+        <div className="home-badge">
+          <span className="badge-strip" aria-hidden="true" />
+          <button type="button" className="badge-photo" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')} title={t('profile.change')}>
+            <PlayerAvatar p={mePreview} size="lg" />
+            <span className="badge-photo-edit"><Icon name="gallery-add" className="size-3.5" /></span>
           </button>
-
-          <input
-            className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
-            placeholder={t('home.name.ph')} maxLength={16} autoComplete="off" aria-label={t('home.name')}
-            autoFocus={!!s.autoJoinCode}
-            onKeyDown={(e) => { if (e.key === 'Enter') go(code ? 'join' : 'create'); }}
-          />
-
-          <div className="home-actions">
-            <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'create'} onPress={() => go('create')}>
-              <Icon name="users-room" className="size-5" />{t('home.create')}
-            </Button>
-            <Button fullWidth size="lg" variant="secondary" isPending={busy === 'solo'} onPress={() => go('solo')}>
-              <Icon name="robot" className="size-5" />{t('home.solo')}
-            </Button>
-          </div>
-
-          <div className="home-or">{t('home.or')}</div>
-          <div className="home-join">
+          <div className="badge-fields">
+            <span className="badge-label">{t('home.name')}</span>
             <input
-              className="home-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder={t('home.code.ph')} maxLength={4} autoCapitalize="characters" autoComplete="off"
-              aria-label={t('home.code.ph')} dir="ltr"
-              onKeyDown={(e) => { if (e.key === 'Enter') go('join'); }}
+              className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
+              placeholder={t('home.name.ph')} maxLength={16} autoComplete="off" aria-label={t('home.name')}
+              autoFocus={!!s.autoJoinCode}
+              onKeyDown={(e) => { if (e.key === 'Enter') go(code ? 'join' : 'create'); }}
             />
-            <Button size="lg" variant="primary" className="home-join-go" isPending={busy === 'join'} onPress={() => go('join')}>
-              <Icon name="login-2" className="size-4" />{t('home.join')}
-            </Button>
           </div>
         </div>
 
-        <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>
-          <Icon name="question-circle" className="size-4" />{t('coach.rules')}
-        </button>
+        <div className="home-actions">
+          <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'create'} onPress={() => go('create')}>
+            <Icon name="users-room" className="size-5" />{t('home.create')}
+          </Button>
+          <Button fullWidth size="lg" variant="secondary" isPending={busy === 'solo'} onPress={() => go('solo')}>
+            <Icon name="robot" className="size-5" />{t('home.solo')}
+          </Button>
+        </div>
 
-        <p className="hero-foot">{t('home.foot')}</p>
+        <div className="home-or"><span>{t('home.or')}</span></div>
+
+        <div className="home-join">
+          <input
+            className="home-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder={t('home.code.ph')} maxLength={4} autoCapitalize="characters" autoComplete="off"
+            aria-label={t('home.code.ph')} dir="ltr"
+            onKeyDown={(e) => { if (e.key === 'Enter') go('join'); }}
+          />
+          <Button size="lg" variant="primary" className="home-join-go" isPending={busy === 'join'} onPress={() => go('join')}>
+            <Icon name="login-2" className="size-4" />{t('home.join')}
+          </Button>
+        </div>
+
+        <div className="home-foot-row">
+          <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>
+            <Icon name="question-circle" className="size-4" />{t('coach.rules')}
+          </button>
+          <p className="hero-foot">{t('home.foot')}</p>
+        </div>
       </div>
     </section>
   );

@@ -70,7 +70,7 @@ export function LogPanel() {
     return (
       <Drawer.Backdrop isOpen={s.logOpen} onOpenChange={(o) => store.set({ logOpen: o, unread: 0 })}>
         <Drawer.Content placement={i18n.dir() === 'rtl' ? 'left' : 'right'} className="max-w-[380px]">
-          <Drawer.Dialog aria-label={t('game.logHead')} className="log-drawer light">
+          <Drawer.Dialog aria-label={t('game.logHead')} className="log-drawer">
             <Drawer.CloseTrigger />
             <Drawer.Header><Drawer.Heading>{t('game.logHead')}</Drawer.Heading></Drawer.Header>
             <Drawer.Body className="p-0"><Entries log={log} /></Drawer.Body>
@@ -82,7 +82,7 @@ export function LogPanel() {
   const collapsed = s.logCollapsed;
   const toggle = () => store.set((st) => { const v = !st.logCollapsed; try { localStorage.setItem('mekina.logCollapsed', v ? '1' : '0'); } catch { /* ignore */ } return { logCollapsed: v }; });
   return (
-    <Card className={`log-area light gap-0 p-0 ${collapsed ? 'collapsed' : ''}`}>
+    <Card className={`log-area gap-0 p-0 ${collapsed ? 'collapsed' : ''}`}>
       <button type="button" className="log-head" onClick={toggle} aria-expanded={!collapsed} title={collapsed ? t('game.logShow') : t('game.logHide')}>
         <Icon name="document-text" className="size-4 log-head-ic" />
         {!collapsed && <span className="log-title">{t('game.logHead')}</span>}
