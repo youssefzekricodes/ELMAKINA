@@ -56,8 +56,11 @@ function applyRoom(l: any) {
   subscribe(room.code);
 }
 
+let lastViewTime = 0;
 function applyView(v: any) {
   if (!v) return;
+  if (v.serverTime && v.serverTime < lastViewTime) return; // ignore a view older than one we already applied
+  lastViewTime = v.serverTime || lastViewTime;
   clockOffset = v.serverTime - Date.now();
   const prev = store.get();
   const me = uid;
@@ -161,10 +164,11 @@ export async function createRoom(name: string) { return afterJoin(await emit('cr
 export async function joinRoom(name: string, code: string) { const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) clearInviteParam(); return r; }
 export async function playSolo(name: string, guided = false) { return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
 export async function leaveRoom() { await emit('leave_room'); unsubscribe(); resetEvents(); voiceOnRoomGone(); store.set({ room: null, state: null, screen: 'home', tour: false }); }
-export const toggleReady = () => emit('toggle_ready');
+async function lobbyOp(op: string) { const r = await emit(op); if (r && r.room) applyRoom(r.room); return r; }
+export const toggleReady = () => lobbyOp('toggle_ready');
 export const startGame = () => emit('start_game');
-export const addBot = () => emit('add_bot');
-export const removeBot = () => emit('remove_bot');
+export const addBot = () => lobbyOp('add_bot');
+export const removeBot = () => lobbyOp('remove_bot');
 export async function newGame() { const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
 export function commitProfile(p: Profile) {
   store.set({ profile: p }); localStorage.setItem('mekina.profile', JSON.stringify(p));
@@ -182,14 +186,16 @@ export function startAction(type: string) {
   if (a.target) { store.set({ targeting: a, targetId: null }); return; }
   sendAction({ type });
 }
-export async function sendAction(payload: any) { store.set({ targeting: null, targetId: null }); await emit('game_action', { action: payload }); }
+/** Emit a game move and apply the server's returned view immediately (snappy, no Realtime wait). */
+async function move(op: string, data?: any) { const r = await emit(op, data); if (r && r.view) applyView(r.view); return r; }
+export async function sendAction(payload: any) { store.set({ targeting: null, targetId: null }); return move('game_action', { action: payload }); }
 export const cancelTargeting = () => store.set({ targeting: null, targetId: null });
 export const pickTarget = (id: string) => store.set({ targetId: id });
-export const challenge = () => emit('game_challenge');
-export const challengeTarget = (targetId: string) => emit('game_challenge_target', { targetId });
-export const pass = () => emit('game_pass');
-export const block = () => emit('game_block');
-export const decide = (d: any) => emit('game_decision', { choice: d });
+export const challenge = () => move('game_challenge');
+export const challengeTarget = (targetId: string) => move('game_challenge_target', { targetId });
+export const pass = () => move('game_pass');
+export const block = () => move('game_block');
+export const decide = (d: any) => move('game_decision', { choice: d });
 
 // ── invite link (?room=CODE) ──
 export function clearInviteParam() { if (location.search) history.replaceState(null, '', location.pathname); store.set({ autoJoinCode: null }); }

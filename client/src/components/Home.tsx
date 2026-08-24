@@ -47,7 +47,6 @@ export function Home() {
 
         {/* player badge — you assume an identity before you sit down */}
         <div className="home-badge">
-          <span className="badge-strip" aria-hidden="true" />
           <button type="button" className="badge-photo" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')} title={t('profile.change')}>
             <PlayerAvatar p={mePreview} size="lg" />
             <span className="badge-photo-edit"><Icon name="gallery-add" className="size-3.5" /></span>

@@ -255,7 +255,7 @@ class RoomOps {
     if (this.game) this.game.setProfile(me.id, { avatar: me.avatar, color: me.color });
     return this.done();
   }
-  toggleReady(me) { if (this.room.phase !== 'lobby') throw fail('Game in progress'); me.ready = !me.ready; return this.done({ ready: me.ready }); }
+  toggleReady(me) { if (this.room.phase !== 'lobby') throw fail('Game in progress'); me.ready = !me.ready; return this.done({ ready: me.ready, room: lobbyView(this.room) }); }
   pushBot() {
     const room = this.room;
     if (room.players.length >= MAX_PLAYERS) throw fail('Room is full');
@@ -263,11 +263,11 @@ class RoomOps {
     const bot = { id: uuid(), name: BOT_NAMES.find((n) => !used.has(n)) || `Machine·${room.players.length + 1}`, ready: true, connected: true, isBot: true, avatar: null, avatarData: null, color: null };
     room.players.push(bot); applyDefaults(room.players, bot); return bot;
   }
-  addBot(me) { if (this.room.host_id !== me.id) throw fail('Only the host can add bots'); if (this.room.phase !== 'lobby') throw fail('Game in progress'); this.pushBot(); return this.done(); }
+  addBot(me) { if (this.room.host_id !== me.id) throw fail('Only the host can add bots'); if (this.room.phase !== 'lobby') throw fail('Game in progress'); this.pushBot(); return this.done({ room: lobbyView(this.room) }); }
   removeBot(me) {
     if (this.room.host_id !== me.id) throw fail('Only the host can remove bots'); if (this.room.phase !== 'lobby') throw fail('Game in progress');
     const idx = this.room.players.map((p) => p.isBot).lastIndexOf(true); if (idx < 0) throw fail('No bot to remove');
-    this.room.players.splice(idx, 1); return this.done();
+    this.room.players.splice(idx, 1); return this.done({ room: lobbyView(this.room) });
   }
   start(opts = {}) {
     const room = this.room;
@@ -313,7 +313,8 @@ class RoomOps {
     this.game.tick(this.now); // anything overdue happens first (e.g. a window that already expired)
     fn(this.game);
     this.runBots();
-    return this.done();
+    // Return the caller's fresh view so the client can update instantly, without waiting for the Realtime round-trip.
+    return this.done({ view: this.viewFor(me.id) });
   }
   async done(extra = {}) { await this.commit(); return { ok: true, ...extra }; }
 }

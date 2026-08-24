@@ -183,8 +183,7 @@
   .home-stage .tagline { margin: 6px 0 0; }
 
   /* player badge (glass) — assume your identity before you sit down */
-  .home-badge { position: relative; width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 16px 14px 18px; border-radius: 18px; overflow: hidden; text-align: start; background: rgba(22,16,11,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,240,214,.1); box-shadow: 0 22px 60px rgba(0,0,0,.5); }
-  .badge-strip { position: absolute; inset-inline-start: 0; inset-block: 0; width: 5px; background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, #000)); }
+  .home-badge { position: relative; width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 18px; overflow: hidden; text-align: start; background: rgba(22,16,11,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,240,214,.1); box-shadow: 0 22px 60px rgba(0,0,0,.5); }
   .badge-photo { position: relative; flex-shrink: 0; border-radius: 14px; cursor: pointer; transition: transform .15s; }
   .badge-photo:hover { transform: translateY(-1px); }
   .badge-photo .pavatar { box-shadow: 0 0 0 2px rgba(255,240,214,.16), 0 6px 16px rgba(0,0,0,.4); }
