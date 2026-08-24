@@ -356,8 +356,25 @@
   /* brass rivets in the console corners */
   .console .act-label { color: var(--muted); }
   .status-line { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; flex-wrap: wrap; }
+  /* masthead: a clear title plate, prominent coin bank, and the live status/timer */
+  .console-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; padding-bottom: 10px; border-bottom: 1px solid var(--separator); }
+  .ct-meta { display: flex; align-items: center; gap: 12px; }
+  .ct-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--foreground); }
+  .ct-deck { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+  .ct-deck svg { opacity: .7; }
+  .me-coins { transform: scale(1.02); }
+
   .hand-row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-  .hand { display: flex; gap: 10px; }
+  /* the hand sits on a felt dock — makes "these are the cards in your grip" unmistakable */
+  .hand { display: flex; gap: 12px; align-items: flex-end; padding: 12px 14px 10px; border-radius: 16px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--foreground) 4%, transparent), color-mix(in srgb, var(--foreground) 8%, transparent));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -10px 22px -14px rgba(26,25,24,.4); }
+  .hand.picking { padding-bottom: 12px; }
+  /* each held card carries an ink name-plate in its own character colour */
+  .hand-card { --c: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .hand-card .gcard { box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--c) 45%, rgba(0,0,0,.35)), 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent); border-radius: 9px; }
+  .hc-name { max-width: 108px; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; text-align: center; line-height: 1.1;
+    color: color-mix(in srgb, var(--c) 60%, var(--foreground)); }
   .hand.picking { flex-wrap: wrap; }
   .hand.picking .pick-banner { width: 100%; }
   .actions { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 0; }
@@ -385,8 +402,11 @@
   /* hand cards lift like they're held */
   .hand-row .hand .gcard { transition: transform .18s var(--ease), filter .18s; }
   .hand-row .hand .gcard:hover { transform: translateY(-8px) rotate(-1.5deg); filter: drop-shadow(0 12px 20px rgba(0,0,0,.5)); z-index: 2; }
-  .act-tile { width: 100%; height: auto; min-height: 52px; padding: 8px 10px; justify-content: flex-start; text-align: start; gap: 10px; font-weight: 500; position: relative; border-radius: var(--radius-lg); border-color: var(--border); transition: border-color .15s, background .15s, transform .12s; }
-  .act-tile:not([data-disabled]):not([disabled]):hover { border-color: color-mix(in srgb, var(--c) 60%, var(--border)); background: color-mix(in srgb, var(--c) 8%, var(--surface)); transform: translateY(-1px); }
+  /* claim tiles: each carries its character's colour as a left spine so the seven claims read apart at a glance */
+  .act-tile { width: 100%; height: auto; min-height: 54px; padding: 8px 10px 8px 14px; justify-content: flex-start; text-align: start; gap: 10px; font-weight: 500; position: relative; overflow: hidden; border-radius: var(--radius-lg); border-color: var(--border); transition: border-color .15s, background .15s, transform .12s, box-shadow .15s; }
+  .act-tile::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; width: 4px; background: var(--c); opacity: .9; transition: width .15s; }
+  .act-tile:not([data-disabled]):not([disabled]):hover { border-color: color-mix(in srgb, var(--c) 60%, var(--border)); background: color-mix(in srgb, var(--c) 8%, var(--surface)); transform: translateY(-1px); box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--c) 60%, transparent); }
+  .act-tile:not([data-disabled]):not([disabled]):hover::before { width: 6px; }
   .act-tile .thumb { width: 32px; height: 46px; border-radius: 6px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,.22), 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent); background: #fff; display: flex; align-items: center; justify-content: center; }
   .act-tile .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .act-tile .thumb.icon { width: 40px; height: 46px; border-radius: var(--radius-lg); background: var(--accent-soft); color: var(--accent-soft-foreground); box-shadow: none; }

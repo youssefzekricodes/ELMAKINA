@@ -75,20 +75,26 @@ export function Console() {
 
   return (
     <Card id="console" className="console light gap-2.5 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold">{t('game.yourhand')}</span>
+      <div className="console-top">
+        <div className="ct-meta">
+          <span className="ct-title">{t('game.yourhand')}</span>
           <Coins n={meP.coins} big className="me-coins" />
-          <span className="text-xs text-muted">{t('game.max', { max: st.maxCoins, deck: st.deckSize })}</span>
+          <span className="ct-deck"><Icon name="card-recive" className="size-3.5" />{t('game.max', { max: st.maxCoins, deck: st.deckSize })}</span>
         </div>
         {status}
       </div>
       <div className="hand-row">
         <div className={`hand ${selfPick ? 'picking' : ''}`}>
           {selfPick && <PickBanner text={t('pick.own')} />}
-          {you.cards.length ? you.cards.map((c, i) => (
-            <GameCard key={animKey + ':' + i} c={c} w={104} anim={!first.current} pick={selfPick} onPress={selfPick ? () => sendAction({ type: 'police', targetId: me, slot: i }) : undefined} />
-          )) : <span className="status-line">{t('game.nocards')}</span>}
+          {you.cards.length ? you.cards.map((c, i) => {
+            const known = CH[c as keyof typeof CH];
+            return (
+              <div className="hand-card" key={animKey + ':' + i} style={known ? ({ '--c': known.color } as any) : undefined}>
+                <GameCard c={c} w={104} anim={!first.current} pick={selfPick} onPress={selfPick ? () => sendAction({ type: 'police', targetId: me, slot: i }) : undefined} />
+                {known && <span className="hc-name">{i18n.charName(c)}</span>}
+              </div>
+            );
+          }) : <span className="status-line">{t('game.nocards')}</span>}
         </div>
         {myTurn && (
           <div className="actions">
