@@ -4,6 +4,7 @@ import { useStore, store } from '../lib/store';
 import { addBot, copyInvite, leaveRoom, removeBot, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
 import { Icon, PlayerAvatar } from './ui';
+import { AddFriendButton } from './Social';
 import { useVoice, speakingOf, inCall } from '../lib/voice';
 
 export function Lobby() {
@@ -61,6 +62,7 @@ export function Lobby() {
                   <PlayerAvatar p={p} size="lg" />
                   {inCall(p.id) && <span className="seat-mic"><Icon name={p.id in v.peers && v.peers[p.id].muted ? 'microphone-off' : 'microphone'} className="size-3" /></span>}
                 </span>
+                {!p.isBot && p.id !== room.you && <AddFriendButton uid={p.id} name={p.name} />}
                 <div className="pcard-name">{p.name}</div>
                 <div className="pcard-tags">
                   {p.isHost && <span className="ptag host"><Icon name="crown" className="size-3" />{t('lobby.host')}</span>}

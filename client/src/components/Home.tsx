@@ -3,9 +3,10 @@ import { Alert, Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { createRoom, joinRoom, playSolo, notify, isConfigured } from '../lib/net';
+import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { IMG } from '../theme';
-import { Html, Icon, PlayerAvatar } from './ui';
+import { GoogleG, Html, Icon, PlayerAvatar } from './ui';
 
 export function Home() {
   const s = useStore();
@@ -59,6 +60,31 @@ export function Home() {
               autoFocus={!!s.autoJoinCode}
               onKeyDown={(e) => { if (e.key === 'Enter') go(code ? 'join' : 'create'); }}
             />
+          </div>
+        </div>
+
+        {/* account + trophies + social entry points */}
+        <div className="home-account">
+          <div className="acct-left">
+            {s.account && !s.account.isGuest ? (
+              <div className="acct-me">
+                {s.account.avatarUrl ? <img className="acct-photo" src={s.account.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <PlayerAvatar p={mePreview} size="sm" />}
+                <span className="acct-name">{s.account.name}</span>
+                <button type="button" className="acct-link" onClick={signOutAccount}>{t('acct.signout')}</button>
+              </div>
+            ) : (
+              <button type="button" className="acct-google" onClick={signInWithGoogle} disabled={!isConfigured}>
+                <GoogleG className="size-4" />{t('acct.google')}
+              </button>
+            )}
+          </div>
+          <div className="acct-tools">
+            <span className="trophy-pill" title={t('lb.trophies')}><Icon name="win" className="size-4" />{s.trophies}</span>
+            <button type="button" className="acct-tool" onClick={() => store.set({ modal: 'leaderboard' })} aria-label={t('lb.title')}><Icon name="win" className="size-4" /><span className="acct-tool-tx">{t('lb.title')}</span></button>
+            <button type="button" className="acct-tool" onClick={() => store.set({ modal: 'friends' })} aria-label={t('fr.title')}>
+              <Icon name="users-group-rounded" className="size-4" /><span className="acct-tool-tx">{t('fr.title')}</span>
+              {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
+            </button>
           </div>
         </div>
 

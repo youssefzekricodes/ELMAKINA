@@ -39,6 +39,26 @@ function applyDefaults(players, player) {
   if (!player.color) { const used = new Set(players.filter((p) => p !== player).map((p) => p.color)); player.color = PALETTE.find((c) => !used.has(c)) || PALETTE[players.indexOf(player) % PALETTE.length]; }
 }
 const humans = (room) => room.players.filter((p) => !p.isBot);
+
+/** Final trophy deltas for the human players of a finished game.
+ *  Rank 1 (winner) = +3, rank 2 = +1, last place = -1, everyone in between = 0.
+ *  Ranking: winner first, then survivors/eliminated by reverse elimination order (last out ranks higher). */
+function standings(game) {
+  const players = game.players || [];
+  const total = players.length;
+  const out = game.outOrder || [];
+  // rank order (best → worst): winner, then anyone still standing, then eliminated newest→oldest
+  const ranked = [];
+  if (game.winnerId) ranked.push(game.winnerId);
+  for (const p of players) if (p.alive && p.id !== game.winnerId && !ranked.includes(p.id)) ranked.push(p.id);
+  for (let i = out.length - 1; i >= 0; i--) if (!ranked.includes(out[i])) ranked.push(out[i]);
+  for (const p of players) if (!ranked.includes(p.id)) ranked.push(p.id); // safety net
+  const delta = (rank) => (rank === 1 ? 3 : rank === total ? -1 : rank === 2 ? 1 : 0);
+  return ranked
+    .map((id, i) => ({ id, rank: i + 1 }))
+    .filter(({ id }) => { const p = players.find((x) => x.id === id); return p && !p.isBot; })
+    .map(({ id, rank }) => ({ id, delta: delta(rank), win: rank === 1 }));
+}
 const pickHost = (room) => { if (!room.players.find((p) => p.id === room.host_id) && room.players.length) room.host_id = (humans(room)[0] || room.players[0]).id; };
 
 /** Public lobby payload (same for everyone; clients know their own id). */
@@ -211,7 +231,7 @@ class RoomOps {
     this.members = {};
     for (const m of (await this.db.listMembers(this.room.code)) || []) this.members[m.user_id] = typeof m.last_seen === 'number' ? m.last_seen : (m.last_seen ? new Date(m.last_seen).getTime() : 0);
     const st = await this.db.getState(this.room.code);
-    if (st && st.state && st.state.game) { this.version = st.version; this.sched = st.state.bots || {}; this.game = Game.fromJSON(st.state.game, { now: () => this.now }); }
+    if (st && st.state && st.state.game) { this.version = st.version; this.sched = st.state.bots || {}; this.awarded = !!st.state.awarded; this.game = Game.fromJSON(st.state.game, { now: () => this.now }); }
     else { this.version = st ? st.version : 0; }
   }
   /** Bots plus any human who left — the computer plays their seat (auto mode), as long as someone is still watching. */
@@ -240,11 +260,18 @@ class RoomOps {
     room.updated_at = this.now;
     const expected = room.version; room.version = expected + 1;
     if (!(await this.db.updateRoom(room.code, room, expected))) throw CONFLICT();
+    // Award trophies exactly once, when the game first reaches 'ended'. Persist the flag in state so a
+    // retry/tick never double-awards; run the actual DB writes only after state is safely committed.
+    let awards = null;
+    if (this.game && this.game.phase === 'ended' && !this.awarded) { awards = standings(this.game); this.awarded = true; }
     const stExpected = this.version; this.version = stExpected + 1;
-    const state = this.game ? { game: this.game.toJSON(), bots: this.sched } : null;
+    const state = this.game ? { game: this.game.toJSON(), bots: this.sched, awarded: !!this.awarded } : null;
     if (!(await this.db.saveState(room.code, state, stExpected))) throw CONFLICT();
     const rows = humans(room).map((p) => ({ id: `${room.code}:${p.id}`, code: room.code, user_id: p.id, view: this.game ? this.viewFor(p.id) : null }));
     await this.db.upsertViews(rows);
+    if (awards && this.db.bumpScore) {
+      for (const a of awards) { try { await this.db.bumpScore(a.id, a.delta, a.win); } catch (e) { /* trophies are best-effort */ } }
+    }
   }
   // ── lobby ops ──
   setProfile(me, raw) {

@@ -47,6 +47,7 @@ function makeDb(sb: SupabaseClient) {
     async upsertViews(rows: any[]) { if (!rows.length) return; await one(sb.from('game_views').upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })), { onConflict: 'id' })); },
     async deleteViews(code: string) { await one(sb.from('game_views').delete().eq('code', code)); },
     async listDueRooms(now: number) { const rows = await one(sb.from('rooms').select('code').lte('next_due', ts(now)).limit(100)); return (rows || []).map((r: any) => r.code); },
+    async bumpScore(uid: string, delta: number, win: boolean) { const { error } = await sb.rpc('bump_score', { p_uid: uid, p_delta: delta, p_win: win }); if (error) throw error; },
   };
 }
 

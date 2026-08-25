@@ -8,6 +8,7 @@ import { i18n, t } from '../i18n';
 import { sfx } from './sfx';
 import { processEvents, resetEvents, banner } from './fx';
 import { voiceOnRoomGone } from './voice';
+import { initSocial, syncProfile } from './social';
 import { ACTIONS, type ActionDef } from '../theme';
 
 let clockOffset = 0;
@@ -147,6 +148,7 @@ export async function connect() {
   uid = session?.user.id || null;
   store.set({ me: uid });
   supabase.auth.onAuthStateChange((_e, s) => { uid = s?.user.id || uid; });
+  if (uid) initSocial(uid);
   await hello();
   if (!store.get().room) store.set({ connected: true });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && store.get().room) { emitQuiet('ping'); hello(); } });
@@ -175,6 +177,7 @@ export function commitProfile(p: Profile) {
   store.set({ profile: p }); localStorage.setItem('mekina.profile', JSON.stringify(p));
   if (p.avatar === 'custom' && p.avatarData) customAvatars.me = p.avatarData;
   if (store.get().room) emit('set_profile', { profile: p });
+  syncProfile(); // keep the persistent profile row (leaderboard/friends) in step with the avatar
 }
 export async function copyInvite(code: string) {
   const url = `${location.origin}${location.pathname}?room=${code}`;

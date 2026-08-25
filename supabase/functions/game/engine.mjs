@@ -64,6 +64,7 @@ export class Game {
     this.T = Object.assign({}, DEFAULT_TIMINGS, opts.timings || {});
     this.phase = 'playing';
     this.winnerId = null;
+    this.outOrder = []; // player ids in the order they were eliminated (first out = last place)
     this.log = [];
     this.events = [];
     this.evSeq = 0;
@@ -85,11 +86,11 @@ export class Game {
 
   // ───────────────────────── (de)serialization ─────────────────────────
   toJSON() {
-    return { phase: this.phase, winnerId: this.winnerId, log: this.log, events: this.events, evSeq: this.evSeq, seq: this.seq, flash: this.flash, deadline: this.deadline, due: this.due, pending: this.pending, players: this.players, deck: this.deck.toArray(), handSize: this.handSize, turnIndex: this.turnIndex, T: this.T };
+    return { phase: this.phase, winnerId: this.winnerId, outOrder: this.outOrder, log: this.log, events: this.events, evSeq: this.evSeq, seq: this.seq, flash: this.flash, deadline: this.deadline, due: this.due, pending: this.pending, players: this.players, deck: this.deck.toArray(), handSize: this.handSize, turnIndex: this.turnIndex, T: this.T };
   }
   static fromJSON(o, opts = {}) {
     const g = new Game(null, opts); g._init(opts);
-    Object.assign(g, { phase: o.phase, winnerId: o.winnerId, log: o.log || [], events: o.events || [], evSeq: o.evSeq || 0, seq: o.seq || 0, flash: o.flash || null, deadline: o.deadline ?? null, due: o.due || null, pending: o.pending || null, players: o.players, handSize: o.handSize, turnIndex: o.turnIndex, T: Object.assign({}, DEFAULT_TIMINGS, o.T || {}) });
+    Object.assign(g, { phase: o.phase, winnerId: o.winnerId, outOrder: o.outOrder || [], log: o.log || [], events: o.events || [], evSeq: o.evSeq || 0, seq: o.seq || 0, flash: o.flash || null, deadline: o.deadline ?? null, due: o.due || null, pending: o.pending || null, players: o.players, handSize: o.handSize, turnIndex: o.turnIndex, T: Object.assign({}, DEFAULT_TIMINGS, o.T || {}) });
     g.deck = new Queue(o.deck || []);
     return g;
   }
@@ -139,6 +140,7 @@ export class Game {
     this.event('card_lost', { playerId: p.id, killerId: killerId || null });
     if (p.cards.length === 0) {
       p.alive = false;
+      if (!this.outOrder.includes(p.id)) this.outOrder.push(p.id); // record finish order for trophies
       this.event('eliminated', { playerId: p.id, killerId: killerId && killerId !== p.id ? killerId : null });
       const killer = killerId && killerId !== p.id ? this.player(killerId) : null;
       const bounty = p.coins; p.coins = 0;

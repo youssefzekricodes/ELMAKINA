@@ -39,14 +39,20 @@ export interface Snapshot {
   logCollapsed: boolean;
   unread: number;
   banner: { text: string; id: number } | null;
-  modal: 'rules' | 'avatar' | 'chars' | 'guide' | null;
+  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'leaderboard' | 'friends' | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews
   reactions: FloatingReaction[]; // ephemeral in-game emoji reactions (broadcast, not persisted)
+  account: Account | null;   // signed-in identity (Google) or guest
+  trophies: number;          // my trophy total
+  friends: Friend[];         // accepted friends
+  friendReqs: Friend[];      // incoming pending requests
   tick: number; // bumps when language changes so every text re-renders
 }
 
 /** A live emoji reaction floating over the table; removed automatically after a few seconds. */
 export interface FloatingReaction { id: number; uid: string; name: string; emoji: string }
+export interface Account { uid: string; name: string; email: string | null; avatarUrl: string | null; isGuest: boolean }
+export interface Friend { id: string; uid: string; name: string; avatar: string | null; avatarData: string | null; status: 'pending' | 'accepted'; incoming: boolean }
 
 const loadProfile = (): Profile => { try { return Object.assign({ avatar: 'boy-1', avatarData: null, color: null }, JSON.parse(localStorage.getItem('mekina.profile') || '{}')); } catch { return { avatar: 'boy-1', avatarData: null, color: null }; } };
 
@@ -54,7 +60,8 @@ let snap: Snapshot = {
   screen: 'home', connected: false, room: null, state: null, me: null,
   lang: localStorage.getItem('mekina.lang') || 'en', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
-  targeting: null, targetId: null, logOpen: false, logCollapsed: localStorage.getItem('mekina.logCollapsed') === '1', unread: 0, banner: null, modal: null, tour: false, reactions: [], tick: 0,
+  targeting: null, targetId: null, logOpen: false, logCollapsed: localStorage.getItem('mekina.logCollapsed') === '1', unread: 0, banner: null, modal: null, tour: false, reactions: [],
+  account: null, trophies: 0, friends: [], friendReqs: [], tick: 0,
 };
 const listeners = new Set<() => void>();
 
