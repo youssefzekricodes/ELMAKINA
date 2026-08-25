@@ -819,11 +819,11 @@
   .react-launch-face { font-size: 24px; line-height: 1; }
   .react-launch:hover { transform: translateY(-2px); background: var(--accent-soft); }
   .react-dock.open .react-launch { color: var(--muted); }
-  .react-tray { display: flex; align-items: center; gap: 4px; padding: 7px 9px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); animation: react-tray-in .18s var(--ease); }
+  .react-tray { display: grid; grid-template-columns: repeat(4, 44px); gap: 5px; padding: 8px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); animation: react-tray-in .18s var(--ease); }
   @keyframes react-tray-in { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
-  .react-key { width: 40px; height: 40px; border: 0; background: transparent; border-radius: 12px; font-size: 24px; line-height: 1; cursor: pointer; transition: transform .12s var(--ease), background .12s; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
-  .react-key:hover { transform: scale(1.18) rotate(-4deg); background: var(--surface-secondary); }
-  .react-key img { width: 34px; height: 34px; object-fit: contain; }
+  .react-key { width: 44px; height: 44px; border: 0; background: var(--surface-secondary); border-radius: 12px; cursor: pointer; transition: transform .12s var(--ease), box-shadow .12s; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; padding: 3px; }
+  .react-key:hover { transform: scale(1.12) rotate(-3deg); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+  .react-key img { width: 100%; height: 100%; object-fit: contain; }
   /* floating layer: reactions rise from the bottom and fade */
   .react-fly { position: fixed; inset: 0; z-index: 44; pointer-events: none; overflow: hidden; }
   .react-bubble { position: absolute; bottom: 84px; display: flex; flex-direction: column; align-items: center; gap: 3px; animation: react-rise 4.2s var(--ease) forwards; will-change: transform, opacity; }

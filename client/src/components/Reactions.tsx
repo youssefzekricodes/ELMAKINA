@@ -6,15 +6,17 @@ import { sendReaction } from '../lib/net';
 import { t } from '../i18n';
 import { Icon } from './ui';
 
-// A reaction's `token` is either an emoji glyph or an image path (starts with "/"); gif stickers fly bigger.
+// GIF sticker reactions only (image path in `token`). Each flies up over the table when tapped.
 const isGif = (token: string) => token.startsWith('/');
 const REACTIONS: { token: string; key: string }[] = [
-  { token: '😂', key: 'hhh' },
-  { token: '😭', key: 'cry' },
-  { token: '😠', key: 'grrr' },
-  { token: '🎉', key: 'yeeey' },
-  { token: '/img/reactions/scuba.gif', key: 'scuba' },
+  { token: '/img/reactions/peepo-laugh.gif', key: 'laugh' },
+  { token: '/img/reactions/pepe-point.gif', key: 'point' },
+  { token: '/img/reactions/angry.gif', key: 'angry' },
+  { token: '/img/reactions/pepe-cry.gif', key: 'cry' },
   { token: '/img/reactions/cat-crying.gif', key: 'catcry' },
+  { token: '/img/reactions/goose.gif', key: 'dance' },
+  { token: '/img/reactions/scuba.gif', key: 'scuba' },
+  { token: '/img/reactions/icon60.gif', key: 'icon60' },
 ];
 
 export function Reactions() {
