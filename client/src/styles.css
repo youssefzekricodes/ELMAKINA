@@ -811,6 +811,28 @@
   .rule-char { align-items: center; padding: 10px; border-inline-start: 4px solid var(--accent); }
   .rule-char b { font-size: 14px; }
 
+  /* ── in-game emoji / sticker reactions ── */
+  .leave-btn { flex-shrink: 0; font-weight: 700; }
+  /* launcher + tray, tucked in the bottom corner (opposite the log toggle, clear of the prompt) */
+  .react-dock { position: fixed; z-index: 45; right: calc(12px + var(--sab)); bottom: calc(14px + var(--sab)); display: flex; align-items: center; gap: 8px; }
+  [dir="rtl"] .react-dock { right: auto; left: calc(12px + var(--sab)); }
+  .react-launch { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--overlay-shadow); transition: transform .15s var(--ease), background .15s; }
+  .react-launch:hover { transform: translateY(-2px); background: var(--accent-soft); }
+  .react-dock.open .react-launch { color: var(--muted); }
+  .react-tray { display: flex; align-items: center; gap: 4px; padding: 7px 9px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); animation: react-tray-in .18s var(--ease); }
+  @keyframes react-tray-in { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
+  .react-key { width: 40px; height: 40px; border: 0; background: transparent; border-radius: 12px; font-size: 24px; line-height: 1; cursor: pointer; transition: transform .12s var(--ease), background .12s; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
+  .react-key:hover { transform: scale(1.18) rotate(-4deg); background: var(--surface-secondary); }
+  .react-key img { width: 34px; height: 34px; object-fit: contain; }
+  /* floating layer: reactions rise from the bottom and fade */
+  .react-fly { position: fixed; inset: 0; z-index: 44; pointer-events: none; overflow: hidden; }
+  .react-bubble { position: absolute; bottom: 84px; display: flex; flex-direction: column; align-items: center; gap: 3px; animation: react-rise 4.2s var(--ease) forwards; will-change: transform, opacity; }
+  .react-emoji { font-size: 46px; line-height: 1; filter: drop-shadow(0 6px 14px rgba(0,0,0,.5)); }
+  .react-emoji img, .react-emoji.gif { width: 96px; height: 96px; object-fit: contain; border-radius: 14px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.55)); }
+  .react-name { font-size: 11px; font-weight: 700; color: #fff; background: rgba(0,0,0,.55); padding: 2px 8px; border-radius: 999px; white-space: nowrap; backdrop-filter: blur(4px); }
+  @keyframes react-rise { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.06); } 22% { transform: translateY(-8px) scale(1); } 100% { opacity: 0; transform: translateY(-190px) scale(.92); } }
+  @media (prefers-reduced-motion: reduce) { .react-bubble { animation-duration: 3s; } }
+
   /* responsive */
   @media (max-width: 1023px) {
     .game-grid, .game-grid.log-collapsed { grid-template-columns: 1fr; grid-template-areas: "table" "console"; min-height: 0; }

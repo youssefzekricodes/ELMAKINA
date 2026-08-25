@@ -16,7 +16,11 @@ import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
 import { VoiceDock } from './components/VoiceDock';
+import { Reactions } from './components/Reactions';
 import { Coach } from './components/Coach';
+
+// Voice chat is hidden for now (kept in the tree so it can be flipped back on in one place).
+const VOICE_ENABLED = false;
 import { Guide } from './components/Guide';
 import { Tour } from './components/Tour';
 
@@ -59,7 +63,8 @@ export default function App() {
           </section>
         )}
       </div>
-      {s.room && <VoiceDock />}
+      {VOICE_ENABLED && s.room && <VoiceDock />}
+      {inGame && <Reactions />}
       <RulesModal />
       <CharactersModal />
       <Guide />

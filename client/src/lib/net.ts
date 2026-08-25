@@ -106,6 +106,7 @@ function subscribe(code: string) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_views', filter: `id=eq.${code}:${uid}` }, (payload: any) => {
       const r = payload.new; if (r && r.view) applyView(r.view);
     })
+    .on('broadcast', { event: 'react' }, ({ payload }: any) => { if (payload && payload.uid !== uid) addReaction(payload); })
     .subscribe((status) => { store.set({ connected: status === 'SUBSCRIBED' }); if (status === 'SUBSCRIBED') hello(); });
   clearInterval(pingTimer);
   pingTimer = setInterval(() => { if (!document.hidden) emitQuiet('ping'); }, 20000);
@@ -178,6 +179,20 @@ export function commitProfile(p: Profile) {
 export async function copyInvite(code: string) {
   const url = `${location.origin}${location.pathname}?room=${code}`;
   try { await navigator.clipboard.writeText(url); notify(t('lobby.copied'), true); } catch { notify(url, true); }
+}
+
+// ── emoji reactions (ephemeral, broadcast over the room channel — no DB) ──
+let reactionSeq = 0;
+function addReaction(r: { uid: string; name: string; emoji: string }) {
+  const id = ++reactionSeq;
+  store.set((s) => ({ reactions: [...s.reactions.slice(-14), { id, uid: r.uid, name: r.name, emoji: r.emoji }] }));
+  setTimeout(() => store.set((s) => ({ reactions: s.reactions.filter((x) => x.id !== id) })), 4200);
+}
+export function sendReaction(emoji: string) {
+  const st = store.get();
+  const name = st.room?.players.find((p) => p.id === uid)?.name || st.name || '?';
+  addReaction({ uid: uid || '', name, emoji });                       // show mine instantly
+  try { channel?.send({ type: 'broadcast', event: 'react', payload: { uid, name, emoji } }); } catch { /* ignore */ }
 }
 
 // ── game ──

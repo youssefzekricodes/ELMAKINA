@@ -51,7 +51,7 @@ export function TopBar() {
         <IconButton label={t('top.rules')} icon="question-circle" onPress={() => store.set({ modal: 'guide' })} />
         <span className={`lamp ${s.connected ? 'on' : 'off'}`} title="Connection" />
         {inGame && (
-          <Button variant="outline" size="sm" onPress={onLeave}>
+          <Button variant="danger" size="sm" onPress={onLeave} className="leave-btn">
             <Icon name="logout-2" className="size-4" /><span className="leave-tx">{t('top.leave')}</span>
           </Button>
         )}
