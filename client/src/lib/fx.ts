@@ -38,8 +38,14 @@ export function flyCoins(fromId: string, toId: string, n: number) {
 export function flyCard(fromId: string) {
   const a = anchor(fromId), b = rectOf(bankEl()) || anchor('bank'); const fx = fxRoot();
   sfx.play('card');
+  // a lost card is never shown face-up — only its back lifts, flips and tosses back onto the deck
   const c = document.createElement('div'); c.className = 'fx-card'; fx.appendChild(c);
-  c.animate([{ transform: `translate(${a.x - 20}px, ${a.y - 33}px) rotate(0deg)`, opacity: 1 }, { transform: `translate(${b.x - 20}px, ${b.y - 33}px) rotate(540deg) scale(.5)`, opacity: 0.2 }], { duration: reducedMotion ? 1 : 800, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }).onfinish = () => c.remove();
+  c.animate([
+    { transform: `translate(${a.x - 27}px, ${a.y - 44}px) rotate(0deg) scale(.9)`, opacity: 0 },
+    { transform: `translate(${a.x - 27}px, ${a.y - 74}px) rotate(-9deg) scale(1.12)`, opacity: 1, offset: 0.28 },
+    { transform: `translate(${(a.x + b.x) / 2 - 27}px, ${Math.min(a.y, b.y) - 92}px) rotate(240deg) scale(1)`, opacity: 1, offset: 0.62 },
+    { transform: `translate(${b.x - 27}px, ${b.y - 44}px) rotate(560deg) scale(.42)`, opacity: 0.12 },
+  ], { duration: reducedMotion ? 1 : 950, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => c.remove();
   shake(seatEl(fromId));
 }
 export function stamp(pid: string, text: string, cls = '') {

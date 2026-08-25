@@ -29,6 +29,13 @@ export const THEME = {
 export const CH = THEME.characters;
 export const IMG = THEME.img;
 
+/** Card art for the safe (non-character) moves — these are played as cards too. */
+export const ACTION_CARDS: Record<string, string> = {
+  income: '/img/cards/take-coin.png',
+  loan: '/img/cards/take-2coins.png',
+  paidkill: '/img/cards/pay-7-to-kill.png',
+};
+
 export const DEFAULT_AVATARS = ['boy-1', 'boy-2', 'boy-3', 'boy-4', 'boy-5', 'boy-6', 'girl-1', 'girl-2', 'girl-3', 'girl-4', 'girl-5', 'girl-6'];
 export const PALETTE = CHARACTERS.map((c) => ({ color: CH[c].color.toLowerCase(), name: c }));
 

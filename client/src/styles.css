@@ -379,6 +379,30 @@
     color: color-mix(in srgb, var(--c) 60%, var(--foreground)); }
   .hand.picking { flex-wrap: wrap; }
   .hand.picking .pick-banner { width: 100%; }
+
+  /* ── card board: every move is a card; the ones you hold are framed, unplayable ones dim ── */
+  .card-board { display: flex; flex-direction: column; gap: 12px; }
+  .board-group { display: flex; flex-direction: column; gap: 7px; }
+  .board-hint { margin-inline-start: auto; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .board-grid { display: flex; flex-wrap: wrap; gap: 9px; }
+  .board-card { width: 92px; border: 0; background: transparent; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: transform .14s var(--ease); }
+  .board-card:not(.off):hover { transform: translateY(-6px); }
+  .board-card:not(.off):active { transform: translateY(-2px) scale(.98); }
+  .board-card.off { cursor: default; }
+  .bc-art { position: relative; width: 100%; aspect-ratio: .62; border-radius: 9px; overflow: hidden; background: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.42); transition: box-shadow .15s; }
+  .bc-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* framed = a character you actually hold (your real identity) */
+  .board-card.owned .bc-art { box-shadow: 0 0 0 2.5px var(--gold), 0 0 16px color-mix(in srgb, var(--gold) 55%, transparent), 0 6px 16px rgba(0,0,0,.42); }
+  .board-card:not(.off):hover .bc-art { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 70%, transparent), 0 12px 26px rgba(0,0,0,.5); }
+  .board-card.owned:not(.off):hover .bc-art { box-shadow: 0 0 0 2.5px var(--gold), 0 0 20px color-mix(in srgb, var(--gold) 70%, transparent), 0 12px 26px rgba(0,0,0,.5); }
+  /* unplayable, non-owned cards fade back; your owned cards always stay bright so you can read your hand */
+  .board-card.off:not(.owned) .bc-art { opacity: .5; }
+  .board-card.off:not(.owned) .bc-art img { filter: grayscale(.75) brightness(.7); }
+  .bc-cost { position: absolute; top: 4px; inset-inline-end: 4px; display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0,0,0,.62); padding: 1px 6px; border-radius: 999px; }
+  .bc-cost img { width: 11px; height: 11px; }
+  .bc-own { position: absolute; top: 4px; inset-inline-start: 4px; display: inline-flex; align-items: center; gap: 1px; font-size: 10px; font-weight: 800; color: #1a140e; background: var(--gold); padding: 1px 5px 1px 4px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  .bc-name { font-size: 11px; font-weight: 700; text-align: center; line-height: 1.15; color: var(--foreground); }
+  .bc-why { font-size: 9.5px; font-weight: 600; color: var(--danger); text-align: center; line-height: 1.05; }
   .actions { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 0; }
   .act-group { display: flex; flex-direction: column; gap: 5px; }
   .act-label { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-inline-start: 2px; }
@@ -664,7 +688,7 @@
   /* fx */
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
-  .fx-card { position: absolute; width: 40px; aspect-ratio: .61; border-radius: 5px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 6px 14px rgba(0,0,0,.6); will-change: transform; }
+  .fx-card { position: absolute; width: 54px; aspect-ratio: .61; border-radius: 6px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 10px 22px rgba(0,0,0,.65); will-change: transform; z-index: 5; }
   .fx-stamp { position: absolute; transform: translate(-50%, -50%) rotate(-12deg); font-weight: 800; font-size: 28px; letter-spacing: var(--tracking-wide); padding: 4px 12px; border: 4px solid currentColor; border-radius: var(--radius-lg); color: var(--danger); background: rgba(255,255,255,.12); text-shadow: 0 2px 0 rgba(0,0,0,.4); animation: stamp .2s var(--ease) both, stamp-out 3s .5s both; white-space: nowrap; }
   .fx-stamp.ok { color: var(--success); }
   .fx-stamp.blue { color: #F08A1D; }

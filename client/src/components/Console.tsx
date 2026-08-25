@@ -1,7 +1,8 @@
-/* Your control panel: hand, coins, status and the action tiles (HeroUI Buttons laid out as tiles). */
+/* Your control panel — every move is a card. The character cards you actually hold are framed;
+   cards you can't play right now are disabled. Your cards stay visible so you never forget your hand. */
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, Chip, Tooltip } from '@heroui/react';
-import { ACTIONS, CH, IMG, type ActionDef } from '../theme';
+import { ACTIONS, ACTION_CARDS, CH, IMG, type ActionDef } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore } from '../lib/store';
 import { sendAction, startAction } from '../lib/net';
@@ -10,53 +11,30 @@ import { sfx } from '../lib/sfx';
 import { Coins, GameCard, Icon, PickBanner, Ring } from './ui';
 
 const pressAction = (type: string) => { sfx.play('lever'); startAction(type); };
-
 const actionName = (type: string) => (CH[type as keyof typeof CH] ? i18n.charName(type) : t(`action.${type}.name`));
 const actionDesc = (type: string) => t(`action.${type}.desc`);
+const cardArt = (type: string) => (CH[type as keyof typeof CH] ? CH[type as keyof typeof CH].card : ACTION_CARDS[type]);
 
-function Tile({ a, coins, targets, onPick }: { a: ActionDef; coins: number; targets: string[] | null; onPick?: (a: ActionDef) => void }) {
-  const canAfford = coins >= a.cost;
-  const ok = canAfford && (!targets || targets.length > 0);
-  const why = !canAfford ? t('game.needCoins', { n: a.cost }) : targets && !targets.length ? t('game.noTarget') : '';
+/** One playable card: art + name + cost. Owned character cards are framed; unplayable ones are disabled. */
+function BoardCard({ a, coins, targets, myTurn, owned, onPlay }: {
+  a: ActionDef; coins: number; targets: string[] | null; myTurn: boolean; owned: number; onPlay: (a: ActionDef) => void;
+}) {
   const th = CH[a.type as keyof typeof CH];
-  return (
-    <Tooltip delay={400}>
-      <Button variant="outline" isDisabled={!ok} onPress={() => (onPick ? onPick(a) : pressAction(a.type))} className={`act-tile ${a.kind}`} style={{ '--c': th ? th.color : 'var(--muted)' } as any}>
-        {th ? <span className="thumb"><img src={th.cardSm} alt="" /></span> : <span className="thumb icon"><Icon name={a.type} className="size-5" /></span>}
-        <span className="txt">
-          <span className="t">{actionName(a.type)}</span>
-          <span className={`d ${why ? 'blocked' : ''}`}>{why || t(`action.${a.type}.tag`)}</span>
-        </span>
-        {a.cost ? <Chip size="sm" variant="soft" color={canAfford ? 'warning' : 'danger'} className="cost">{a.cost}<img src={IMG.coin} alt="" /></Chip> : null}
-      </Button>
-      <Tooltip.Content>{actionDesc(a.type)}</Tooltip.Content>
-    </Tooltip>
-  );
-}
-
-/** Art + colour identity for the safe "default" moves. Money moves show coins; the coup shows a strike. */
-const BASIC_ART: Record<string, { icon?: string; img?: string; color: string }> = {
-  income: { img: IMG.coin, color: '#C9962B' },         // take 1 coin — a single coin
-  loan: { icon: 'coins', color: '#2F7D6B' },           // foreign aid +2 — a stack of coins
-  paidkill: { icon: 'danger-triangle', color: '#B3261E' }, // pay 7 to strike — oxblood danger
-};
-
-/** Basic (non-claim) actions: safe moves nobody can challenge — shown as bold, art-forward action cards. */
-function BasicTile({ a, coins, targets }: { a: ActionDef; coins: number; targets: string[] | null }) {
   const canAfford = coins >= a.cost;
-  const ok = canAfford && (!targets || targets.length > 0);
-  const why = !canAfford ? t('game.needCoins', { n: a.cost }) : targets && !targets.length ? t('game.noTarget') : '';
-  const art = BASIC_ART[a.type] || { icon: a.type, color: 'var(--accent)' };
+  const playable = myTurn && canAfford && (!targets || targets.length > 0);
+  const why = !myTurn ? '' : !canAfford ? t('game.needCoins', { n: a.cost }) : targets && !targets.length ? t('game.noTarget') : '';
   return (
-    <Tooltip delay={400}>
-      <Button variant="outline" isDisabled={!ok} onPress={() => pressAction(a.type)} className={`basic-tile ${a.type}`} style={{ '--c': art.color } as any}>
-        <span className="bt-art">{art.img ? <img src={art.img} alt="" /> : <Icon name={art.icon!} className="size-5" />}</span>
-        <span className="bt-txt">
-          <span className="bt-t">{actionName(a.type)}</span>
-          <span className={`bt-d ${why ? 'blocked' : ''}`}>{why || t(`action.${a.type}.tag`)}</span>
+    <Tooltip delay={350}>
+      <button type="button" className={`board-card ${owned ? 'owned' : ''} ${playable ? '' : 'off'}`} disabled={!playable}
+        onClick={() => onPlay(a)} style={{ '--c': th ? th.color : 'var(--accent)' } as any}>
+        <span className="bc-art">
+          <img src={cardArt(a.type)} alt={actionName(a.type)} draggable={false} />
+          {a.cost > 0 && <span className="bc-cost">{a.cost}<img src={IMG.coin} alt="" /></span>}
+          {owned > 0 && <span className="bc-own"><Icon name="check-circle" className="size-3.5" />{owned > 1 ? `×${owned}` : ''}</span>}
         </span>
-        {a.cost ? <span className="bt-cost">{a.cost}<img src={IMG.coin} alt="" /></span> : <span className="bt-cost free">{t('actions.free')}</span>}
-      </Button>
+        <span className="bc-name">{actionName(a.type)}</span>
+        {why ? <span className="bc-why">{why}</span> : null}
+      </button>
       <Tooltip.Content>{actionDesc(a.type)}</Tooltip.Content>
     </Tooltip>
   );
@@ -67,19 +45,25 @@ export function Console() {
   const st = s.state!; const me = s.me;
   const meP = st.players.find((p) => p.id === me); const you = st.you;
   const handKey = JSON.stringify(you?.cards || []);
-  const [animKey, setAnimKey] = useState(handKey);
   const [preview, setPreview] = useState<ActionDef | null>(null); // guided mode: show a character's rule before claiming
   const first = useRef(true);
-  useEffect(() => { if (first.current) { first.current = false; return; } setAnimKey(handKey); sfx.play('deal'); }, [handKey]);
+  useEffect(() => { if (first.current) { first.current = false; return; } sfx.play('deal'); }, [handKey]);
   if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
+
   const myTurn = st.phase === 'playing' && st.pending && st.pending.stage === 'turn' && st.pending.actorId === me && meP.alive;
   const selfPick = !!(s.targeting && s.targeting.type === 'police' && s.targetId === me);
   const ring = st.pending?.stage === 'turn' ? <Ring deadline={st.pending.deadline} total={st.timings.turn} tick={myTurn} /> : null;
+  const owned: Record<string, number> = {};
+  for (const c of you.cards) owned[c] = (owned[c] || 0) + 1;
+
   let status: React.ReactNode = null;
   if (st.phase === 'ended') status = <div className="status-line">{t('game.over')}</div>;
   else if (myTurn) status = <div className="status-line"><Chip variant="primary" color="accent">{t('game.yourturn')}</Chip><span>{t('game.choose')}</span>{ring}</div>;
   else if (st.pending && st.pending.stage === 'turn') status = <div className="status-line"><span dangerouslySetInnerHTML={{ __html: i18n.html('game.waitingFor', { name: (st.players.find((p) => p.id === st.pending!.actorId) || {}).name || '?' }) }} />{ring}</div>;
   else if (!meP.alive) status = <div className="status-line">{t('game.eliminated')}</div>;
+
+  const play = (a: ActionDef) => { if (s.tour && a.kind === 'claim') setPreview(a); else pressAction(a.type); };
+  const card = (a: ActionDef) => <BoardCard key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} myTurn={!!myTurn} owned={CH[a.type as keyof typeof CH] ? (owned[a.type] || 0) : 0} onPlay={play} />;
 
   return (
     <Card id="console" className="console gap-2.5 p-3">
@@ -91,26 +75,30 @@ export function Console() {
         </div>
         {status}
       </div>
-      <div className="hand-row">
-        <div className={`hand ${selfPick ? 'picking' : ''}`}>
-          {selfPick && <PickBanner text={t('pick.own')} />}
-          {you.cards.length ? you.cards.map((c, i) => {
-            const known = CH[c as keyof typeof CH];
-            return (
-              <div className="hand-card" key={animKey + ':' + i} style={known ? ({ '--c': known.color } as any) : undefined}>
-                <GameCard c={c} w={104} anim={!first.current} pick={selfPick} onPress={selfPick ? () => sendAction({ type: 'police', targetId: me, slot: i }) : undefined} />
-                {known && <span className="hc-name">{i18n.charName(c)}</span>}
-              </div>
-            );
-          }) : <span className="status-line">{t('game.nocards')}</span>}
+
+      {selfPick ? (
+        // Police self-swap: pick which of your real cards to exchange for a fresh one.
+        <div className="hand picking">
+          <PickBanner text={t('pick.own')} />
+          {you.cards.map((c, i) => (
+            <div className="hand-card" key={handKey + ':' + i} style={CH[c as keyof typeof CH] ? ({ '--c': CH[c as keyof typeof CH].color } as any) : undefined}>
+              <GameCard c={c} w={104} pick onPress={() => sendAction({ type: 'police', targetId: me, slot: i })} />
+            </div>
+          ))}
         </div>
-        {myTurn && (
-          <div className="actions">
-            <div className="act-group"><div className="act-label"><Icon name="bolt" className="size-3.5" />{t('actions.basic')}</div><div className="basic-row">{ACTIONS.filter((a) => a.kind === 'default').map((a) => <BasicTile key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} />)}</div></div>
-            <div className="act-group"><div className="act-label"><Icon name="hand-stars" className="size-3.5" />{t('actions.claims')}</div><div className="act-grid claims">{ACTIONS.filter((a) => a.kind === 'claim').map((a) => <Tile key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} onPick={s.tour ? setPreview : undefined} />)}</div></div>
+      ) : (
+        <div className="card-board">
+          <div className="board-group">
+            <div className="act-label"><Icon name="bolt" className="size-3.5" />{t('actions.basic')}</div>
+            <div className="board-grid">{ACTIONS.filter((a) => a.kind === 'default').map(card)}</div>
           </div>
-        )}
-      </div>
+          <div className="board-group">
+            <div className="act-label"><Icon name="hand-stars" className="size-3.5" />{t('actions.claims')}<span className="board-hint">{t('board.claimHint')}</span></div>
+            <div className="board-grid">{ACTIONS.filter((a) => a.kind === 'claim').map(card)}</div>
+          </div>
+        </div>
+      )}
+
       {preview && (
         <div className="claim-preview-backdrop" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>
           <div className="claim-preview" onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.type as keyof typeof CH]?.color }}>
