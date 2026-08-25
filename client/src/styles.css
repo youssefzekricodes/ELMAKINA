@@ -945,8 +945,10 @@
     .prompt { width: calc(100vw - 12px); bottom: calc(6px + var(--sab)); }
     /* the three verdict buttons (Pass / Block / Call liar) don't fit one row on phones — stack them,
        and left-align the icon+label so every icon lines up down the column instead of drifting with label length */
+    /* stacked verdict buttons: a fixed [icon | label] grid so every icon and every label line up */
     .cl-btns { flex-direction: column; }
-    .cl-btns .rx { justify-content: flex-start; padding-inline: 16px; }
+    .cl-btns .rx { display: grid; grid-template-columns: 22px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 16px; }
+    .cl-btns .rx svg { justify-self: center; }
     .p-cards .gcard { width: 78px !important; }
     .p-title { font-size: 15px; }
     .p-actions .key { min-width: 0; }
