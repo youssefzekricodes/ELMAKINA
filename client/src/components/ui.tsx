@@ -28,7 +28,7 @@ export function GoogleG({ className = 'size-4' }: { className?: string }) {
 export function PlayerAvatar({ p, size = 'md', className = '' }: { p: any; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
   const dim = { xs: 'size-7', sm: 'size-10', md: 'size-14', lg: 'size-[72px]', xl: 'size-28' }[size];
   return (
-    <Avatar className={`pavatar ${dim} ${className}`} style={{ '--bg': (p && p.color) || '#727274' } as any}>
+    <Avatar className={`pavatar ${p && p.avatar === 'custom' ? 'custom' : ''} ${dim} ${className}`} style={{ '--bg': (p && p.color) || '#727274' } as any}>
       <Avatar.Image src={avatarSrc(p)} alt="" className="pavatar-img" />
       <Avatar.Fallback>{(p?.name || '?').slice(0, 2).toUpperCase()}</Avatar.Fallback>
     </Avatar>

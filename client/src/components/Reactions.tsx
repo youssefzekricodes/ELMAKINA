@@ -15,8 +15,12 @@ const REACTIONS: { token: string; key: string }[] = [
   { token: '/img/reactions/pepe-cry.gif', key: 'cry' },
   { token: '/img/reactions/cat-crying.gif', key: 'catcry' },
   { token: '/img/reactions/goose.gif', key: 'dance' },
+  { token: '/img/reactions/dog-dance.gif', key: 'dogdance' },
+  { token: '/img/reactions/shiba.gif', key: 'shiba' },
   { token: '/img/reactions/scuba.gif', key: 'scuba' },
   { token: '/img/reactions/icon60.gif', key: 'icon60' },
+  { token: '/img/reactions/hi.gif', key: 'hi' },
+  { token: '/img/reactions/tung.gif', key: 'tung' },
 ];
 
 export function Reactions() {
