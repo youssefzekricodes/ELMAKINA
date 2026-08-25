@@ -1,27 +1,34 @@
-/* Leaderboard + Friends modals. Both read/write the Supabase social tables via lib/social. */
+/* Leaderboard + Friends full pages (reached from Home). Read/write the Supabase social tables via lib/social. */
 import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, type LeaderRow } from '../lib/social';
+import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, type LeaderRow } from '../lib/social';
 import { Icon, PlayerAvatar } from './ui';
 
 const asPlayer = (uid: string, avatar: string | null, avatarData: string | null) => ({ id: uid, avatar: avatar || 'boy-1', avatarData, color: null });
-const close = () => store.set({ modal: null });
+const home = () => store.set({ screen: 'home' });
 
-export function LeaderboardModal() {
-  const s = useStore();
-  const [rows, setRows] = useState<LeaderRow[] | null>(null);
-  useEffect(() => { if (s.modal === 'leaderboard') { setRows(null); loadLeaderboard().then(setRows); } }, [s.modal]);
-  if (s.modal !== 'leaderboard') return null;
+function PageHead({ icon, title }: { icon: string; title: string }) {
   return (
-    <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label={t('lb.title')} onClick={close}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-head">
-          <h2 className="sheet-title"><Icon name="win" className="size-5" />{t('lb.title')}</h2>
-          <button type="button" className="sheet-x" onClick={close} aria-label={t('preview.cancel')}><Icon name="close-circle" className="size-5" /></button>
-        </div>
-        <div className="sheet-body">
+    <header className="page-head">
+      <button type="button" className="page-back" onClick={home} aria-label={t('page.back')}>
+        <Icon name="alt-arrow-left" className="size-5" />
+      </button>
+      <h1 className="page-title"><Icon name={icon} className="size-6" />{title}</h1>
+      <span className="page-head-sp" />
+    </header>
+  );
+}
+
+export function LeaderboardPage() {
+  const [rows, setRows] = useState<LeaderRow[] | null>(null);
+  useEffect(() => { setRows(null); loadLeaderboard().then(setRows); }, []);
+  return (
+    <section className="screen page-screen">
+      <div className="page-shell">
+        <PageHead icon="win" title={t('lb.title')} />
+        <div className="page-body">
           {rows === null ? <p className="sheet-empty">{t('lb.loading')}</p>
             : rows.length === 0 ? <p className="sheet-empty">{t('lb.empty')}</p>
               : <ol className="lb-list">
@@ -37,23 +44,20 @@ export function LeaderboardModal() {
               </ol>}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-export function FriendsModal() {
+export function FriendsPage() {
   const s = useStore();
-  if (s.modal !== 'friends') return null;
+  useEffect(() => { loadFriends(); }, []);
   const accepted = s.friends.filter((f) => f.status === 'accepted');
   const outgoing = s.friends.filter((f) => f.status === 'pending' && !f.incoming);
   return (
-    <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label={t('fr.title')} onClick={close}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-head">
-          <h2 className="sheet-title"><Icon name="users-group-rounded" className="size-5" />{t('fr.title')}</h2>
-          <button type="button" className="sheet-x" onClick={close} aria-label={t('preview.cancel')}><Icon name="close-circle" className="size-5" /></button>
-        </div>
-        <div className="sheet-body">
+    <section className="screen page-screen">
+      <div className="page-shell">
+        <PageHead icon="users-group-rounded" title={t('fr.title')} />
+        <div className="page-body">
           {s.account?.isGuest && <p className="fr-hint">{t('fr.guest')}</p>}
 
           {s.friendReqs.length > 0 && (
@@ -91,7 +95,7 @@ export function FriendsModal() {
           </section>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 

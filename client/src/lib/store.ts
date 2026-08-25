@@ -23,7 +23,7 @@ export interface GameState {
 }
 
 export interface Snapshot {
-  screen: 'home' | 'lobby' | 'game';
+  screen: 'home' | 'lobby' | 'game' | 'leaderboard' | 'friends';
   connected: boolean;
   room: Room | null;
   state: GameState | null;
@@ -39,7 +39,7 @@ export interface Snapshot {
   logCollapsed: boolean;
   unread: number;
   banner: { text: string; id: number } | null;
-  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'leaderboard' | 'friends' | null;
+  modal: 'rules' | 'avatar' | 'chars' | 'guide' | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews
   reactions: FloatingReaction[]; // ephemeral in-game emoji reactions (broadcast, not persisted)
   account: Account | null;   // signed-in identity (Google) or guest

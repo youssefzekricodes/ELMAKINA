@@ -387,12 +387,12 @@
   .basic-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
   .basic-tile { --c: var(--accent); height: auto; min-height: 52px; padding: 8px 10px; justify-content: flex-start; text-align: start; gap: 10px; position: relative; border-radius: var(--radius-lg); border-color: var(--border); background: var(--surface); transition: border-color .15s, background .15s, transform .12s, box-shadow .15s; }
   .basic-tile:not([data-disabled]):not([disabled]):hover { border-color: color-mix(in srgb, var(--c) 55%, var(--border)); background: color-mix(in srgb, var(--c) 8%, var(--surface)); transform: translateY(-1px); box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--c) 55%, transparent); }
-  /* mini action-card: card-shaped chip in the move's own colour with a white glyph */
-  .basic-tile .bt-art { width: 30px; height: 42px; border-radius: 7px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #fff;
-    background: linear-gradient(155deg, color-mix(in srgb, var(--c) 78%, #fff) 0%, var(--c) 55%, color-mix(in srgb, var(--c) 72%, #000) 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.14), 0 3px 8px -2px color-mix(in srgb, var(--c) 55%, transparent); }
-  .basic-tile:not([data-disabled]):not([disabled]):hover .bt-art { transform: translateY(-1px) rotate(-2deg); }
-  .basic-tile .bt-art svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); transition: transform .15s var(--ease); }
+  /* colour-coded soft icon badge for each safe move */
+  .basic-tile .bt-art { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent); transition: transform .15s var(--ease), background .15s; }
+  .basic-tile .bt-art svg { width: 21px; height: 21px; }
+  .basic-tile .bt-art img { width: 20px; height: 20px; }
+  .basic-tile:not([data-disabled]):not([disabled]):hover .bt-art { transform: translateY(-1px) scale(1.04); background: color-mix(in srgb, var(--c) 24%, transparent); }
   .basic-tile .bt-txt { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
   .basic-tile .bt-t { font-size: 13px; font-weight: 800; line-height: 1.2; color: var(--foreground); }
   .basic-tile .bt-d { font-size: 10.5px; color: var(--muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
@@ -813,10 +813,10 @@
 
   /* ── in-game emoji / sticker reactions ── */
   .leave-btn { flex-shrink: 0; font-weight: 700; }
-  /* launcher + tray, tucked in the bottom corner (opposite the log toggle, clear of the prompt) */
-  .react-dock { position: fixed; z-index: 45; right: calc(12px + var(--sab)); bottom: calc(14px + var(--sab)); display: flex; align-items: center; gap: 8px; }
-  [dir="rtl"] .react-dock { right: auto; left: calc(12px + var(--sab)); }
-  .react-launch { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--overlay-shadow); transition: transform .15s var(--ease), background .15s; }
+  /* launcher + tray, tucked below the top bar on the trailing edge (clear of the bottom prompt) */
+  .react-dock { position: fixed; z-index: 45; inset-inline-end: 12px; top: calc(var(--sat) + 58px); display: flex; flex-direction: row-reverse; align-items: center; gap: 8px; }
+  .react-launch { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--overlay-shadow); transition: transform .15s var(--ease), background .15s; }
+  .react-launch-face { font-size: 24px; line-height: 1; }
   .react-launch:hover { transform: translateY(-2px); background: var(--accent-soft); }
   .react-dock.open .react-launch { color: var(--muted); }
   .react-tray { display: flex; align-items: center; gap: 4px; padding: 7px 9px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); animation: react-tray-in .18s var(--ease); }
@@ -833,11 +833,14 @@
   @keyframes react-rise { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.06); } 22% { transform: translateY(-8px) scale(1); } 100% { opacity: 0; transform: translateY(-190px) scale(.92); } }
   @media (prefers-reduced-motion: reduce) { .react-bubble { animation-duration: 3s; } }
 
-  /* ── Home account bar + trophies + social entry points ── */
-  .home-account { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
-  .acct-left { min-width: 0; }
-  .acct-google { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #fff; color: #1f1f1f; font-weight: 700; font-size: 13.5px; border: 1px solid rgba(0,0,0,.12); box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer; transition: transform .12s var(--ease), box-shadow .12s; }
-  .acct-google:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+  /* ── Home top row (trophies + social pages) + sign-in ── */
+  .home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+  .home-top-tools { display: inline-flex; align-items: center; gap: 6px; }
+  /* Google sign-in: a clean, full-width pill directly under the player badge */
+  .home-signin { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; }
+  .home-signin.signed { justify-content: flex-start; gap: 10px; padding: 8px 14px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 60%, transparent); border: 1px solid var(--border); }
+  .acct-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 11px 16px; border-radius: 14px; background: #fff; color: #1f1f1f; font-weight: 700; font-size: 14.5px; border: 1px solid rgba(0,0,0,.14); box-shadow: 0 2px 10px rgba(0,0,0,.28); cursor: pointer; transition: transform .12s var(--ease), box-shadow .12s; }
+  .acct-google:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,.34); }
   .acct-google:disabled { opacity: .5; cursor: not-allowed; }
   .acct-me { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
   .acct-photo { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
@@ -851,16 +854,18 @@
   .acct-badge { position: absolute; top: -6px; inset-inline-end: -6px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
   @media (max-width: 480px) { .acct-tool-tx { display: none; } .acct-tool { padding: 7px; } }
 
-  /* ── generic bottom-sheet modal (leaderboard / friends) ── */
-  .sheet-backdrop { position: fixed; inset: 0; z-index: 78; display: flex; align-items: center; justify-content: center; padding: calc(16px + var(--sat)) 16px calc(16px + var(--sab)); background: var(--backdrop); backdrop-filter: blur(4px); animation: coach-fade .2s var(--ease); overflow-y: auto; }
-  .sheet { width: min(440px, 100%); max-height: calc(100dvh - 32px - var(--sat) - var(--sab)); display: flex; flex-direction: column; border-radius: var(--radius-2xl); background: var(--surface); border: 1px solid var(--border); box-shadow: 0 24px 70px rgba(0,0,0,.5); animation: pop .24s var(--ease); overflow: hidden; }
-  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid var(--separator); }
-  .sheet-title { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: .02em; text-transform: uppercase; color: var(--foreground); margin: 0; }
-  .sheet-title svg { color: var(--gold); }
-  .sheet-x { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 2px; border-radius: 8px; }
-  .sheet-x:hover { color: var(--foreground); }
-  .sheet-body { padding: 12px 14px 16px; overflow-y: auto; }
-  .sheet-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 24px 8px; }
+  /* ── full pages (leaderboard / friends) ── */
+  .page-screen { display: flex; justify-content: center; padding: 16px 14px calc(16px + var(--sab)); }
+  .page-shell { width: min(460px, 100%); display: flex; flex-direction: column; gap: 6px; }
+  .page-head { display: flex; align-items: center; gap: 10px; padding: 4px 2px 12px; border-bottom: 1px solid var(--separator); margin-bottom: 8px; }
+  .page-back { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--foreground); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background .12s, transform .12s; }
+  .page-back:hover { background: var(--surface-secondary); transform: translateX(-1px); }
+  [dir="rtl"] .page-back svg { transform: scaleX(-1); }
+  .page-title { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: .03em; text-transform: uppercase; color: var(--foreground); margin: 0; }
+  .page-title svg { color: var(--gold); }
+  .page-head-sp { flex-shrink: 0; width: 40px; }
+  .page-body { min-height: 40vh; }
+  .sheet-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 32px 8px; }
 
   /* leaderboard rows */
   .lb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }

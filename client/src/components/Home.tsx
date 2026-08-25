@@ -28,6 +28,18 @@ export function Home() {
   return (
     <section className="screen home-screen">
       <div className="home-stage">
+        {/* top row: trophies + social pages */}
+        <div className="home-top">
+          <span className="trophy-pill" title={t('lb.trophies')}><Icon name="win" className="size-4" />{s.trophies}</span>
+          <div className="home-top-tools">
+            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')}><Icon name="win" className="size-4" /><span className="acct-tool-tx">{t('lb.title')}</span></button>
+            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')}>
+              <Icon name="users-group-rounded" className="size-4" /><span className="acct-tool-tx">{t('fr.title')}</span>
+              {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
+            </button>
+          </div>
+        </div>
+
         <div className="home-hero">
           <div className="home-emblem"><img src={IMG.machineSmall} alt="" draggable={false} /></div>
           <div className="wordmark">
@@ -63,37 +75,25 @@ export function Home() {
           </div>
         </div>
 
-        {/* account + trophies + social entry points */}
-        <div className="home-account">
-          <div className="acct-left">
-            {s.account && !s.account.isGuest ? (
-              <div className="acct-me">
-                {s.account.avatarUrl ? <img className="acct-photo" src={s.account.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <PlayerAvatar p={mePreview} size="sm" />}
-                <span className="acct-name">{s.account.name}</span>
-                <button type="button" className="acct-link" onClick={signOutAccount}>{t('acct.signout')}</button>
-              </div>
-            ) : (
-              <button type="button" className="acct-google" onClick={signInWithGoogle} disabled={!isConfigured}>
-                <GoogleG className="size-4" />{t('acct.google')}
-              </button>
-            )}
+        {/* sign-in / identity — sits right under your badge */}
+        {s.account && !s.account.isGuest ? (
+          <div className="home-signin signed">
+            {s.account.avatarUrl ? <img className="acct-photo" src={s.account.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <PlayerAvatar p={mePreview} size="sm" />}
+            <span className="acct-name">{s.account.name}</span>
+            <button type="button" className="acct-link" onClick={signOutAccount}>{t('acct.signout')}</button>
           </div>
-          <div className="acct-tools">
-            <span className="trophy-pill" title={t('lb.trophies')}><Icon name="win" className="size-4" />{s.trophies}</span>
-            <button type="button" className="acct-tool" onClick={() => store.set({ modal: 'leaderboard' })} aria-label={t('lb.title')}><Icon name="win" className="size-4" /><span className="acct-tool-tx">{t('lb.title')}</span></button>
-            <button type="button" className="acct-tool" onClick={() => store.set({ modal: 'friends' })} aria-label={t('fr.title')}>
-              <Icon name="users-group-rounded" className="size-4" /><span className="acct-tool-tx">{t('fr.title')}</span>
-              {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
-            </button>
-          </div>
-        </div>
+        ) : (
+          <button type="button" className="home-signin acct-google" onClick={signInWithGoogle} disabled={!isConfigured}>
+            <GoogleG className="size-[18px]" />{t('acct.google')}
+          </button>
+        )}
 
         <div className="home-actions">
           <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'create'} onPress={() => go('create')}>
-            <Icon name="users-room" className="size-5" />{t('home.create')}
+            <Icon name="users-group-rounded" className="size-5" />{t('home.create')}
           </Button>
           <Button fullWidth size="lg" variant="secondary" isPending={busy === 'solo'} onPress={() => go('solo')}>
-            <Icon name="robot" className="size-5" />{t('home.solo')}
+            <Icon name="cpu-bolt" className="size-5" />{t('home.solo')}
           </Button>
         </div>
 

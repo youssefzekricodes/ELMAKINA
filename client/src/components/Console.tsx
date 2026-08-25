@@ -34,11 +34,11 @@ function Tile({ a, coins, targets, onPick }: { a: ActionDef; coins: number; targ
   );
 }
 
-/** Art + colour identity for the safe "default" moves — each gets a mini action-card instead of a plain icon. */
-const BASIC_ART: Record<string, { icon: string; color: string }> = {
-  income: { icon: 'wallet-money', color: '#C9962B' },  // pocket 1 coin — brass/gold
-  loan: { icon: 'coins', color: '#2F7D6B' },           // foreign aid +2 — teal
-  paidkill: { icon: 'danger-triangle', color: '#B3261E' }, // pay 7 to strike — oxblood
+/** Art + colour identity for the safe "default" moves. Money moves show coins; the coup shows a strike. */
+const BASIC_ART: Record<string, { icon?: string; img?: string; color: string }> = {
+  income: { img: IMG.coin, color: '#C9962B' },         // take 1 coin — a single coin
+  loan: { icon: 'coins', color: '#2F7D6B' },           // foreign aid +2 — a stack of coins
+  paidkill: { icon: 'danger-triangle', color: '#B3261E' }, // pay 7 to strike — oxblood danger
 };
 
 /** Basic (non-claim) actions: safe moves nobody can challenge — shown as bold, art-forward action cards. */
@@ -50,7 +50,7 @@ function BasicTile({ a, coins, targets }: { a: ActionDef; coins: number; targets
   return (
     <Tooltip delay={400}>
       <Button variant="outline" isDisabled={!ok} onPress={() => pressAction(a.type)} className={`basic-tile ${a.type}`} style={{ '--c': art.color } as any}>
-        <span className="bt-art"><Icon name={art.icon} className="size-5" /></span>
+        <span className="bt-art">{art.img ? <img src={art.img} alt="" /> : <Icon name={art.icon!} className="size-5" />}</span>
         <span className="bt-txt">
           <span className="bt-t">{actionName(a.type)}</span>
           <span className={`bt-d ${why ? 'blocked' : ''}`}>{why || t(`action.${a.type}.tag`)}</span>
