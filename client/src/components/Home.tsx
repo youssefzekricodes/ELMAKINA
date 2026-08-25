@@ -3,10 +3,10 @@ import { Alert, Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { createRoom, joinRoom, playSolo, notify, isConfigured } from '../lib/net';
-import { signInWithGoogle, signOutAccount } from '../lib/social';
+import { signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { IMG } from '../theme';
-import { GoogleG, Html, Icon, PlayerAvatar } from './ui';
+import { Html, Icon, PlayerAvatar } from './ui';
 
 export function Home() {
   const s = useStore();
@@ -75,17 +75,13 @@ export function Home() {
           </div>
         </div>
 
-        {/* sign-in / identity — sits right under your badge */}
-        {s.account && !s.account.isGuest ? (
+        {/* identity chip if already signed in (Google sign-in button is hidden for now) */}
+        {s.account && !s.account.isGuest && (
           <div className="home-signin signed">
             {s.account.avatarUrl ? <img className="acct-photo" src={s.account.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <PlayerAvatar p={mePreview} size="sm" />}
             <span className="acct-name">{s.account.name}</span>
             <button type="button" className="acct-link" onClick={signOutAccount}>{t('acct.signout')}</button>
           </div>
-        ) : (
-          <button type="button" className="home-signin acct-google" onClick={signInWithGoogle} disabled={!isConfigured}>
-            <GoogleG className="size-[18px]" />{t('acct.google')}
-          </button>
         )}
 
         <div className="home-actions">

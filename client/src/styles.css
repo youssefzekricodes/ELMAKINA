@@ -907,8 +907,8 @@
     .game-grid, .game-grid.log-collapsed { min-height: 0; }
     .table-area { min-height: 0; height: auto; padding: 10px 10px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; gap: 10px; }
     /* compact centre strip so the opponents + your actions stay above the fold with 6 players */
-    .felt { position: relative; left: auto; top: auto; transform: none; width: 100%; height: 92px; border-radius: 24px; margin: 0; gap: 16px; }
-    .felt::before { inset: 10px; }
+    .felt { position: relative; left: auto; top: auto; transform: none; width: 100%; height: 118px; border-radius: 24px; margin: 0; gap: 16px; }
+    .felt::before { inset: 12px; }
     .table-area::after { display: none; }
     .table-logo { width: 42px; height: 42px; }
     .deck { width: 40px; height: 62px; } .deck .cardback { width: 40px; }
@@ -936,9 +936,12 @@
     .hand .gcard { width: min(22vw, 88px) !important; }
     .actions { width: 100%; }
     .act-grid.claims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .basic-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .basic-tile { min-height: 60px; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 9px; }
-    .basic-tile .bt-cost { position: absolute; top: 7px; inset-inline-end: 7px; }
+    /* basic actions: full-width rows, all the same size, icon + text + cost aligned in one row */
+    .basic-row { grid-template-columns: 1fr; gap: 7px; }
+    .basic-tile { min-height: 52px; flex-direction: row; align-items: center; gap: 11px; padding: 8px 12px; }
+    .basic-tile .bt-txt { flex: 1; min-width: 0; }
+    .basic-tile .bt-d { white-space: normal; }
+    .basic-tile .bt-cost { position: static; margin-inline-start: auto; }
     .act-tile { min-height: 56px; padding: 8px; }
     .act-tile .d { font-size: 10.5px; }
     .prompt { width: calc(100vw - 12px); bottom: calc(6px + var(--sab)); }
