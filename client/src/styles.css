@@ -813,10 +813,9 @@
 
   /* ── in-game emoji / sticker reactions ── */
   .leave-btn { flex-shrink: 0; font-weight: 700; }
-  /* launcher + tray, tucked below the top bar on the trailing edge (clear of the bottom prompt) */
-  .react-dock { position: fixed; z-index: 45; inset-inline-end: 12px; top: calc(var(--sat) + 58px); display: flex; flex-direction: row-reverse; align-items: center; gap: 8px; }
-  .react-launch { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--overlay-shadow); transition: transform .15s var(--ease), background .15s; }
-  .react-launch-face { font-size: 24px; line-height: 1; }
+  /* launcher + tray, down on the trailing edge just above the control panel (thumb-reachable); tray opens upward */
+  .react-dock { position: fixed; z-index: 39; inset-inline-end: 12px; bottom: calc(18px + var(--sab)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .react-launch { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--overlay-shadow); transition: transform .15s var(--ease), background .15s, color .15s; }
   .react-launch:hover { transform: translateY(-2px); background: var(--accent-soft); }
   .react-dock.open .react-launch { color: var(--muted); }
   .react-tray { display: grid; grid-template-columns: repeat(4, 44px); gap: 5px; padding: 8px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); animation: react-tray-in .18s var(--ease); }

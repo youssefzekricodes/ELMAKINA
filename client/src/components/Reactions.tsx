@@ -57,7 +57,7 @@ export function Reactions() {
           </div>
         )}
         <button type="button" className="react-launch" aria-label={t('react.title')} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          {open ? <Icon name="close-circle" className="size-5" /> : <span className="react-launch-face">😄</span>}
+          <Icon name={open ? 'close-circle' : 'smile'} className="size-6" />
         </button>
       </div>
     </>
