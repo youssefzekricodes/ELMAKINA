@@ -88,14 +88,7 @@ export function Console() {
         </div>
       ) : (
         <div className="card-board">
-          <div className="board-group">
-            <div className="act-label"><Icon name="bolt" className="size-3.5" />{t('actions.basic')}</div>
-            <div className="board-grid">{ACTIONS.filter((a) => a.kind === 'default').map(card)}</div>
-          </div>
-          <div className="board-group">
-            <div className="act-label"><Icon name="hand-stars" className="size-3.5" />{t('actions.claims')}<span className="board-hint">{t('board.claimHint')}</span></div>
-            <div className="board-grid">{ACTIONS.filter((a) => a.kind === 'claim').map(card)}</div>
-          </div>
+          <div className="board-grid">{ACTIONS.map(card)}</div>
         </div>
       )}
 
