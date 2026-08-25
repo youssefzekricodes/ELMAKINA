@@ -277,7 +277,7 @@ export class Game {
       case 'income': this.addLog('action', 'income', { name: actor.name, gain: this.gainText(actor, 1) }); return this.endTurn();
       case 'loan': this.addLog('action', 'loan.ask', { name: actor.name });
         return this.openBlockWindow({ kind: 'veto', character: 'taxman', eligible: this.alivePlayers().filter((p) => p.id !== actor.id).map((p) => p.id) }, { k: 'loanGet' }, { k: 'loanVeto' });
-      case 'paidkill': this.pay(actor, 7); this.addLog('action', 'paidkill', { name: actor.name, target: tn }); return this.doKill(target.id, 'paidkill', { canPay: true }, { k: 'endTurn' });
+      case 'paidkill': this.pay(actor, 7); this.event('coup', { playerId: actor.id, targetId: target.id }); this.addLog('action', 'paidkill', { name: actor.name, target: tn }); return this.doKill(target.id, 'paidkill', { canPay: true }, { k: 'endTurn' });
       case 'terrorist': this.pay(actor, 3); this.addLog('claim', 'claim.terrorist', { name: actor.name, target: tn }); break;
       case 'colonel': this.pay(actor, 4); this.addLog('claim', 'claim.colonel', { name: actor.name, target: tn, guess: a.guess }); break;
       case 'businesswoman': this.addLog('claim', 'claim.businesswoman', { name: actor.name }); break;
@@ -534,14 +534,14 @@ export class Game {
       w.blockEligible = w.blockEligible.filter((id) => id !== playerId);
       w.challengeEligible = w.challengeEligible.filter((id) => id !== playerId);
       this.addLog('block', 'bw.taxclaim', { name: this.name(playerId), target: this.name(bw.claim.claimerId) });
-      this.event('block', { playerId, kind: 'tax', character: 'taxman' });
+      this.event('block', { playerId, actorId: this.pending.actorId, kind: 'tax', character: 'taxman' });
       if (w.eligible.length === 0) { this.clearDue(); return this.run({ k: 'bwResolveTax' }); }
       return this.sync();
     }
     if (w.blockerId) throw new GameError('Already blocked');
     w.blockerId = playerId; this.clearDue();
     const cbs = w.cb;
-    this.event('block', { playerId, kind: w.block.kind, character: w.block.character });
+    this.event('block', { playerId, actorId: this.pending.actorId, kind: w.block.kind, character: w.block.character });
     this.closeWindow();
     this.run(cbs.onBlocked, playerId, w);
   }

@@ -72,14 +72,20 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
   const fresh = evs.filter((e) => e.id > (lastEventId as number));
   if (!fresh.length) return;
   lastEventId = fresh[fresh.length - 1].id;
+  const elimIds = new Set(fresh.filter((e) => e.type === 'eliminated').map((e) => e.playerId)); // don't double up card-loss + death
   fresh.forEach((e, i) => setTimeout(() => {
     switch (e.type) {
       case 'coins': flyCoins(e.from, e.to, e.n); break;
-      case 'card_lost': flyCard(e.playerId); cameraShake(document.getElementById('table')); if (e.playerId === me) { shake(document.getElementById('console')); sfx.play('lose'); } break;
+      case 'coup': sfx.clip('coup'); break;                       // someone paid 7 to strike
+      case 'card_lost':
+        flyCard(e.playerId); cameraShake(document.getElementById('table'));
+        if (e.playerId === me) shake(document.getElementById('console'));
+        if (!elimIds.has(e.playerId)) sfx.clip(e.playerId === me ? 'cardloss' : 'cardkill'); // you lose one vs. you knock one out
+        break;
       case 'reveal': reveal(e.character); cameraShake(document.getElementById('table'), true); stamp(e.playerId, t('stamp.true'), 'ok'); setTimeout(() => stamp(e.challengerId, t('stamp.wrong')), 600); break;
-      case 'bluff': stamp(e.playerId, t('stamp.bluff')); cameraShake(document.getElementById('table'), true); break;
-      case 'block': stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); break;
-      case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); cameraShake(document.getElementById('table'), true); if (e.playerId === me) sfx.play('lose'); break;
+      case 'bluff': stamp(e.playerId, t('stamp.bluff')); cameraShake(document.getElementById('table'), true); sfx.clip('bluff'); break;
+      case 'block': stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); if (e.actorId === me) sfx.clip('blocked'); break;
+      case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); cameraShake(document.getElementById('table'), true); sfx.clip('death'); break;
       case 'win': if (e.playerId === me) { confetti(); sfx.play('win'); } else sfx.play('lose'); break;
     }
   }, i * 350));
