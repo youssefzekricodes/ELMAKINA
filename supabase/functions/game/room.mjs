@@ -13,7 +13,7 @@
  *   saveState(code, state, expectedVersion) -> bool (insert when expectedVersion===0) | deleteState(code)
  *   upsertViews(rows:[{id, code, user_id, view}]) | deleteViews(code) | listDueRooms(now) -> [code]
  */
-import { Game, GameError, MIN_PLAYERS, MAX_PLAYERS } from './engine.mjs';
+import { Game, GameError, MIN_PLAYERS, MAX_PLAYERS, ACTION_GRACE } from './engine.mjs';
 import { BOT_NAMES, runBots, botsNextDue } from './bots.mjs';
 
 export const DEFAULT_AVATARS = ['boy-1', 'boy-2', 'boy-3', 'boy-4', 'boy-5', 'boy-6', 'girl-1', 'girl-2', 'girl-3', 'girl-4', 'girl-5', 'girl-6'];
@@ -142,7 +142,7 @@ async function hello(ctx) {
   await db.touchMember(room.code, uid, now);
   const r = new RoomOps(ctx, room); await r.load();
   let changed = r.refreshPresence();
-  if (r.game) { if (r.game.tick(now)) changed = true; if (r.runBots()) changed = true; }
+  if (r.game) { if (r.game.tick(now, ACTION_GRACE)) changed = true; if (r.runBots()) changed = true; }
   if (changed) await r.commit();
   return { ok: true, room: lobbyView(r.room), view: r.game ? r.viewFor(uid) : null };
 }
@@ -210,7 +210,7 @@ async function tickRoom(ctx, code) {
   const r = new RoomOps(ctx, room); await r.load();
   if (ctx.uid && room.players.some((p) => p.id === ctx.uid)) { await db.touchMember(room.code, ctx.uid, now); r.members[ctx.uid] = now; }
   let changed = r.refreshPresence();
-  if (r.game) { if (r.game.tick(now)) changed = true; if (r.runBots()) changed = true; }
+  if (r.game) { if (r.game.tick(now, ACTION_GRACE)) changed = true; if (r.runBots()) changed = true; }
   if (changed) await r.commit();
   return { ok: true, changed };
 }
@@ -337,7 +337,9 @@ class RoomOps {
     if (!this.game) throw fail('No game running');
     this.touch(me);
     this.refreshPresence();
-    this.game.tick(this.now); // anything overdue happens first (e.g. a window that already expired)
+    // Fire anything truly overdue first, but give the caller's own move the grace window: a click made
+    // with time left that lands a moment late still counts instead of being pre-empted by the timeout.
+    this.game.tick(this.now, ACTION_GRACE);
     fn(this.game);
     this.runBots();
     // Return the caller's fresh view so the client can update instantly, without waiting for the Realtime round-trip.

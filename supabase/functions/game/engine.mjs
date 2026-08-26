@@ -51,6 +51,9 @@ export class Queue {
 export class GameError extends Error {}
 
 const TIMEOUT = { k: 'windowTimeout' };
+// Grace after a deadline before the server auto-times-out: absorbs network latency so a move made
+// with time still on the clock always counts, even if it lands a fraction of a second late.
+export const ACTION_GRACE = 1200;
 
 export class Game {
   /**
@@ -110,16 +113,17 @@ export class Game {
   /** Schedule the continuation `cont` to run at now+ms (replaces any previous schedule). */
   setDue(ms, cont) { this.deadline = this.now() + ms; this.due = cont; }
   clearDue() { this.deadline = null; this.due = null; }
-  /** Next moment something will happen by itself (or null). */
-  nextDue() { return this.phase === 'playing' ? this.deadline : null; }
+  /** Next moment something will happen by itself (or null) — includes the grace so scheduled ticks
+   *  (and the cron backstop) don't auto-resolve before a last-second move can arrive. */
+  nextDue() { return this.phase === 'playing' && this.deadline != null ? this.deadline + ACTION_GRACE : null; }
   /**
    * Advance time: fire every continuation whose deadline has passed. Returns true if anything happened.
    * Safe to call as often as you like (clients + cron both call it).
    */
-  tick(now = this.now()) {
+  tick(now = this.now(), grace = 0) {
     let fired = 0;
     for (let guard = 0; guard < 50; guard++) {
-      if (this.phase !== 'playing' || this.deadline == null || now < this.deadline) break;
+      if (this.phase !== 'playing' || this.deadline == null || now < this.deadline + grace) break;
       const c = this.due; this.clearDue(); fired++;
       this.run(c);
     }
