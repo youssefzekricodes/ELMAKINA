@@ -236,13 +236,13 @@
   /* faint concentric rings for depth/creativity */
   .table-area::after { content: none; }
   /* clean light "table": a soft neutral surface, hairline edge, one gentle shadow */
-  /* a proper poker oval: elliptical felt ringed by a two-tone wooden rail */
-  .felt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(62%, 720px); height: min(42%, 290px); border-radius: 50%;
+  /* card-table felt: rounded rectangle ringed by a two-tone wooden rail */
+  .felt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(64%, 740px); height: min(42%, 290px); border-radius: clamp(28px, 8%, 48px);
     background: radial-gradient(ellipse at 50% 30%, var(--felt-hi), var(--felt) 62%, var(--felt-lo));
     border: 2px solid color-mix(in srgb, var(--gold) 35%, #1a0f06);
     box-shadow: 0 0 0 11px #4a3016, 0 0 0 13px #241505, inset 0 3px 26px rgba(0,0,0,.35), inset 0 0 70px rgba(0,0,0,.22), 0 30px 70px rgba(0,0,0,.65);
     display: flex; align-items: center; justify-content: center; gap: 30px; }
-  .felt::before { content: ''; position: absolute; inset: 7% 9%; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--brass) 55%, transparent); pointer-events: none; }
+  .felt::before { content: ''; position: absolute; inset: 14px; border-radius: clamp(20px, 6%, 36px); border: 1px dashed color-mix(in srgb, var(--brass) 55%, transparent); pointer-events: none; }
   .felt::after { content: none; }
   .table-logo { width: 92px; height: 92px; object-fit: contain; opacity: .08; filter: grayscale(1) brightness(3); pointer-events: none; }
   .deck { position: relative; width: 64px; height: 104px; }
@@ -1010,8 +1010,8 @@
     .game-grid, .game-grid.log-collapsed { min-height: 0; }
     .table-area { min-height: 0; height: auto; padding: 10px 10px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; gap: 10px; }
     /* compact centre strip so the opponents + your actions stay above the fold with 6 players */
-    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 22px); height: 122px; border-radius: 50%; margin: 8px auto 4px; gap: 16px; box-shadow: 0 0 0 8px #4a3016, 0 0 0 10px #241505, inset 0 3px 20px rgba(0,0,0,.35), 0 18px 44px rgba(0,0,0,.55); }
-    .felt::before { inset: 10% 12%; }
+    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 22px); height: 122px; border-radius: 26px; margin: 8px auto 4px; gap: 16px; box-shadow: 0 0 0 8px #4a3016, 0 0 0 10px #241505, inset 0 3px 20px rgba(0,0,0,.35), 0 18px 44px rgba(0,0,0,.55); }
+    .felt::before { inset: 10px; border-radius: 18px; }
     .table-area::after { display: none; }
     .table-logo { width: 42px; height: 42px; }
     .deck { width: 40px; height: 62px; } .deck .cardback { width: 40px; }
@@ -1085,8 +1085,8 @@
     .game-grid, .game-grid.log-collapsed { grid-template-columns: 1fr; grid-template-areas: "table" "console"; min-height: 0; }
     .table-area { min-height: 0; height: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; border-radius: var(--radius-2xl); }
     .table-area::after { display: none; }
-    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 18px); height: 70px; border-radius: 50%; margin: 6px auto 2px; gap: 12px; box-shadow: 0 0 0 6px #4a3016, 0 0 0 8px #241505, inset 0 2px 14px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.5); }
-    .felt::before { inset: 10% 12%; }
+    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 18px); height: 70px; border-radius: 20px; margin: 6px auto 2px; gap: 12px; box-shadow: 0 0 0 6px #4a3016, 0 0 0 8px #241505, inset 0 2px 14px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.5); }
+    .felt::before { inset: 8px; border-radius: 14px; }
     .table-logo { width: 36px; height: 36px; }
     .deck { width: 34px; height: 52px; } .deck .cardback { width: 34px; }
     .seats { position: relative; inset: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
