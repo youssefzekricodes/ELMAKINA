@@ -203,15 +203,17 @@ export function sendReaction(emoji: string) {
 export function startAction(type: string) {
   const a = ACTIONS.find((x) => x.type === type) as ActionDef;
   if (!a.target) { sendAction({ type }); return; }
-  // When there's only one possible target (e.g. 1-vs-1), skip the picker.
+  // When there's only one possible opponent (e.g. 1-vs-1), skip the player picker.
+  // Note: police's target list includes yourself, so count OPPONENTS, not raw targets.
   const st = store.get().state;
   const targets = st ? validTargets(st, uid, a) : [];
   if (!targets.length) { notify(i18n.err(t('game.noTarget'))); return; } // guard: never arm an empty picker
-  if (targets.length === 1) {
-    // police (choose a slot) and colonel (choose a guess) still need a second step — preselect the player;
-    // every other targeted action can be applied straight away.
-    if (a.type === 'police' || a.type === 'colonel') { store.set({ targeting: a, targetId: targets[0] }); return; }
-    sendAction({ type, targetId: targets[0] });
+  const others = targets.filter((id) => id !== uid);
+  if (others.length === 1) {
+    // police (choose a slot) and colonel (choose a guess) still need their follow-up — preselect the player;
+    // every other targeted action applies straight away.
+    if (a.type === 'police' || a.type === 'colonel') { store.set({ targeting: a, targetId: others[0] }); return; }
+    sendAction({ type, targetId: others[0] });
     return;
   }
   store.set({ targeting: a, targetId: null });
@@ -232,7 +234,12 @@ export function clearInviteParam() { if (location.search) history.replaceState(n
 export function tryAutoJoin() {
   const { autoJoinCode, name, room } = store.get();
   if (!autoJoinCode || !uid || room) return;
-  if (name.trim()) joinRoom(name.trim(), autoJoinCode);
+  let n = name.trim();
+  if (!n) { // invite links join directly — hand first-timers a guest name they can change later
+    n = 'Guest' + Math.floor(100 + Math.random() * 900);
+    store.set({ name: n }); localStorage.setItem('mekina.name', n);
+  }
+  joinRoom(n, autoJoinCode);
 }
 
 export function setLanguage(l: string) {

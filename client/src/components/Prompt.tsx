@@ -136,28 +136,22 @@ export function Prompt() {
     else if (w.block) effect = t('effect.' + (p!.action.type || 'block'), { name: actor, target: tgt });
     const total = w.claim ? st.timings.challenge : st.timings.block;
     head = <><span className="strip-note">{t('steps.react')}</span><Ring deadline={w.deadline} total={total} tick={urgent} /></>;
-    // The claim on trial: a spotlit card, who's claiming what, its effect, and the three verdicts.
+    // Minimal centred claim: small card, one sentence, stacked full-width verdicts.
     body = (
-      <div className="react-stack">
-        <div className={`claim-card ${urgent ? 'urgent' : ''}`} style={cardC ? { ['--c' as any]: CH[cardC as keyof typeof CH]?.color } : undefined}>
-          <TimerBar deadline={w.deadline} total={total} />
-          <div className="cl-head">
-            {cardC && <div className="cl-card"><GameCard c={cardC} w={66} small /></div>}
-            <div className="cl-txt">
-              <div className="cl-who"><PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" /><Html as="span" html={title} /></div>
-              {effect && <div className="cl-effect"><Icon name="alt-arrow-right" className="size-3.5" /><Html html={boldNames(effect, [actor, tgt])} /></div>}
-            </div>
+      <div className="claim-min" style={cardC ? { ['--c' as any]: CH[cardC as keyof typeof CH]?.color } : undefined}>
+        <TimerBar deadline={w.deadline} total={total} />
+        {cardC && <div className="cm-card"><GameCard c={cardC} w={76} small /></div>}
+        <div className="cm-who"><PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" /><Html as="span" className="cm-title" html={title} /></div>
+        {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
+        {canPass || canBlock || canChallenge ? (
+          <div className="cm-btns">
+            {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
+            {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
+            {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span></button>}
           </div>
-          {canPass || canBlock || canChallenge ? (
-            <div className="cl-btns">
-              {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span></button>}
-              {canBlock && <button type="button" className="rx block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
-              {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
-            </div>
-          ) : (
-            <div className="p-waiting">{w.claim && w.claim.claimerId === me ? t('prompt.waiting.mine') : t('prompt.waiting.others')} {t('prompt.passed', { n: w.passed.length, total: w.eligible.length })}</div>
-          )}
-        </div>
+        ) : (
+          <div className="p-waiting">{w.claim && w.claim.claimerId === me ? t('prompt.waiting.mine') : t('prompt.waiting.others')} {t('prompt.passed', { n: w.passed.length, total: w.eligible.length })}</div>
+        )}
       </div>
     );
   } else if (w && w.type === 'result') {
