@@ -80,7 +80,7 @@ export function LogPanel() {
     );
   }
   const collapsed = s.logCollapsed;
-  const toggle = () => store.set((st) => { const v = !st.logCollapsed; try { localStorage.setItem('mekina.logCollapsed', v ? '1' : '0'); } catch { /* ignore */ } return { logCollapsed: v }; });
+  const toggle = () => store.set((st) => ({ logCollapsed: !st.logCollapsed })); // session-only; the log opens by default each game
   return (
     <Card className={`log-area gap-0 p-0 ${collapsed ? 'collapsed' : ''}`}>
       <button type="button" className="log-head" onClick={toggle} aria-expanded={!collapsed} title={collapsed ? t('game.logShow') : t('game.logHide')}>

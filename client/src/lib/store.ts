@@ -60,7 +60,7 @@ let snap: Snapshot = {
   screen: 'home', connected: false, room: null, state: null, me: null,
   lang: localStorage.getItem('mekina.lang') || 'en', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
-  targeting: null, targetId: null, logOpen: false, logCollapsed: localStorage.getItem('mekina.logCollapsed') === '1', unread: 0, banner: null, modal: null, tour: false, reactions: [],
+  targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, modal: null, tour: false, reactions: [],
   account: null, trophies: 0, friends: [], friendReqs: [], tick: 0,
 };
 const listeners = new Set<() => void>();
