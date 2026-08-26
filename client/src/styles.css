@@ -1056,28 +1056,27 @@
     .hand-row { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
     .hand { justify-content: center; gap: 8px; }
     .hand .gcard { width: min(22vw, 88px) !important; }
-    /* phone card hand: one swipeable row laid along a smooth arc — small gaps between cards,
-       vertical offsets follow a parabola (centre up, edges dip) with a gentle tangent tilt.
-       No scroll-snap: a flick glides with full momentum so one swipe can reach the end. */
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 30px 16px 12px; margin-inline: -2px; scrollbar-width: none; scroll-behavior: smooth; }
+    /* phone card hand: one swipeable row — upright cards on a subtle arc (no tilt), horizontal
+       scroll only, free momentum so one flick can reach the end. Your cards are sorted first. */
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 9px; padding: 24px 16px 10px; margin-inline: -2px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
-    .board-card { width: 116px; flex-shrink: 0; transform: var(--fan, none); transform-origin: 50% 100%; }
-    /* the arc: y = k·(i−5.5)² with a matching tangent rotation */
-    .board-card:nth-child(1)  { --fan: translateY(14px) rotate(-7deg); }
-    .board-card:nth-child(2)  { --fan: translateY(9px)  rotate(-5.4deg); }
-    .board-card:nth-child(3)  { --fan: translateY(5px)  rotate(-3.9deg); }
-    .board-card:nth-child(4)  { --fan: translateY(2px)  rotate(-2.3deg); }
-    .board-card:nth-child(5)  { --fan: translateY(0)    rotate(-0.8deg); }
-    .board-card:nth-child(6)  { --fan: translateY(0)    rotate(0.8deg); }
-    .board-card:nth-child(7)  { --fan: translateY(2px)  rotate(2.3deg); }
-    .board-card:nth-child(8)  { --fan: translateY(5px)  rotate(3.9deg); }
-    .board-card:nth-child(9)  { --fan: translateY(9px)  rotate(5.4deg); }
-    .board-card:nth-child(10) { --fan: translateY(14px) rotate(7deg); }
-    /* your framed cards still lift out of the arc */
-    .board-card.owned { transform: var(--fan, none) translateY(-10px); z-index: 2; }
-    .board-card.off.owned { transform: var(--fan, none) translateY(-10px); }
-    .board-card:not(.off):hover { transform: var(--fan, none) translateY(-6px); }
-    .bc-name { font-size: 12px; }
+    .board-card { width: 98px; flex-shrink: 0; transform: var(--fan, none); }
+    /* subtle arc via height only — cards stay upright */
+    .board-card:nth-child(1)  { --fan: translateY(0); }
+    .board-card:nth-child(2)  { --fan: translateY(2px); }
+    .board-card:nth-child(3)  { --fan: translateY(4px); }
+    .board-card:nth-child(4)  { --fan: translateY(6px); }
+    .board-card:nth-child(5)  { --fan: translateY(7px); }
+    .board-card:nth-child(6)  { --fan: translateY(8px); }
+    .board-card:nth-child(7)  { --fan: translateY(8px); }
+    .board-card:nth-child(8)  { --fan: translateY(9px); }
+    .board-card:nth-child(9)  { --fan: translateY(9px); }
+    .board-card:nth-child(10) { --fan: translateY(10px); }
+    /* your framed cards still lift above the row */
+    .board-card.owned { transform: var(--fan, none) translateY(-9px); z-index: 2; }
+    .board-card.off.owned { transform: var(--fan, none) translateY(-9px); }
+    .board-card:not(.off):hover { transform: var(--fan, none) translateY(-5px); }
+    .bc-name { font-size: 11.5px; }
     .actions { width: 100%; }
     .act-grid.claims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     /* basic actions: full-width rows, all the same size, icon + text + cost aligned in one row */
@@ -1142,21 +1141,12 @@
     .seat.me { display: none; }
     /* the card hand: one swipeable row on a wide-but-short screen */
     .console-top { padding: 3px 9px; }
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 7px; padding: 24px 12px 8px; scrollbar-width: none; scroll-behavior: smooth; }
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 20px 12px 8px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
-    .board-card { width: 88px; flex-shrink: 0; transform: var(--fan, none); transform-origin: 50% 100%; }
-    .board-card:nth-child(1)  { --fan: translateY(10px) rotate(-5.5deg); }
-    .board-card:nth-child(2)  { --fan: translateY(7px)  rotate(-4.2deg); }
-    .board-card:nth-child(3)  { --fan: translateY(4px)  rotate(-3deg); }
-    .board-card:nth-child(4)  { --fan: translateY(2px)  rotate(-1.8deg); }
-    .board-card:nth-child(5)  { --fan: translateY(0)    rotate(-0.6deg); }
-    .board-card:nth-child(6)  { --fan: translateY(0)    rotate(0.6deg); }
-    .board-card:nth-child(7)  { --fan: translateY(2px)  rotate(1.8deg); }
-    .board-card:nth-child(8)  { --fan: translateY(4px)  rotate(3deg); }
-    .board-card:nth-child(9)  { --fan: translateY(7px)  rotate(4.2deg); }
-    .board-card:nth-child(10) { --fan: translateY(10px) rotate(5.5deg); }
-    .board-card.owned { transform: var(--fan, none) translateY(-9px); z-index: 2; }
-    .board-card.off.owned { transform: var(--fan, none) translateY(-9px); }
+    .board-card { width: 76px; flex-shrink: 0; transform: var(--fan, none); }
+    .board-card:nth-child(n)  { --fan: translateY(0); }
+    .board-card.owned { transform: var(--fan, none) translateY(-8px); z-index: 2; }
+    .board-card.off.owned { transform: var(--fan, none) translateY(-8px); }
     .bc-name { font-size: 10px; }
     .bc-why { display: none; }
     .banner { font-size: 34px; }

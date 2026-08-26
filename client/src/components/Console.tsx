@@ -47,7 +47,10 @@ export function Console() {
   const handKey = JSON.stringify(you?.cards || []);
   const [preview, setPreview] = useState<ActionDef | null>(null); // guided mode: show a character's rule before claiming
   const first = useRef(true);
+  const boardRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (first.current) { first.current = false; return; } sfx.play('deal'); }, [handKey]);
+  // the swiper opens on YOUR cards (they're sorted first) whenever the hand changes
+  useEffect(() => { const el = boardRef.current; if (el) el.scrollTo({ left: 0 }); }, [handKey]);
   if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
 
   const myTurn = st.phase === 'playing' && st.pending && st.pending.stage === 'turn' && st.pending.actorId === me && meP.alive;
@@ -64,6 +67,9 @@ export function Console() {
 
   const play = (a: ActionDef) => { if (s.tour && a.kind === 'claim') setPreview(a); else pressAction(a.type); };
   const card = (a: ActionDef) => <BoardCard key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} myTurn={!!myTurn} owned={CH[a.type as keyof typeof CH] ? (owned[a.type] || 0) : 0} onPlay={play} />;
+  // your held cards come first, side by side — the hand starts on YOUR identity (stable sort keeps the rest in order)
+  const isMine = (a: ActionDef) => (CH[a.type as keyof typeof CH] && owned[a.type] ? 1 : 0);
+  const orderedActions = [...ACTIONS].sort((a, b) => isMine(b) - isMine(a));
 
   return (
     <Card id="console" className="console gap-2.5 p-3">
@@ -88,7 +94,7 @@ export function Console() {
         </div>
       ) : (
         <div className="card-board">
-          <div className="board-grid">{ACTIONS.map(card)}</div>
+          <div className="board-grid" ref={boardRef}>{orderedActions.map(card)}</div>
         </div>
       )}
 
