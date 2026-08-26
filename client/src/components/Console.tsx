@@ -49,8 +49,18 @@ export function Console() {
   const first = useRef(true);
   const boardRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (first.current) { first.current = false; return; } sfx.play('deal'); }, [handKey]);
-  // the swiper opens on YOUR cards (they're sorted first) whenever the hand changes
-  useEffect(() => { const el = boardRef.current; if (el) el.scrollTo({ left: 0 }); }, [handKey]);
+  // centre the swiper on YOUR cards (they sit mid-row) whenever the hand changes
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const el = boardRef.current; if (!el || el.scrollWidth <= el.clientWidth) return;
+      const own = [...el.querySelectorAll<HTMLElement>('.board-card.owned')];
+      if (!own.length) return;
+      const left = Math.min(...own.map((c) => c.offsetLeft));
+      const right = Math.max(...own.map((c) => c.offsetLeft + c.offsetWidth));
+      el.scrollTo({ left: (left + right) / 2 - el.clientWidth / 2 });
+    }, 60); // after layout
+    return () => clearTimeout(id);
+  }, [handKey]);
   if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
 
   const myTurn = st.phase === 'playing' && st.pending && st.pending.stage === 'turn' && st.pending.actorId === me && meP.alive;
@@ -67,9 +77,13 @@ export function Console() {
 
   const play = (a: ActionDef) => { if (s.tour && a.kind === 'claim') setPreview(a); else pressAction(a.type); };
   const card = (a: ActionDef) => <BoardCard key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} myTurn={!!myTurn} owned={CH[a.type as keyof typeof CH] ? (owned[a.type] || 0) : 0} onPlay={play} />;
-  // your held cards come first, side by side — the hand starts on YOUR identity (stable sort keeps the rest in order)
-  const isMine = (a: ActionDef) => (CH[a.type as keyof typeof CH] && owned[a.type] ? 1 : 0);
-  const orderedActions = [...ACTIONS].sort((a, b) => isMine(b) - isMine(a));
+  // your held cards sit side by side in the MIDDLE of the row, with the rest split around them —
+  // the swiper centres on them so you can swipe either way
+  const isMine = (a: ActionDef) => !!(CH[a.type as keyof typeof CH] && owned[a.type]);
+  const mine = ACTIONS.filter(isMine);
+  const rest = ACTIONS.filter((a) => !isMine(a));
+  const half = Math.ceil(rest.length / 2);
+  const orderedActions = [...rest.slice(0, half), ...mine, ...rest.slice(half)];
 
   return (
     <Card id="console" className="console gap-2.5 p-3">
