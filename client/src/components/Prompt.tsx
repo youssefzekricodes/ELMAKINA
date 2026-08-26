@@ -215,7 +215,7 @@ export function Prompt() {
   useEffect(() => { if (key && key !== lastKey.current) { lastKey.current = key; if (urgent) sfx.play('alert'); } });
   if (!body) return null;
   return (
-    <Card className={`prompt shadow-overlay ${urgent ? 'urgent' : ''}`} key={key}>
+    <Card className={`prompt shadow-overlay ${urgent ? 'urgent' : ''} ${key === 'end' ? 'prompt-end' : ''}`} key={key}>
       {head && <div className="p-strip">{head}</div>}
       <div className="p-body">{body}</div>
     </Card>

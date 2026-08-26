@@ -73,7 +73,7 @@ export function Table() {
           <span className="bank-lbl">{t('game.bank')}</span>
         </div>
       </div>
-      <div className="seats">
+      <div className={`seats ${s.targeting ? 'targeting' : ''}`}>
         {opponents.map((p, i) => {
           const a = ((angles[i] !== undefined ? angles[i] : -90) * Math.PI) / 180;
           const isTurn = st.turnPlayerId === p.id && st.phase === 'playing';
@@ -86,6 +86,7 @@ export function Table() {
           return (
             <div key={p.id} className={cls} data-seat={p.id} onClick={() => onSeat(p.id)} role={targetable ? 'button' : undefined}
               style={{ left: `clamp(80px, ${50 + 40 * Math.cos(a)}%, calc(100% - 80px))`, top: `clamp(100px, ${52 + 33 * Math.sin(a)}%, calc(100% - 100px))` }}>
+              {targetable && !pickSlots && <span className="target-tap"><Icon name="cursor" className="size-3" />{t('pick.tap')}</span>}
               <div className={`av-wrap ${inCall(p.id) ? 'in-call' : ''} ${speakingOf(p.id) ? 'speaking' : ''}`}>
                 {claimCh && <span className="claim-badge" style={{ ['--c' as any]: CH[claimCh].color }} title={i18n.charName(claimCh)}><img src={CH[claimCh].cardSm} alt={i18n.charName(claimCh)} /></span>}
                 <PlayerAvatar p={p} size="md" />

@@ -9,6 +9,7 @@ import { sfx } from './sfx';
 import { processEvents, resetEvents, banner } from './fx';
 import { voiceOnRoomGone } from './voice';
 import { initSocial, syncProfile } from './social';
+import { validTargets } from './rules';
 import { ACTIONS, type ActionDef } from '../theme';
 
 let clockOffset = 0;
@@ -201,8 +202,18 @@ export function sendReaction(emoji: string) {
 // ── game ──
 export function startAction(type: string) {
   const a = ACTIONS.find((x) => x.type === type) as ActionDef;
-  if (a.target) { store.set({ targeting: a, targetId: null }); return; }
-  sendAction({ type });
+  if (!a.target) { sendAction({ type }); return; }
+  // When there's only one possible target (e.g. 1-vs-1), skip the picker.
+  const st = store.get().state;
+  const targets = st ? validTargets(st, uid, a) : [];
+  if (targets.length === 1) {
+    // police (choose a slot) and colonel (choose a guess) still need a second step — preselect the player;
+    // every other targeted action can be applied straight away.
+    if (a.type === 'police' || a.type === 'colonel') { store.set({ targeting: a, targetId: targets[0] }); return; }
+    sendAction({ type, targetId: targets[0] });
+    return;
+  }
+  store.set({ targeting: a, targetId: null });
 }
 /** Emit a game move and apply the server's returned view immediately (snappy, no Realtime wait). */
 async function move(op: string, data?: any) { const r = await emit(op, data); if (r && r.view) applyView(r.view); return r; }
