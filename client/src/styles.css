@@ -383,7 +383,7 @@
   /* ── card board: one mixed hand of cards (basic moves + roles), floating with no wrapper panel ── */
   .card-board { display: flex; flex-direction: column; gap: 10px; }
   .board-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(6px, 1.4vw, 10px); }
-  .board-card { width: clamp(58px, 12.5vw, 96px); border: 0; background: transparent; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .14s var(--ease); }
+  .board-card { position: relative; width: clamp(58px, 12.5vw, 96px); border: 0; background: transparent; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .14s var(--ease); }
   .board-card:not(.off):hover { transform: translateY(-6px); }
   .board-card:not(.off):active { transform: translateY(-2px) scale(.98); }
   .board-card.off { cursor: default; }

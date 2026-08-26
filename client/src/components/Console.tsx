@@ -30,8 +30,8 @@ function BoardCard({ a, coins, targets, myTurn, owned, onPlay }: {
         <span className="bc-art">
           <img src={cardArt(a.type)} alt={actionName(a.type)} draggable={false} />
           {a.cost > 0 && <span className="bc-cost">{a.cost}<img src={IMG.coin} alt="" /></span>}
-          {owned > 0 && <span className="bc-own">{t('board.yours')}{owned > 1 ? ` ×${owned}` : ''}</span>}
         </span>
+        {owned > 0 && <span className="bc-own">{t('board.yours')}{owned > 1 ? ` ×${owned}` : ''}</span>}
         <span className="bc-name">{actionName(a.type)}</span>
         {why ? <span className="bc-why">{why}</span> : null}
       </button>
