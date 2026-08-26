@@ -89,7 +89,9 @@ export function Prompt() {
     } else body = <><PickBanner text={t('pick.player')} /><div className="p-sub">{t('prompt.target.tap')}</div></>;
   } else if (w && w.type === 'reaction' && w.bwMulti) {
     // Business Woman calls the bluff on the skimming Tax Men — all shown at once, each independently.
-    const canAct = !!(meP && meP.alive && w.eligible.includes(me) && !w.passed.includes(me));
+    // You never act on your own skim: only players with someone ELSE to challenge get buttons.
+    const othersSkimming = (w.targets || []).some((tg: { id: string }) => tg.id !== me);
+    const canAct = !!(meP && meP.alive && w.eligible.includes(me) && !w.passed.includes(me) && othersSkimming);
     urgent = canAct; key = 'bwmulti' + w.deadline;
     head = <><span className="strip-note">{t('prompt.bw.head')}</span><Ring deadline={w.deadline} total={st.timings.challenge} tick={canAct} /></>;
     body = (

@@ -350,8 +350,10 @@ export class Game {
     if (!actor || !actor.alive) return this.bwPayout();
     const targets = bw.taxers.filter((id) => !bw.resolved.includes(id) && (() => { const p = this.player(id); return p && p.alive; })());
     if (targets.length === 0) return this.bwPayout();
-    // Anyone alive may call the bluff on a skimming Tax Man (a player can't challenge their own skim).
-    const everyone = this.alivePlayers().map((p) => p.id);
+    // Anyone alive may call the bluff on a skimming Tax Man (a player can't challenge their own skim) —
+    // so a player whose ONLY listed skim is their own has nothing to do here and isn't asked at all.
+    const everyone = this.alivePlayers().filter((p) => targets.some((id) => id !== p.id)).map((p) => p.id);
+    if (everyone.length === 0) return this.bwPayout();
     const w = {
       type: 'reaction', bwMulti: true, claim: null, block: null,
       targets: targets.map((id) => ({ id, character: 'taxman' })),
