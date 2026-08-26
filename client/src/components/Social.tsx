@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, type LeaderRow } from '../lib/social';
+import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, type LeaderRow } from '../lib/social';
+import { joinRoom, leaveRoom, notify } from '../lib/net';
 import { Icon, PlayerAvatar } from './ui';
 
 const asPlayer = (uid: string, avatar: string | null, avatarData: string | null) => ({ id: uid, avatar: avatar || 'boy-1', avatarData, color: null });
@@ -96,6 +97,61 @@ export function FriendsPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Invite modal (opened from the lobby): pick friends to push a "join my room" invite. */
+export function InviteModal() {
+  const s = useStore();
+  const [sent, setSent] = useState<Record<string, boolean>>({});
+  if (s.modal !== 'invite') return null;
+  const code = s.room?.code;
+  const friends = s.friends.filter((f) => f.status === 'accepted');
+  const invite = async (uid: string) => { if (!code) return; const r = await inviteToRoom(uid, code); if (r.ok) { setSent((m) => ({ ...m, [uid]: true })); notify(t('invite.sent'), true); } };
+  return (
+    <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label={t('invite.title')} onClick={close}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <h2 className="sheet-title"><Icon name="user-plus-rounded" className="size-5" />{t('invite.title')}</h2>
+          <button type="button" className="sheet-x" onClick={close} aria-label={t('preview.cancel')}><Icon name="close-circle" className="size-5" /></button>
+        </div>
+        <div className="sheet-body">
+          {friends.length === 0 ? <p className="sheet-empty">{t('invite.none')}</p> : friends.map((f) => (
+            <div className="fr-row" key={f.id}>
+              <PlayerAvatar p={asPlayer(f.uid, f.avatar, f.avatarData)} size="sm" />
+              <span className="fr-name">{f.name}</span>
+              {sent[f.uid]
+                ? <span className="fr-pending">{t('invite.sentTag')}</span>
+                : <Button size="sm" variant="primary" onPress={() => invite(f.uid)}>{t('invite.send')}</Button>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Live banner shown to the recipient when a friend invites them to a room. */
+export function InviteBanner() {
+  const s = useStore();
+  const inv = s.invite;
+  if (!inv) return null;
+  const join = async () => {
+    const name = (s.account && !s.account.isGuest ? s.account.name : s.name) || s.name || 'Player';
+    if (!name.trim()) { notify(t('toast.name')); store.set({ screen: 'home' }); dismissInvite(); return; }
+    if (s.room) await leaveRoom();
+    dismissInvite();
+    await joinRoom(name.trim(), inv.code);
+  };
+  return (
+    <div className="invite-pop" role="alert">
+      <span className="invite-pop-ic"><Icon name="users-room" className="size-5" /></span>
+      <div className="invite-pop-tx"><b>{inv.fromName}</b><span>{t('invite.incoming', { code: inv.code })}</span></div>
+      <div className="invite-pop-btns">
+        <Button size="sm" variant="primary" onPress={join}>{t('invite.join')}</Button>
+        <Button size="sm" variant="tertiary" isIconOnly aria-label={t('invite.dismiss')} onPress={() => dismissInvite()}><Icon name="close-circle" className="size-4" /></Button>
+      </div>
+    </div>
   );
 }
 

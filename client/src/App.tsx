@@ -15,7 +15,7 @@ import { Console } from './components/Console';
 import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
-import { LeaderboardPage, FriendsPage } from './components/Social';
+import { LeaderboardPage, FriendsPage, InviteModal, InviteBanner } from './components/Social';
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
 import { Coach } from './components/Coach';
@@ -71,6 +71,8 @@ export default function App() {
       <RulesModal />
       <CharactersModal />
       <Guide />
+      <InviteModal />
+      <InviteBanner />
       <AvatarPicker />
       <Toast.Provider placement="top" maxVisibleToasts={3} />
       <div id="fx" className="fx-root" aria-hidden="true" />

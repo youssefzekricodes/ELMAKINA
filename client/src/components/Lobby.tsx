@@ -99,6 +99,10 @@ export function Lobby() {
             <Button isIconOnly size="md" variant="tertiary" aria-label={t('top.chars')} onPress={() => store.set({ modal: 'chars' })}><Icon name="card-recive" className="size-5" /></Button>
             <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
           </Tooltip>
+          <Tooltip delay={400}>
+            <Button isIconOnly size="md" variant="secondary" aria-label={t('lobby.invite')} onPress={() => store.set({ modal: 'invite' })}><Icon name="users-group-rounded" className="size-5" /></Button>
+            <Tooltip.Content>{t('lobby.invite')}</Tooltip.Content>
+          </Tooltip>
           {isHost && n < room.maxPlayers && (
             <Tooltip delay={400}>
               <Button isIconOnly size="md" variant="secondary" aria-label={t('lobby.addSeat')} onPress={addBot}><Icon name="user-plus-rounded" className="size-5" /></Button>

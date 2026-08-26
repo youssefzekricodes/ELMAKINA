@@ -39,13 +39,14 @@ export interface Snapshot {
   logCollapsed: boolean;
   unread: number;
   banner: { text: string; id: number } | null;
-  modal: 'rules' | 'avatar' | 'chars' | 'guide' | null;
+  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews
   reactions: FloatingReaction[]; // ephemeral in-game emoji reactions (broadcast, not persisted)
   account: Account | null;   // signed-in identity (Google) or guest
   trophies: number;          // my trophy total
   friends: Friend[];         // accepted friends
   friendReqs: Friend[];      // incoming pending requests
+  invite: RoomInvite | null; // a friend invited me to their room (live push)
   tick: number; // bumps when language changes so every text re-renders
 }
 
@@ -53,6 +54,7 @@ export interface Snapshot {
 export interface FloatingReaction { id: number; uid: string; name: string; emoji: string }
 export interface Account { uid: string; name: string; email: string | null; avatarUrl: string | null; isGuest: boolean }
 export interface Friend { id: string; uid: string; name: string; avatar: string | null; avatarData: string | null; status: 'pending' | 'accepted'; incoming: boolean }
+export interface RoomInvite { id: string; fromName: string; code: string }
 
 const loadProfile = (): Profile => { try { return Object.assign({ avatar: 'boy-1', avatarData: null, color: null }, JSON.parse(localStorage.getItem('mekina.profile') || '{}')); } catch { return { avatar: 'boy-1', avatarData: null, color: null }; } };
 
@@ -61,7 +63,7 @@ let snap: Snapshot = {
   lang: localStorage.getItem('mekina.lang') || 'en', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
   targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, modal: null, tour: false, reactions: [],
-  account: null, trophies: 0, friends: [], friendReqs: [], tick: 0,
+  account: null, trophies: 0, friends: [], friendReqs: [], invite: null, tick: 0,
 };
 const listeners = new Set<() => void>();
 

@@ -8,6 +8,7 @@ export interface LeaderRow { uid: string; name: string; avatar: string | null; a
 
 let curUid: string | null = null;
 let friendsChannel: RealtimeChannel | null = null;
+let invitesChannel: RealtimeChannel | null = null;
 
 /** Called once we know the auth uid (guest or Google). Builds the account, syncs the profile, loads social data. */
 export async function initSocial(uid: string) {
@@ -28,6 +29,7 @@ export async function initSocial(uid: string) {
   await syncProfile();
   await Promise.all([loadTrophies(), loadFriends()]);
   subscribeFriends();
+  subscribeInvites();
 }
 
 /** Upsert my public profile row (name + avatar) so friends and leaderboards can show me. */
@@ -78,6 +80,26 @@ function subscribeFriends() {
     .subscribe();
 }
 
+// ── room invites (live "join my room" push to a friend) ──
+function subscribeInvites() {
+  if (!supabase || !curUid || invitesChannel) return;
+  invitesChannel = supabase.channel('invites-' + curUid)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_invites', filter: `to_uid=eq.${curUid}` }, ({ new: r }: any) => {
+      if (r && r.code) store.set({ invite: { id: r.id, fromName: r.from_name || 'A friend', code: r.code } });
+    })
+    .subscribe();
+}
+export async function inviteToRoom(toUid: string, code: string): Promise<{ ok: boolean }> {
+  if (!supabase || !curUid || !code) return { ok: false };
+  const name = (store.get().account?.name || store.get().name || 'A friend').trim() || 'A friend';
+  const { error } = await supabase.from('room_invites').insert({ from_uid: curUid, to_uid: toUid, from_name: name, code });
+  return { ok: !error };
+}
+export async function dismissInvite() {
+  const inv = store.get().invite; store.set({ invite: null });
+  if (supabase && inv) { try { await supabase.from('room_invites').delete().eq('id', inv.id); } catch { /* ignore */ } }
+}
+
 // ── actions ──
 export async function signInWithGoogle() {
   if (!supabase) return;
@@ -86,7 +108,7 @@ export async function signInWithGoogle() {
 
 export async function signOutAccount() {
   if (!supabase) return;
-  try { if (friendsChannel) { supabase.removeChannel(friendsChannel); friendsChannel = null; } await supabase.auth.signOut(); } catch { /* ignore */ }
+  try { if (friendsChannel) { supabase.removeChannel(friendsChannel); friendsChannel = null; } if (invitesChannel) { supabase.removeChannel(invitesChannel); invitesChannel = null; } await supabase.auth.signOut(); } catch { /* ignore */ }
   location.reload(); // reconnect() will start a fresh guest session
 }
 

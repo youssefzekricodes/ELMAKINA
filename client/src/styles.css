@@ -947,6 +947,14 @@
   .seat-friend:hover { transform: scale(1.1); background: var(--accent-soft); }
   .seat-friend.done { color: var(--success); cursor: default; }
 
+  /* live "a friend invited you" push banner */
+  .invite-pop { position: fixed; z-index: 90; left: 50%; top: calc(var(--sat) + 12px); transform: translateX(-50%); display: flex; align-items: center; gap: 11px; width: min(440px, calc(100vw - 20px)); padding: 10px 12px; border-radius: 14px; background: rgba(22,16,11,.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid color-mix(in srgb, var(--accent) 45%, rgba(255,240,214,.12)); box-shadow: 0 18px 50px rgba(0,0,0,.6); color: #F3E9D6; animation: drop-in .28s var(--ease); }
+  .invite-pop-ic { flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-foreground); }
+  .invite-pop-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+  .invite-pop-tx b { font-weight: 800; font-size: 14px; }
+  .invite-pop-tx span { font-size: 12.5px; color: #C9BCA4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .invite-pop-btns { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; }
+
   /* responsive */
   @media (max-width: 1023px) {
     .game-grid, .game-grid.log-collapsed { grid-template-columns: 1fr; grid-template-areas: "table" "console"; min-height: 0; }
