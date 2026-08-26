@@ -1055,10 +1055,27 @@
     .hand-row { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
     .hand { justify-content: center; gap: 8px; }
     .hand .gcard { width: min(22vw, 88px) !important; }
-    /* phone card hand: one big swipeable row — flick left/right with a finger */
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; gap: 12px; padding: 26px 10px 10px; margin-inline: -2px; scrollbar-width: none; }
+    /* phone card hand: one big swipeable row, fanned like cards held in a hand —
+       cards overlap slightly and follow a gentle arc (edges dip, centre lifts) */
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; gap: 0; padding: 30px 16px 12px; margin-inline: -2px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
-    .board-card { width: 116px; flex-shrink: 0; scroll-snap-align: center; }
+    .board-card { width: 116px; flex-shrink: 0; scroll-snap-align: center; margin-inline-end: -22px; transform: var(--fan, none); transform-origin: 50% 90%; }
+    .board-card:last-child { margin-inline-end: 0; }
+    /* the fan: rotation sweeps across the row, edges sit a little lower */
+    .board-card:nth-child(1)  { --fan: rotate(-8deg) translateY(10px); }
+    .board-card:nth-child(2)  { --fan: rotate(-6deg) translateY(6px); }
+    .board-card:nth-child(3)  { --fan: rotate(-4.5deg) translateY(3px); }
+    .board-card:nth-child(4)  { --fan: rotate(-3deg) translateY(1px); }
+    .board-card:nth-child(5)  { --fan: rotate(-1deg) translateY(0); }
+    .board-card:nth-child(6)  { --fan: rotate(1deg) translateY(0); }
+    .board-card:nth-child(7)  { --fan: rotate(3deg) translateY(1px); }
+    .board-card:nth-child(8)  { --fan: rotate(4.5deg) translateY(3px); }
+    .board-card:nth-child(9)  { --fan: rotate(6deg) translateY(6px); }
+    .board-card:nth-child(10) { --fan: rotate(8deg) translateY(10px); }
+    /* your framed cards still lift out of the fan and sit on top of the overlap */
+    .board-card.owned { transform: var(--fan, none) translateY(-10px); z-index: 2; }
+    .board-card.off.owned { transform: var(--fan, none) translateY(-10px); }
+    .board-card:not(.off):hover { transform: var(--fan, none) translateY(-6px); }
     .bc-name { font-size: 12px; }
     .actions { width: 100%; }
     .act-grid.claims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1124,9 +1141,22 @@
     .seat.me { display: none; }
     /* the card hand: one swipeable row on a wide-but-short screen */
     .console-top { padding: 3px 9px; }
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; gap: 10px; padding: 22px 10px 8px; scrollbar-width: none; }
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; gap: 0; padding: 24px 12px 8px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
-    .board-card { width: 88px; flex-shrink: 0; scroll-snap-align: center; }
+    .board-card { width: 88px; flex-shrink: 0; scroll-snap-align: center; margin-inline-end: -14px; transform: var(--fan, none); transform-origin: 50% 90%; }
+    .board-card:last-child { margin-inline-end: 0; }
+    .board-card:nth-child(1)  { --fan: rotate(-6deg) translateY(7px); }
+    .board-card:nth-child(2)  { --fan: rotate(-4.5deg) translateY(4px); }
+    .board-card:nth-child(3)  { --fan: rotate(-3deg) translateY(2px); }
+    .board-card:nth-child(4)  { --fan: rotate(-1.5deg) translateY(1px); }
+    .board-card:nth-child(5)  { --fan: rotate(0deg) translateY(0); }
+    .board-card:nth-child(6)  { --fan: rotate(1.5deg) translateY(1px); }
+    .board-card:nth-child(7)  { --fan: rotate(3deg) translateY(2px); }
+    .board-card:nth-child(8)  { --fan: rotate(4.5deg) translateY(4px); }
+    .board-card:nth-child(9)  { --fan: rotate(6deg) translateY(7px); }
+    .board-card:nth-child(10) { --fan: rotate(7.5deg) translateY(10px); }
+    .board-card.owned { transform: var(--fan, none) translateY(-9px); z-index: 2; }
+    .board-card.off.owned { transform: var(--fan, none) translateY(-9px); }
     .bc-name { font-size: 10px; }
     .bc-why { display: none; }
     .banner { font-size: 34px; }
