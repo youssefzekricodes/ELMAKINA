@@ -25,7 +25,7 @@ function BoardCard({ a, coins, targets, myTurn, owned, onPlay }: {
   const why = !myTurn ? '' : !canAfford ? t('game.needCoins', { n: a.cost }) : targets && !targets.length ? t('game.noTarget') : '';
   return (
     <Tooltip delay={350}>
-      <button type="button" className={`board-card ${owned ? 'owned' : ''} ${playable ? '' : 'off'}`} disabled={!playable}
+      <button type="button" className={`board-card ${owned ? 'owned' : ''} ${playable ? '' : 'off'}`} data-kind={a.kind} disabled={!playable}
         onClick={() => onPlay(a)} style={{ '--c': th ? th.color : 'var(--accent)' } as any}>
         <span className="bc-art">
           <img src={cardArt(a.type)} alt={actionName(a.type)} draggable={false} />

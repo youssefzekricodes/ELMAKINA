@@ -7,14 +7,25 @@ import { useStore } from '../lib/store';
 import { Icon } from './ui';
 
 // Shown in order; each tip appears the first time its target exists and hasn't been dismissed.
-const TIPS = [
-  { key: 'hand', sel: '.console .hand' },        // MY hand in the console (not an opponent's)
+// `all: true` spotlights the union of every matching element (e.g. all your framed cards at once).
+const TIPS: { key: string; sel: string; all?: boolean }[] = [
+  { key: 'hand', sel: '.board-card.owned', all: true },            // the gold-framed cards = your secret roles
   { key: 'coins', sel: '.me-coins' },
-  { key: 'basic', sel: '.basic-row' },
-  { key: 'claims', sel: '.act-grid.claims' },
-  { key: 'react', sel: '.cl-btns' },             // only exists when I can actually react (pass/block/call)
-  { key: 'result', sel: '.verdict-strip' },      // shown when a called bluff resolves
+  { key: 'basic', sel: '.board-card[data-kind="default"]', all: true },  // the safe money/coup cards
+  { key: 'claims', sel: '.board-card[data-kind="claim"]', all: true },   // the character cards (bluffable)
+  { key: 'react', sel: '.cm-btns, .cl-btns' },                     // only exists when I can actually react
+  { key: 'result', sel: '.verdict-strip' },                        // shown when a called bluff resolves
 ];
+
+/** Bounding rect covering every element that matches the selector. */
+function unionRect(sel: string): DOMRect | null {
+  const els = [...document.querySelectorAll(sel)] as HTMLElement[];
+  if (!els.length) return null;
+  let l = Infinity, t2 = Infinity, r = -Infinity, b = -Infinity;
+  for (const el of els) { const rc = el.getBoundingClientRect(); if (!rc.width) continue; l = Math.min(l, rc.left); t2 = Math.min(t2, rc.top); r = Math.max(r, rc.right); b = Math.max(b, rc.bottom); }
+  if (!isFinite(l)) return null;
+  return new DOMRect(l, t2, r - l, b - t2);
+}
 
 export function Tour() {
   const s = useStore();
@@ -29,9 +40,15 @@ export function Tour() {
     const compute = () => {
       const tip = TIPS.find((tp) => !done[tp.key] && document.querySelector(tp.sel));
       if (!tip) { setCur(null); setRect(null); return; }
-      const el = document.querySelector(tip.sel) as HTMLElement | null;
+      const r = tip.all ? unionRect(tip.sel) : (document.querySelector(tip.sel) as HTMLElement | null)?.getBoundingClientRect() ?? null;
       setCur(tip.key);
-      setRect(el ? el.getBoundingClientRect() : null);
+      // only push a new rect when it actually moved — a fresh DOMRect every tick restarts the
+      // spotlight's CSS transition from zero, so it never reaches its target
+      setRect((prev) => {
+        if (!r) return null;
+        if (prev && Math.abs(prev.left - r.left) < 1 && Math.abs(prev.top - r.top) < 1 && Math.abs(prev.width - r.width) < 1 && Math.abs(prev.height - r.height) < 1) return prev;
+        return r;
+      });
     };
     compute();
     const id = window.setInterval(compute, 250);
