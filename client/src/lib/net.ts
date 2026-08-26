@@ -206,6 +206,7 @@ export function startAction(type: string) {
   // When there's only one possible target (e.g. 1-vs-1), skip the picker.
   const st = store.get().state;
   const targets = st ? validTargets(st, uid, a) : [];
+  if (!targets.length) { notify(i18n.err(t('game.noTarget'))); return; } // guard: never arm an empty picker
   if (targets.length === 1) {
     // police (choose a slot) and colonel (choose a guess) still need a second step — preselect the player;
     // every other targeted action can be applied straight away.
