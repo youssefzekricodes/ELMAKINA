@@ -15,6 +15,12 @@ function anchor(id: string) { return rectOf(id === 'bank' ? bankEl() : coinsElOf
 
 function bump(el: Element | null) { if (!el) return; el.classList.remove('bump'); void (el as HTMLElement).offsetWidth; el.classList.add('bump'); }
 function shake(el: Element | null) { if (!el) return; el.classList.remove('shake'); void (el as HTMLElement).offsetWidth; el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 500); }
+/** Flash a highlight on a player's seat: 'hit' (lost a card / caught lying) or 'out' (eliminated). */
+function flashSeat(pid: string, kind: 'hit' | 'out') {
+  const el = seatEl(pid); if (!el) return;
+  const cls = 'seat-fx-' + kind; el.classList.remove(cls); void (el as HTMLElement).offsetWidth; el.classList.add(cls);
+  if (kind === 'hit') setTimeout(() => el.classList.remove(cls), 900);
+}
 /** Camera shake on a non-centered element (the table / console) for big beats. */
 function cameraShake(el: Element | null, big = false) {
   if (!el || reducedMotion) return; const cls = big ? 'cam-shake-lg' : 'cam-shake';
@@ -41,12 +47,13 @@ export function flyCard(fromId: string) {
   // a lost card is never shown face-up — only its back lifts, flips and tosses back onto the deck
   const c = document.createElement('div'); c.className = 'fx-card'; fx.appendChild(c);
   c.animate([
-    { transform: `translate(${a.x - 27}px, ${a.y - 44}px) rotate(0deg) scale(.9)`, opacity: 0 },
-    { transform: `translate(${a.x - 27}px, ${a.y - 74}px) rotate(-9deg) scale(1.12)`, opacity: 1, offset: 0.28 },
-    { transform: `translate(${(a.x + b.x) / 2 - 27}px, ${Math.min(a.y, b.y) - 92}px) rotate(240deg) scale(1)`, opacity: 1, offset: 0.62 },
-    { transform: `translate(${b.x - 27}px, ${b.y - 44}px) rotate(560deg) scale(.42)`, opacity: 0.12 },
-  ], { duration: reducedMotion ? 1 : 950, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => c.remove();
+    { transform: `translate(${a.x - 27}px, ${a.y - 44}px) rotateY(0deg) rotate(0deg) scale(.9)`, opacity: 0 },
+    { transform: `translate(${a.x - 27}px, ${a.y - 80}px) rotateY(180deg) rotate(-8deg) scale(1.16)`, opacity: 1, offset: 0.3 },
+    { transform: `translate(${(a.x + b.x) / 2 - 27}px, ${Math.min(a.y, b.y) - 96}px) rotateY(540deg) rotate(220deg) scale(1)`, opacity: 1, offset: 0.64 },
+    { transform: `translate(${b.x - 27}px, ${b.y - 44}px) rotateY(900deg) rotate(540deg) scale(.42)`, opacity: 0.1 },
+  ], { duration: reducedMotion ? 1 : 1000, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => c.remove();
   shake(seatEl(fromId));
+  flashSeat(fromId, 'hit');
 }
 export function stamp(pid: string, text: string, cls = '') {
   const a = anchor(pid); const s = document.createElement('div'); s.className = 'fx-stamp ' + cls; s.textContent = text; s.style.left = a.x + 'px'; s.style.top = (a.y - 10) + 'px'; fxRoot().appendChild(s);
@@ -89,9 +96,9 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
         if (!elimIds.has(e.playerId)) sfx.clip(e.playerId === me ? 'cardloss' : 'cardkill'); // you lose one vs. you knock one out
         break;
       case 'reveal': reveal(e.character); cameraShake(document.getElementById('table'), true); stamp(e.playerId, t('stamp.true'), 'ok'); setTimeout(() => stamp(e.challengerId, t('stamp.wrong')), 600); break;
-      case 'bluff': stamp(e.playerId, t('stamp.bluff')); cameraShake(document.getElementById('table'), true); sfx.clip('bluff'); break;
+      case 'bluff': stamp(e.playerId, t('stamp.bluff')); flashSeat(e.playerId, 'hit'); cameraShake(document.getElementById('table'), true); sfx.clip('bluff'); break;
       case 'block': stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); if (e.actorId === me) sfx.clip('blocked'); break;
-      case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); cameraShake(document.getElementById('table'), true); sfx.clip('death'); break;
+      case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); flashSeat(e.playerId, 'out'); cameraShake(document.getElementById('table'), true); sfx.clip('death'); break;
       case 'win': if (e.playerId === me) { confetti(); sfx.play('win'); } else sfx.play('lose'); break;
     }
   }, i * 350));

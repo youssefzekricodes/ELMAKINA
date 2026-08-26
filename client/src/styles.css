@@ -538,11 +538,11 @@
   .p-bluff { border-top: 1px solid var(--separator); padding-top: 12px; }
   /* ── reaction drawer: each claim is a spotlit card put on trial, stacked so several can be judged at once ── */
   .react-stack { display: flex; flex-direction: column; gap: 12px; }
-  .claim-card { --c: var(--brass-hi); position: relative; border-radius: 16px; padding: 15px 15px 13px; overflow: hidden;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, var(--surface)) 0%, var(--surface) 52%);
-    border: 1px solid color-mix(in srgb, var(--c) 40%, var(--border));
-    box-shadow: inset 0 1px 0 rgba(255,240,214,.05), 0 10px 26px rgba(0,0,0,.42); }
-  .claim-card.urgent { border-color: color-mix(in srgb, var(--danger) 55%, transparent); box-shadow: inset 0 1px 0 rgba(255,240,214,.05), 0 0 0 1px color-mix(in srgb, var(--danger) 45%, transparent), 0 14px 34px rgba(0,0,0,.5); }
+  /* minimalist: a clean flat card, thin border, subtle colour accent from the timer rail */
+  .claim-card { --c: var(--brass-hi); position: relative; border-radius: 14px; padding: 16px; overflow: hidden;
+    background: color-mix(in srgb, var(--c) 6%, var(--surface)); border: 1px solid var(--border);
+    box-shadow: 0 8px 22px rgba(0,0,0,.28); }
+  .claim-card.urgent { border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
   /* timer rail pinned to the card's top edge */
   .timerbar { position: absolute; top: 0; inset-inline: 0; height: 3px; background: color-mix(in srgb, var(--foreground) 10%, transparent); z-index: 2; }
   /* the remaining-time bar follows the claimed card's own colour (--c set on the claim-card) */
@@ -562,34 +562,37 @@
   .cl-effect svg { color: var(--accent); flex-shrink: 0; }
   .cl-effect b { color: var(--foreground); font-weight: 700; }
   [dir="rtl"] .cl-effect svg { transform: scaleX(-1); }
-  /* verdict buttons — one tap each, colour-coded by consequence */
-  .cl-btns { display: flex; gap: 9px; margin-top: 14px; }
-  .rx { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 0 12px; border-radius: 13px; cursor: pointer; border: 1px solid transparent;
-    font-family: var(--font-display); font-weight: 600; font-size: 14.5px; letter-spacing: .05em; text-transform: uppercase;
+  /* verdict buttons — equal-width, same height, centred icon+label; clean flat fills */
+  .cl-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .rx { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 0 10px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; white-space: nowrap;
+    font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: .04em; text-transform: uppercase;
     transition: transform .12s var(--ease), box-shadow .14s, background .14s, border-color .14s; }
-  .rx svg { flex-shrink: 0; }
+  .rx svg { flex-shrink: 0; width: 18px; height: 18px; }
+  .rx > span { overflow: hidden; text-overflow: ellipsis; }
   .rx:active { transform: translateY(1px) scale(.99); }
-  .rx.pass { background: transparent; border-color: var(--border-tertiary); color: var(--muted); }
-  .rx.pass:hover { color: var(--foreground); border-color: var(--foreground); background: var(--surface-secondary); }
-  .rx.keep { background: transparent; border-color: var(--border-tertiary); color: var(--muted); width: 100%; }
-  .rx.keep:hover { color: var(--foreground); border-color: var(--foreground); background: var(--surface-secondary); }
-  .rx.block { background: var(--warning); color: var(--warning-foreground); box-shadow: 0 5px 16px color-mix(in srgb, var(--warning) 30%, transparent); }
-  .rx.block:hover { transform: translateY(-1px); box-shadow: 0 9px 24px color-mix(in srgb, var(--warning) 42%, transparent); }
-  .rx.call { background: var(--danger); color: var(--danger-foreground); box-shadow: 0 6px 18px color-mix(in srgb, var(--danger) 40%, transparent); }
-  .rx.call:hover { transform: translateY(-1px); box-shadow: 0 10px 28px color-mix(in srgb, var(--danger) 55%, transparent); }
-  .claim-card.urgent .rx.call { animation: call-throb 1.5s var(--ease) infinite; }
-  @keyframes call-throb { 0%, 100% { box-shadow: 0 6px 18px color-mix(in srgb, var(--danger) 40%, transparent); } 50% { box-shadow: 0 6px 26px color-mix(in srgb, var(--danger) 68%, transparent); } }
+  .rx.pass, .rx.keep { background: transparent; border-color: var(--border-tertiary); color: var(--muted); }
+  .rx.keep { width: 100%; }
+  .rx.pass:hover, .rx.keep:hover { color: var(--foreground); border-color: var(--foreground); background: var(--surface-secondary); }
+  .rx.block { background: var(--warning); color: var(--warning-foreground); }
+  .rx.block:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--warning) 35%, transparent); }
+  .rx.call { background: var(--danger); color: var(--danger-foreground); }
+  .rx.call:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--danger) 45%, transparent); }
+  .claim-card.urgent .rx.call { animation: call-throb 1.6s var(--ease) infinite; }
+  @keyframes call-throb { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); } 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 22%, transparent); } }
   .rx:disabled { opacity: .38; cursor: default; box-shadow: none; transform: none; }
   .p-waiting { color: var(--muted); font-size: 13px; font-style: italic; }
-  .result-head { display: flex; align-items: center; gap: 11px; }
-  .result-ic { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-secondary); color: var(--muted); }
+  .result-head { display: flex; align-items: center; gap: 10px; }
+  .result-ic { flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-secondary); color: var(--muted); }
   .result-ic.ok { background: var(--success-soft); color: var(--success); }
   .result-ic.bad { background: var(--danger-soft); color: var(--danger); }
   .result-title { font-weight: 800; font-size: 17px; letter-spacing: var(--tracking-tight); }
   .verdict .alert__title, .verdict [data-slot="title"] { font-weight: 700; }
   /* stamped verdict strip (replaces the generic Alert) */
-  .verdict-strip { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--surface-secondary); }
-  .verdict-strip .vstamp { flex-shrink: 0; font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; transform: rotate(-3deg); border: 2px solid currentColor; }
+  /* minimal verdict: a coloured accent edge, a small label pill, then the sentence */
+  .verdict-strip { display: flex; align-items: center; gap: 11px; padding: 10px 13px; border-radius: var(--radius-lg); border: 1px solid var(--border); border-inline-start: 3px solid var(--muted); background: var(--surface-secondary); }
+  .verdict-strip.ok { border-inline-start-color: var(--success); }
+  .verdict-strip.bad { border-inline-start-color: var(--danger); }
+  .verdict-strip .vstamp { flex-shrink: 0; font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 9px; border-radius: 6px; }
   .verdict-strip.ok .vstamp { color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
   .verdict-strip.bad .vstamp { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
   .verdict-strip .vtext { font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--foreground); }
@@ -692,9 +695,15 @@
   .rule-char { display: flex; gap: 10px; align-items: flex-start; background: var(--surface-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px; font-size: 13px; }
 
   /* fx */
-  .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+  .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
-  .fx-card { position: absolute; width: 54px; aspect-ratio: .61; border-radius: 6px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 10px 22px rgba(0,0,0,.65); will-change: transform; z-index: 5; }
+  .fx-card { position: absolute; width: 54px; aspect-ratio: .61; border-radius: 6px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 10px 22px rgba(0,0,0,.65); will-change: transform; z-index: 5; backface-visibility: visible; }
+  /* highlight a player who just lost a card / got caught lying */
+  @keyframes seat-hit-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 70%, transparent); } 60% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--danger) 0%, transparent); } 100% { box-shadow: none; } }
+  .seat-fx-hit { animation: seat-hit-pulse .9s var(--ease); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)) !important; }
+  /* knockout flash when a player is eliminated */
+  @keyframes seat-out-knock { 0% { transform: none; box-shadow: none; } 18% { transform: translateX(-3px) scale(1.04); box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 55%, transparent); } 40% { transform: translateX(3px); } 62% { transform: translateX(-2px); } 100% { transform: none; box-shadow: none; } }
+  .seat-fx-out { animation: seat-out-knock .6s var(--ease); }
   .fx-stamp { position: absolute; transform: translate(-50%, -50%) rotate(-12deg); font-weight: 800; font-size: 28px; letter-spacing: var(--tracking-wide); padding: 4px 12px; border: 4px solid currentColor; border-radius: var(--radius-lg); color: var(--danger); background: rgba(255,255,255,.12); text-shadow: 0 2px 0 rgba(0,0,0,.4); animation: stamp .2s var(--ease) both, stamp-out 3s .5s both; white-space: nowrap; }
   .fx-stamp.ok { color: var(--success); }
   .fx-stamp.blue { color: #F08A1D; }
