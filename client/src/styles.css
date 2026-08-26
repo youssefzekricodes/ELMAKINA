@@ -476,7 +476,7 @@
   .log-area.collapsed .log-vlabel { display: block; writing-mode: vertical-rl; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--brass-hi); }
   .log-area.collapsed .log-chevron { color: var(--brass-hi); }
   [dir="rtl"] .log-chevron svg { transform: scaleX(-1); }
-  .log { overflow-y: auto; padding: 6px 6px 16px; font-size: 13px; line-height: 1.5; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .log { overflow-y: auto; padding: 6px 6px 16px; padding-inline-end: 12px; font-size: 13px; line-height: 1.5; display: flex; flex-direction: column; gap: 3px; flex: 1; }
   .log .entry { display: flex; gap: 12px; align-items: flex-start; padding: 12px 10px; border-radius: var(--radius-lg); transition: background .12s; animation: entry-in .3s var(--ease) both; }
   .log .entry:hover { background: var(--surface-secondary); }
   .log .tx { padding-top: 3px; }
@@ -958,6 +958,23 @@
   .sheet-x { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 2px; border-radius: 8px; }
   .sheet-x:hover { color: var(--foreground); }
   .sheet-body { padding: 12px 14px 16px; overflow-y: auto; }
+
+  /* ── scrollbars: every scroll area gets a slim, padded bar (inset thumb, kept off the rounded corners) ── */
+  .log, .prompt, .timeline, .guide-card, .sheet-body, .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  .log::-webkit-scrollbar, .prompt::-webkit-scrollbar, .timeline::-webkit-scrollbar,
+  .guide-card::-webkit-scrollbar, .sheet-body::-webkit-scrollbar, .scrollbar-thin::-webkit-scrollbar { width: 10px; height: 10px; }
+  .log::-webkit-scrollbar-thumb, .prompt::-webkit-scrollbar-thumb, .timeline::-webkit-scrollbar-thumb,
+  .guide-card::-webkit-scrollbar-thumb, .sheet-body::-webkit-scrollbar-thumb, .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb); border-radius: 999px;
+    border: 3px solid transparent; background-clip: padding-box; /* transparent border = padding around the thumb */
+  }
+  .log::-webkit-scrollbar-track, .prompt::-webkit-scrollbar-track, .timeline::-webkit-scrollbar-track,
+  .guide-card::-webkit-scrollbar-track, .sheet-body::-webkit-scrollbar-track, .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent; margin: 10px 0; /* keep the bar clear of the rounded corners */
+  }
 
   /* leaderboard rows */
   .lb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
