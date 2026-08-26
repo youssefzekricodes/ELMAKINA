@@ -236,11 +236,13 @@
   /* faint concentric rings for depth/creativity */
   .table-area::after { content: none; }
   /* clean light "table": a soft neutral surface, hairline edge, one gentle shadow */
-  .felt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(66%, 760px); height: min(44%, 300px); border-radius: clamp(52px, 13%, 96px);
-    background: radial-gradient(ellipse at 50% 30%, var(--felt-hi), var(--felt) 66%, var(--felt-lo));
-    border: 1px solid color-mix(in srgb, var(--brass) 50%, #000);
-    box-shadow: inset 0 2px 18px rgba(247,183,80,.10), inset 0 0 0 6px rgba(0,0,0,.18), 0 2px 0 rgba(255,240,214,.04), 0 26px 60px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; gap: 30px; }
-  .felt::before { content: ''; position: absolute; inset: 18px; border-radius: inherit; border: 1px dashed color-mix(in srgb, var(--brass) 55%, transparent); pointer-events: none; }
+  /* a proper poker oval: elliptical felt ringed by a two-tone wooden rail */
+  .felt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(62%, 720px); height: min(42%, 290px); border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 30%, var(--felt-hi), var(--felt) 62%, var(--felt-lo));
+    border: 2px solid color-mix(in srgb, var(--gold) 35%, #1a0f06);
+    box-shadow: 0 0 0 11px #4a3016, 0 0 0 13px #241505, inset 0 3px 26px rgba(0,0,0,.35), inset 0 0 70px rgba(0,0,0,.22), 0 30px 70px rgba(0,0,0,.65);
+    display: flex; align-items: center; justify-content: center; gap: 30px; }
+  .felt::before { content: ''; position: absolute; inset: 7% 9%; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--brass) 55%, transparent); pointer-events: none; }
   .felt::after { content: none; }
   .table-logo { width: 92px; height: 92px; object-fit: contain; opacity: .08; filter: grayscale(1) brightness(3); pointer-events: none; }
   .deck { position: relative; width: 64px; height: 104px; }
@@ -732,7 +734,11 @@
   /* fx */
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
-  .fx-card { position: absolute; width: 54px; aspect-ratio: .61; border-radius: 6px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 10px 22px rgba(0,0,0,.65); will-change: transform; z-index: 5; backface-visibility: visible; }
+  .fx-card { position: absolute; width: 78px; aspect-ratio: .61; border-radius: 8px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 14px 30px rgba(0,0,0,.7); will-change: transform; z-index: 5; backface-visibility: visible; }
+  /* red impact ring bursting from the seat that lost a card */
+  .fx-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--danger); box-shadow: 0 0 24px color-mix(in srgb, var(--danger) 70%, transparent), inset 0 0 18px color-mix(in srgb, var(--danger) 45%, transparent); will-change: transform, opacity; z-index: 4; }
+  /* full-screen red sting when it's YOUR card */
+  .fx-vignette { position: fixed; inset: 0; pointer-events: none; z-index: 3; background: radial-gradient(ellipse at center, transparent 55%, color-mix(in srgb, var(--danger) 38%, transparent) 100%); opacity: 0; }
   /* highlight a player who just lost a card / got caught lying */
   @keyframes seat-hit-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 70%, transparent); } 60% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--danger) 0%, transparent); } 100% { box-shadow: none; } }
   .seat-fx-hit { animation: seat-hit-pulse .9s var(--ease); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)) !important; }
@@ -1004,8 +1010,8 @@
     .game-grid, .game-grid.log-collapsed { min-height: 0; }
     .table-area { min-height: 0; height: auto; padding: 10px 10px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; gap: 10px; }
     /* compact centre strip so the opponents + your actions stay above the fold with 6 players */
-    .felt { position: relative; left: auto; top: auto; transform: none; width: 100%; height: 118px; border-radius: 24px; margin: 0; gap: 16px; }
-    .felt::before { inset: 12px; }
+    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 22px); height: 122px; border-radius: 50%; margin: 8px auto 4px; gap: 16px; box-shadow: 0 0 0 8px #4a3016, 0 0 0 10px #241505, inset 0 3px 20px rgba(0,0,0,.35), 0 18px 44px rgba(0,0,0,.55); }
+    .felt::before { inset: 10% 12%; }
     .table-area::after { display: none; }
     .table-logo { width: 42px; height: 42px; }
     .deck { width: 40px; height: 62px; } .deck .cardback { width: 40px; }
@@ -1079,8 +1085,8 @@
     .game-grid, .game-grid.log-collapsed { grid-template-columns: 1fr; grid-template-areas: "table" "console"; min-height: 0; }
     .table-area { min-height: 0; height: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; border-radius: var(--radius-2xl); }
     .table-area::after { display: none; }
-    .felt { position: relative; left: auto; top: auto; transform: none; width: 100%; height: 66px; border-radius: 20px; margin: 0; gap: 12px; }
-    .felt::before { inset: 8px; }
+    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 18px); height: 70px; border-radius: 50%; margin: 6px auto 2px; gap: 12px; box-shadow: 0 0 0 6px #4a3016, 0 0 0 8px #241505, inset 0 2px 14px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.5); }
+    .felt::before { inset: 10% 12%; }
     .table-logo { width: 36px; height: 36px; }
     .deck { width: 34px; height: 52px; } .deck .cardback { width: 34px; }
     .seats { position: relative; inset: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
