@@ -16,6 +16,10 @@ export default defineConfig(() => ({
   build: {
     outDir: path.resolve(here, 'dist'),
     emptyOutDir: true,
+    // Keep CSS compatible with older mobile browsers: without this the minifier rewrites media
+    // queries to range syntax ((width<=760px)), which pre-16.4 Safari/webviews ignore entirely —
+    // every phone style silently drops and the desktop layout renders on mobile.
+    cssTarget: 'safari14',
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
