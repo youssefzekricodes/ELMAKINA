@@ -1055,6 +1055,11 @@
     .hand-row { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
     .hand { justify-content: center; gap: 8px; }
     .hand .gcard { width: min(22vw, 88px) !important; }
+    /* phone card hand: one big swipeable row — flick left/right with a finger */
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; gap: 12px; padding: 26px 10px 10px; margin-inline: -2px; scrollbar-width: none; }
+    .board-grid::-webkit-scrollbar { display: none; }
+    .board-card { width: 116px; flex-shrink: 0; scroll-snap-align: center; }
+    .bc-name { font-size: 12px; }
     .actions { width: 100%; }
     .act-grid.claims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     /* basic actions: full-width rows, all the same size, icon + text + cost aligned in one row */
@@ -1117,10 +1122,12 @@
     .seat .bot-chip, .seat .status { display: none; }
     .seat .hand .cardback { width: 13px; }
     .seat.me { display: none; }
-    /* the card hand: many small cards, ideally one row on a wide-but-short screen */
+    /* the card hand: one swipeable row on a wide-but-short screen */
     .console-top { padding: 3px 9px; }
-    .board-card { width: 52px; }
-    .bc-name { font-size: 8.5px; }
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; gap: 10px; padding: 22px 10px 8px; scrollbar-width: none; }
+    .board-grid::-webkit-scrollbar { display: none; }
+    .board-card { width: 88px; flex-shrink: 0; scroll-snap-align: center; }
+    .bc-name { font-size: 10px; }
     .bc-why { display: none; }
     .banner { font-size: 34px; }
   }
