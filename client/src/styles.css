@@ -363,7 +363,7 @@
   .flip .face img { width: 100%; height: 100%; object-fit: cover; }
 
   /* console — no wrapper panel: the cards float directly on the table */
-  .console { grid-area: console; position: relative; background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: 0 !important; box-shadow: none !important; padding: 4px 2px 0 !important; color: var(--foreground); }
+  .console { grid-area: console; position: relative; min-width: 0; max-width: 100%; background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: 0 !important; box-shadow: none !important; padding: 4px 2px 0 !important; color: var(--foreground); }
   /* brass rivets in the console corners */
   .console .act-label { color: var(--muted); }
   .status-line { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; flex-wrap: wrap; }
@@ -390,7 +390,8 @@
   .hand.picking .pick-banner { width: 100%; }
 
   /* ── card board: one mixed hand of cards (basic moves + roles), floating with no wrapper panel ── */
-  .card-board { display: flex; flex-direction: column; gap: 10px; }
+  .card-board { display: flex; flex-direction: column; gap: 10px; min-width: 0; max-width: 100%; }
+  .board-grid { max-width: 100%; }
   .board-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(6px, 1.4vw, 10px); }
   .board-card { position: relative; width: clamp(58px, 12.5vw, 96px); border: 0; background: transparent; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .14s var(--ease); }
   .board-card:not(.off):hover { transform: translateY(-6px); }
