@@ -6,8 +6,8 @@ const names = {
   tn: { taxman: 'القبّاض', businesswoman: 'مرا بزنس', police: 'البوليس', terrorist: 'الإرهابي', colonel: 'الكولونال', politician: 'السياسي', thief: 'السارق' },
 };
 const reasons = {
-  en: { paidkill: 'Paid Kill', terrorist: 'Terrorist', colonel_correct: 'Colonel guessed correctly', lost_challenge: 'lost challenge', caught_bluffing: 'caught bluffing', wrong_guess: 'wrong Colonel guess', paidkill_timeout: 'Paid Kill, timed out', terrorist_timeout: 'Terrorist, timed out' },
-  tn: { paidkill: 'قتلة خالصة', terrorist: 'الإرهابي', colonel_correct: 'الكولونال عرفها', lost_challenge: 'خسر التحدّي', caught_bluffing: 'انكشف الكذّاب', wrong_guess: 'الكولونال غلط', paidkill_timeout: 'قتلة خالصة، خرج الوقت', terrorist_timeout: 'الإرهابي، خرج الوقت' },
+  en: { paidkill: 'Paid Kill', terrorist: 'Terrorist', colonel_correct: 'Colonel guessed correctly', lost_challenge: 'lost challenge', caught_bluffing: 'caught bluffing', wrong_guess: 'wrong Colonel guess', paidkill_timeout: 'Paid Kill, timed out', terrorist_timeout: 'Terrorist, timed out', lost_challenge_timeout: 'lost challenge, timed out', caught_bluffing_timeout: 'caught bluffing, timed out' },
+  tn: { paidkill: 'قتلة خالصة', terrorist: 'الإرهابي', colonel_correct: 'الكولونال عرفها', lost_challenge: 'خسر التحدّي', caught_bluffing: 'انكشف الكذّاب', wrong_guess: 'الكولونال غلط', paidkill_timeout: 'قتلة خالصة، خرج الوقت', terrorist_timeout: 'الإرهابي، خرج الوقت', lost_challenge_timeout: 'خسر التحدّي، خرج الوقت', caught_bluffing_timeout: 'انكشف الكذّاب، خرج الوقت' },
 };
 const whats = {
   en: { inspection: 'the inspection', kill: 'the kill', theft: 'the theft' },
@@ -64,9 +64,9 @@ const log = {
     'police.keep': '{name} leaves the inspected card in place.',
     'kill.out': '{name} is already out — nothing happens.',
     'kill.survive': '{name} pays 9 coins to the bank and survives the {reason}!',
-    'bluff.true': '{challenger} calls the bluff — but {name} reveals a {character}! The claim was true; {challenger} loses a random card.',
+    'bluff.true': '{challenger} calls the bluff — but {name} reveals a {character}! The claim was true; {challenger} loses a card of their choice.',
     'bluff.replace': '{name} returns the revealed {character} to the deck and draws a replacement.',
-    'bluff.caught': '{challenger} calls the bluff — {name} was lying about {character} and loses a random card. The action is stopped.',
+    'bluff.caught': '{challenger} calls the bluff — {name} was lying about {character} and loses a card of their choice. The action is stopped.',
   },
   tn: {
     'game.start': 'بدات اللعبة بـ {n} لعّابة. الكل ياخو {hand} كروت و 2 دينار.',
@@ -118,9 +118,9 @@ const log = {
     'police.keep': '{name} خلّى الكارطة في بلاصتها.',
     'kill.out': '{name} خرج من قبل — ما صار شي.',
     'kill.survive': '{name} خلّص 9 دينار للبنكة و نجى من {reason}!',
-    'bluff.true': '{challenger} قال كذّاب — أما {name} ورّى {character}! كان صادق؛ {challenger} خسر كارطة بالصدفة.',
+    'bluff.true': '{challenger} قال كذّاب — أما {name} ورّى {character}! كان صادق؛ {challenger} يختار كارطة يخسرها.',
     'bluff.replace': '{name} رجّع {character} اللي ورّاها للكومة و خذا وحدة أخرى.',
-    'bluff.caught': '{challenger} قال كذّاب — {name} كان يكذب على {character} و خسر كارطة بالصدفة. الحركة وقفت.',
+    'bluff.caught': '{challenger} قال كذّاب — {name} كان يكذب على {character} و يختار كارطة يخسرها. الحركة وقفت.',
   },
 };
 const CHAR_KEYS = new Set(['character', 'guess']);

@@ -305,6 +305,7 @@ class RoomOps {
     room.players = seated; pickHost(room);
     for (const p of room.players) applyDefaults(room.players, p);
     this.sched = {};
+    this.awarded = false; // fresh game must award trophies again (flag persists across ops in state)
     // Guided (tutorial) games give beginners much longer windows so they can read the coach-marks.
     const timings = opts.guided ? { turn: 120000, challenge: 45000, block: 45000, decision: 60000, resultPause: 5000, turnPause: 3500 } : undefined;
     this.game = new Game(room.players.map((p) => ({ id: p.id, name: p.name, connected: p.connected, isBot: !!p.isBot, avatar: p.avatar, color: p.color })), { now: () => this.now, timings });

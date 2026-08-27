@@ -193,7 +193,8 @@ export class Game {
       // kills
       case 'kill': return this.doKill(c.targetId, c.reason, { canPay: !!c.canPay }, c.then);
       case 'killChoice': return this.killChoice(c, arg || {});
-      case 'killTimeout': { const t = this.player(c.targetId); const killerId = this.pending && this.pending.action ? this.pending.action.actorId : null; this.loseRandomCard(t, `${c.reason}_timeout`, killerId); if (this.checkGameOver()) return; return this.run(c.then); }
+      case 'killTimeout': { const t = this.player(c.targetId); const killerId = c.killerId || (this.pending && this.pending.action ? this.pending.action.actorId : null); this.loseRandomCard(t, `${c.reason}_timeout`, killerId); if (this.checkGameOver()) return; return this.run(c.then); }
+      case 'pause': return this.pause(c.kind, c.data, c.then);
       // police
       case 'policeLook': return this.doPoliceLook();
       case 'policeChoice': return this.policeChoice(arg || {});
@@ -421,14 +422,18 @@ export class Game {
   }
   /** Kill one card of `targetId`; the target secretly chooses which. opts.canPay: Paid Kill (pay 9 to survive). */
   doKill(targetId, reason, opts, then) {
-    const t = this.player(targetId); const killerId = this.pending && this.pending.action ? this.pending.action.actorId : null;
+    const t = this.player(targetId); const killerId = (opts && opts.killerId) || (this.pending && this.pending.action ? this.pending.action.actorId : null);
     if (!t.alive) { this.addLog('system', 'kill.out', { name: t.name }); return this.run(then); }
     const canPay = !!(opts && opts.canPay) && t.coins >= 9;
     if (!canPay && t.cards.length === 1) { this.loseCardAt(t, 0, reason, killerId); if (this.checkGameOver()) return; return this.run(then); }
-    this.openDecision(t.id, 'lose_card', { reason, canPay, payCost: 9 }, { k: 'killChoice', targetId, reason, canPay, then }, { k: 'killTimeout', targetId, reason, then });
+    this.openDecision(t.id, 'lose_card', { reason, canPay, payCost: 9 }, { k: 'killChoice', targetId, reason, canPay, killerId, then }, { k: 'killTimeout', targetId, reason, killerId, then });
+  }
+  /** A lost challenge costs a chosen card: same lose_card decision as kills, then the readable pause + `then`. */
+  challengeLoss(loserId, reason, winnerId, pauseData, then) {
+    this.doKill(loserId, reason, { killerId: winnerId }, { k: 'pause', kind: 'challenge', data: pauseData, then: then || null });
   }
   killChoice(c, choice) {
-    const t = this.player(c.targetId); const killerId = this.pending && this.pending.action ? this.pending.action.actorId : null;
+    const t = this.player(c.targetId); const killerId = c.killerId || (this.pending && this.pending.action ? this.pending.action.actorId : null);
     if (c.canPay && choice.pay) { this.pay(t, 9); this.addLog('coins', 'kill.survive', { name: t.name, reason: c.reason }); return this.run(c.then); }
     const idx = Number.isInteger(choice.index) ? choice.index : Math.floor(Math.random() * t.cards.length);
     this.loseCardAt(t, idx, c.reason, killerId);
@@ -478,17 +483,11 @@ export class Game {
       this.event('reveal', { playerId: claimer.id, character: ch, challengerId: challenger.id });
       const idx = claimer.cards.indexOf(ch); claimer.cards.splice(idx, 1); this.deck.push(ch); claimer.cards.push(this.deck.shift());
       this.addLog('reveal', 'bluff.replace', { name: claimer.name, character: ch });
-      this.loseRandomCard(challenger, 'lost_challenge', claimer.id);
-      if (this.checkGameOver()) return;
-      this.sync();
-      this.pause('challenge', { result: 'true', claimerId: claimer.id, challengerId: challenger.id, character: ch }, block ? { k: 'reopenBlock', block, cbs } : cbs.onProceed);
+      this.challengeLoss(challenger.id, 'lost_challenge', claimer.id, { result: 'true', claimerId: claimer.id, challengerId: challenger.id, character: ch }, block ? { k: 'reopenBlock', block, cbs } : cbs.onProceed);
     } else {
       this.addLog('challenge', 'bluff.caught', { challenger: challenger.name, name: claimer.name, character: ch });
       this.event('bluff', { playerId: claimer.id, character: ch, challengerId: challenger.id });
-      this.loseRandomCard(claimer, 'caught_bluffing', challenger.id);
-      if (this.checkGameOver()) return;
-      this.sync();
-      this.pause('challenge', { result: 'bluff', claimerId: claimer.id, challengerId: challenger.id, character: ch }, cbs.onFail);
+      this.challengeLoss(claimer.id, 'caught_bluffing', challenger.id, { result: 'bluff', claimerId: claimer.id, challengerId: challenger.id, character: ch }, cbs.onFail);
     }
   }
   /** Business Woman calls the bluff on one specific Tax Man in the multi-challenge window. */
@@ -513,18 +512,12 @@ export class Game {
       this.event('reveal', { playerId: taxer.id, character, challengerId: playerId });
       const i = taxer.cards.indexOf(character); taxer.cards.splice(i, 1); this.deck.push(character); taxer.cards.push(this.deck.shift());
       this.addLog('reveal', 'bluff.replace', { name: taxer.name, character });
-      this.loseRandomCard(this.player(playerId), 'lost_challenge', taxer.id);
-      if (this.checkGameOver()) return;
-      this.sync();
-      this.pause('challenge', { result: 'true', claimerId: taxer.id, challengerId: playerId, character }, { k: 'bwOpenMultiChallenge' });
+      this.challengeLoss(playerId, 'lost_challenge', taxer.id, { result: 'true', claimerId: taxer.id, challengerId: playerId, character }, { k: 'bwOpenMultiChallenge' });
     } else { // caught — void this skim, the Tax Man loses a card
       const ti = bw.taxers.indexOf(targetId); if (ti >= 0) bw.taxers.splice(ti, 1);
       this.addLog('challenge', 'bluff.caught', { challenger: this.name(playerId), name: taxer.name, character });
       this.event('bluff', { playerId: taxer.id, character, challengerId: playerId });
-      this.loseRandomCard(taxer, 'caught_bluffing', playerId);
-      if (this.checkGameOver()) return;
-      this.sync();
-      this.pause('challenge', { result: 'bluff', claimerId: taxer.id, challengerId: playerId, character }, { k: 'bwOpenMultiChallenge' });
+      this.challengeLoss(taxer.id, 'caught_bluffing', playerId, { result: 'bluff', claimerId: taxer.id, challengerId: playerId, character }, { k: 'bwOpenMultiChallenge' });
     }
   }
   /** Block / veto / tax by claiming the blocking character. */

@@ -1,6 +1,6 @@
 // Engine scenario tests (serverless engine: fake clock + tick()). Run: node test/engine.test.mjs
 import assert from 'node:assert';
-import { Game, Queue, CHARACTERS, MAX_COINS } from '../supabase/functions/game/engine.mjs';
+import { Game, Queue, CHARACTERS, MAX_COINS, ACTION_GRACE } from '../supabase/functions/game/engine.mjs';
 
 const T = { challenge: 40, block: 40, decision: 40, turn: 200, disconnectedTurn: 30, disconnectedDecision: 20, resultPause: 0, turnPause: 0 };
 let NOW = 1_000_000;
@@ -25,6 +25,14 @@ function giveCard(g, pid, ch) {
 function withoutCard(g, pid, ch) { const p = g.player(pid); while (p.cards.includes(ch)) { const i = p.cards.indexOf(ch); const other = g.deck.toArray().find((c) => c !== ch); const arr = g.deck.toArray(); arr.splice(arr.indexOf(other), 1); g.deck = new Queue(arr); g.deck.push(p.cards[i]); p.cards[i] = other; } }
 /** Round-trip through JSON the way the edge function does between requests. */
 const reload = (g) => Game.fromJSON(JSON.parse(JSON.stringify(g.toJSON())), { now: clock });
+/** Challenge losses now open a lose_card decision (loser chooses). Answer it; returns the card that was lost. */
+function settleLoss(g, index = 0) {
+  const w = g.pending && g.pending.window;
+  if (!(w && w.type === 'decision' && w.kind === 'lose_card')) return null;
+  const loser = g.player(w.playerId); const chosen = loser.cards[Math.min(index, loser.cards.length - 1)];
+  g.decide(w.playerId, { index: Math.min(index, loser.cards.length - 1) });
+  return chosen;
+}
 
 await test('Queue is FIFO', () => {
   const q = new Queue(['a', 'b', 'c']);
@@ -77,7 +85,9 @@ await test('loan veto: truthful tax man veto stops loan, challenger loses a card
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(g.pending.window.claim && !g.pending.window.block);
   const cCards = c.cards.length;
   g.challenge(c.id);
-  assert.equal(c.cards.length, cCards - 1); assert.equal(a.coins, 2); assert.ok(v.cards.length === 3);
+  const cLost = settleLoss(g, 1);                    // challenger chooses which card to lose
+  assert.equal(c.cards.length, cCards - 1); assert.ok(!c.cards.includes(cLost) || c.cards.filter((x) => x === cLost).length < cCards, 'the chosen card was lost');
+  assert.equal(a.coins, 2); assert.ok(v.cards.length === 3);
 });
 
 await test('bluff caught: claimer loses a card and action fails; terrorist cost not refunded', () => {
@@ -87,6 +97,7 @@ await test('bluff caught: claimer loses a card and action fails; terrorist cost 
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   assert.equal(a.coins, 2);
   g.challenge(b.id);
+  settleLoss(g);                                     // caught claimer chooses which card to lose
   assert.equal(a.cards.length, 2); assert.equal(b.cards.length, 3); assert.equal(g.active.id, b.id);
 });
 
@@ -96,6 +107,9 @@ await test('terrorist special case: target challenges truthful terrorist, loses 
   a.coins = 5; giveCard(g, a.id, 'terrorist');
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   g.challenge(b.id);
+  const bBefore = g.player(b.id).cards.slice();
+  const bLost = settleLoss(g, 1);                    // b chooses the challenge loss too now
+  assert.equal(bLost, bBefore[1], 'chosen index is the card lost');
   assert.equal(b.cards.length, 2, 'lost one from challenge'); assert.ok(a.cards.length === 3);
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(!g.pending.window.claim && g.pending.window.block, 'b may still block with Colonel, claim proven');
   g = reload(g);
@@ -119,8 +133,9 @@ await test('block with Colonel: successful block stops kill; lying block fails a
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   g.block(b.id);
   g.challenge(a.id);
+  settleLoss(g);                                     // b chooses the challenge loss
   assert.equal(b.cards.length, 2); assert.equal(g.pending.window.type, 'decision');
-  g.decide(b.id, { index: 1 });
+  g.decide(b.id, { index: 1 });                      // ...then the kill's own choice
   assert.equal(b.cards.length, 1);
 });
 
@@ -131,6 +146,7 @@ await test('anyone may counter: a non-target blocks the Terrorist with Colonel',
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   assert.deepEqual([...g.pending.window.blockEligible].sort(), [b.id, c.id].sort());
   g.block(c.id); g.challenge(a.id);
+  settleLoss(g);                                     // failed challenger chooses
   assert.equal(a.cards.length, 2); assert.equal(b.cards.length, 3); assert.equal(c.cards.length, 3); assert.notEqual(g.active.id, a.id);
 });
 
@@ -200,13 +216,15 @@ await test('business woman: the BW claim can still be called after someone taxed
   assert.equal(w.type, 'reaction'); assert.ok(w.claim && w.claim.claimerId === a.id, 'the BW is still challengeable');
   assert.ok(w.challengeEligible.includes(c.id));
   g.challenge(c.id);                   // c calls the BW bluff — a was lying
+  settleLoss(g);
   assert.equal(a.cards.length, 2); assert.equal(a.coins, 2, 'no payout'); assert.notEqual(g.active.id, a.id);
   // proven BW: after a true challenge the claim is gone from later windows
   g = newGame(3); g.start();
   const x = g.active; const [y, z] = g.players.filter((p) => p.id !== x.id);
   giveCard(g, x.id, 'businesswoman'); giveCard(g, y.id, 'taxman');
   g.declareAction(x.id, { type: 'businesswoman' });
-  g.challenge(z.id);                   // wrong call → z loses a card, BW proven; collection reopens without the claim
+  g.challenge(z.id);                   // wrong call → z loses a card (their choice), BW proven; collection reopens
+  settleLoss(g);
   assert.equal(g.pending.window.type, 'reaction'); assert.equal(g.pending.window.claim, null, 'proven: only tax remains');
   g.block(y.id);                       // y skims → x may now call the bluff on y
   assert.ok(g.pending.window.challengeEligible.includes(x.id), 'anyone alive may challenge a skim');
@@ -228,9 +246,11 @@ await test('business woman concurrent multi-challenge: call bluff on several Tax
   assert.equal(g.pending.window.targets.length, 3, 'all three listed at once');
   g = reload(g);                                  // survives JSON round-trip
   const a2 = g.player(a.id);
-  g.challengeTarget(a.id, c.id);                  // caught bluffing → c loses a card, skim voided; window reopens
+  g.challengeTarget(a.id, c.id);                  // caught bluffing → c chooses a card to lose, skim voided; window reopens
+  settleLoss(g);
   assert.equal(g.pending.window.bwMulti, true); assert.equal(g.pending.window.targets.length, 2, 'c resolved, b & d remain');
-  g.challengeTarget(a.id, d.id);                  // caught → d loses a card too
+  g.challengeTarget(a.id, d.id);                  // caught → d chooses a card too
+  settleLoss(g);
   assert.equal(g.pending.window.bwMulti, true); assert.equal(g.pending.window.targets.length, 1, 'only b remains');
   for (const p of g.players) g.pass(p.id);        // nobody challenges b → honest Tax Man keeps the coin → payout
   assert.equal(g.player(c.id).cards.length, cCards - 1, 'c lost a card');
@@ -280,11 +300,12 @@ await test('readable pauses: turn-end and bluff-call results show a result windo
   g.declareAction(a.id, { type: 'income' });
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'turn_end'); assert.equal(g.active.id, a.id);
   assert.equal(g.viewFor(b.id).pending.window.type, 'result');
-  assert.equal(g.nextDue(), NOW + 60);
+  assert.equal(g.nextDue(), NOW + 60 + ACTION_GRACE); // nextDue includes the late-move grace window
   advance(g, 90);
   assert.equal(g.active.id, b.id, 'turn advanced after the pause');
   giveCard(g, b.id, 'politician');
   g.declareAction(b.id, { type: 'politician' }); g.challenge(a.id);
+  settleLoss(g);                                     // a chooses the challenge loss, then the result pause shows
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'challenge'); assert.equal(g.pending.window.data.result, 'true');
   advance(g, 90);
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'turn_end');

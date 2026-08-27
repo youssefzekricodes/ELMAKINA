@@ -59,7 +59,7 @@ await test('lobby: create, join, ready, start; views are private; leave', async 
   assert.equal(viewOf(db, code, A).players.find((p) => p.id === active).coins, 3);
   // turn-end pause then next turn via tick
   assert.equal(viewOf(db, code, A).pending.window.type, 'result');
-  NOW += 2300; await call(db, B, { op: 'tick' });
+  NOW += 3600; await call(db, B, { op: 'tick' }); // turnPause 2200 + ACTION_GRACE 1200
   assert.equal(viewOf(db, code, A).turnPlayerId, other);
   // leaving mid-game keeps the seat (disconnected), host passes if needed
   assert.ok((await call(db, B, { op: 'leave_room' })).ok);
@@ -102,14 +102,14 @@ await test('tick_all (cron) advances rooms whose next_due passed; presence drops
   const { code } = await call(db, A, { op: 'create_room', name: 'A' });
   await call(db, B, { op: 'join_room', name: 'B', code }); await call(db, B, { op: 'toggle_ready' }); await call(db, A, { op: 'start_game' });
   const first = viewOf(db, code, A).turnPlayerId;
-  NOW += 61_000; // the active player never acts → turn timeout; also A and B have not pinged for > 45 s
+  NOW += 62_500; // the active player never acts (turn 60s + ACTION_GRACE) → turn timeout; also A and B have not pinged for > 45 s
   const res = await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true });
   assert.ok(res.ok); assert.equal(res.rooms, 1);
   const v = viewOf(db, code, A);
   assert.ok(v.log.some((e) => e.key === 'timeout' || e.key === 'disconnected'), 'turn timed out');
   assert.ok(v.players.every((p) => !p.connected), 'idle players marked disconnected');
   assert.equal(v.pending.window.type, 'result', 'turn-end pause is showing');
-  NOW += 2300; await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true });
+  NOW += 3600; await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true });
   assert.notEqual(viewOf(db, code, A).turnPlayerId, first, 'next turn after the pause');
   // a ping brings B back
   await call(db, B, { op: 'ping' }); await call(db, B, { op: 'tick' });
@@ -125,7 +125,7 @@ await test('optimistic concurrency: a stale write is retried, not lost', async (
   // simulate two overlapping requests: wrap saveState so the first attempt hits a conflict once
   let injected = false; const orig = db.saveState.bind(db);
   db.saveState = async (c, s, expected) => { if (!injected) { injected = true; db.rooms.get(code).version++; return false; } return orig(c, s, expected); };
-  NOW += 61_000; // something is certainly due now (turn timeout or a bot move)
+  NOW += 62_500; // something is certainly due now (turn timeout or a bot move)
   const res = await call(db, A, { op: 'tick' });
   assert.ok(res.ok, 'retried after conflict');
   assert.ok(injected);
