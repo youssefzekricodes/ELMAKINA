@@ -41,7 +41,7 @@ export function flyCoins(fromId: string, toId: string, n: number) {
     ], { duration: reducedMotion ? 1 : 700 + i * 80, delay: i * 55, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => { c.remove(); bump(coinsElOf(toId)); };
   }
 }
-export function flyCard(fromId: string, mine = false) {
+export function flyCard(fromId: string, mine = false, character?: string) {
   const a = anchor(fromId), b = rectOf(bankEl()) || anchor('bank'); const fx = fxRoot();
   sfx.play('card');
   // impact ring bursting out of the seat that just lost the card
@@ -52,15 +52,39 @@ export function flyCard(fromId: string, mine = false) {
       { transform: `translate(${a.x - 40}px, ${a.y - 40}px) scale(1.7)`, opacity: 0 },
     ], { duration: 650, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' }).onfinish = () => ring.remove();
   }
-  // a lost card is never shown face-up — only its back lifts, hangs, flips and tosses onto the deck
-  const c = document.createElement('div'); c.className = 'fx-card'; fx.appendChild(c);
-  c.animate([
-    { transform: `translate(${a.x - 39}px, ${a.y - 64}px) rotateY(0deg) rotate(0deg) scale(.8)`, opacity: 0 },
-    { transform: `translate(${a.x - 39}px, ${a.y - 128}px) rotateY(200deg) rotate(-10deg) scale(1.25)`, opacity: 1, offset: 0.32 },
-    { transform: `translate(${a.x - 39}px, ${a.y - 136}px) rotateY(340deg) rotate(-4deg) scale(1.25)`, opacity: 1, offset: 0.48 },
-    { transform: `translate(${(a.x + b.x) / 2 - 39}px, ${Math.min(a.y, b.y) - 120}px) rotateY(640deg) rotate(230deg) scale(1)`, opacity: 1, offset: 0.74 },
-    { transform: `translate(${b.x - 39}px, ${b.y - 64}px) rotateY(940deg) rotate(560deg) scale(.4)`, opacity: 0.08 },
-  ], { duration: reducedMotion ? 1 : 1250, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => c.remove();
+  if (character && CH[character as keyof typeof CH]) {
+    // Lost cards are public: the card rises from the seat, flips FACE-UP centre-stage so
+    // everyone sees what was lost, holds a beat, then flies back onto the deck.
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2 - 30;
+    const el = document.createElement('div'); el.className = 'fx-lost';
+    el.innerHTML = `<div class="fxl-inner"><div class="fxl-face fxl-back"></div><div class="fxl-face fxl-front"><img src="${CH[character as keyof typeof CH].card}" alt="" /></div></div>`;
+    fx.appendChild(el);
+    const inner = el.firstElementChild as HTMLElement;
+    const D = reducedMotion ? 1 : 2400;
+    el.animate([
+      { transform: `translate(${a.x - 62}px, ${a.y - 100}px) scale(.4)`, opacity: 0, easing: 'cubic-bezier(.2,.7,.3,1)' }, // out of the seat
+      { transform: `translate(${cx - 62}px, ${cy - 100}px) scale(1)`, opacity: 1, offset: 0.24, easing: 'linear' },        // centre stage
+      { transform: `translate(${cx - 62}px, ${cy - 100}px) scale(1)`, opacity: 1, offset: 0.66, easing: 'ease-in' },       // hold — read it
+      { transform: `translate(${(cx + b.x) / 2 - 62}px, ${Math.min(cy, b.y) - 130}px) scale(.6)`, opacity: 1, offset: 0.86 },
+      { transform: `translate(${b.x - 62}px, ${b.y - 100}px) scale(.28)`, opacity: 0.1 },                                  // onto the deck
+    ], { duration: D, fill: 'forwards' }).onfinish = () => el.remove();
+    inner.animate([
+      { transform: 'rotateY(0deg)' },
+      { transform: 'rotateY(180deg)', offset: 0.24 },      // face-up by the time it reaches centre
+      { transform: 'rotateY(180deg)', offset: 0.72 },
+      { transform: 'rotateY(360deg)' },                    // flips back over as it returns to the deck
+    ], { duration: D, easing: 'ease-in-out', fill: 'forwards' });
+  } else {
+    // fallback (older events without the card): the back lifts, spins and tosses onto the deck
+    const c = document.createElement('div'); c.className = 'fx-card'; fx.appendChild(c);
+    c.animate([
+      { transform: `translate(${a.x - 39}px, ${a.y - 64}px) rotateY(0deg) rotate(0deg) scale(.8)`, opacity: 0 },
+      { transform: `translate(${a.x - 39}px, ${a.y - 128}px) rotateY(200deg) rotate(-10deg) scale(1.25)`, opacity: 1, offset: 0.32 },
+      { transform: `translate(${a.x - 39}px, ${a.y - 136}px) rotateY(340deg) rotate(-4deg) scale(1.25)`, opacity: 1, offset: 0.48 },
+      { transform: `translate(${(a.x + b.x) / 2 - 39}px, ${Math.min(a.y, b.y) - 120}px) rotateY(640deg) rotate(230deg) scale(1)`, opacity: 1, offset: 0.74 },
+      { transform: `translate(${b.x - 39}px, ${b.y - 64}px) rotateY(940deg) rotate(560deg) scale(.4)`, opacity: 0.08 },
+    ], { duration: reducedMotion ? 1 : 1250, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => c.remove();
+  }
   // losing your OWN card stings: brief red vignette over the whole screen
   if (mine && !reducedMotion) {
     const v = document.createElement('div'); v.className = 'fx-vignette'; fx.appendChild(v);
@@ -105,7 +129,7 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
       case 'coins': flyCoins(e.from, e.to, e.n); break;
       case 'coup': sfx.clip('coup'); break;                       // someone paid 7 to strike
       case 'card_lost':
-        flyCard(e.playerId, e.playerId === me); cameraShake(document.getElementById('table'));
+        flyCard(e.playerId, e.playerId === me, e.character); cameraShake(document.getElementById('table'));
         if (e.playerId === me) shake(document.getElementById('console'));
         if (!elimIds.has(e.playerId)) sfx.clip(e.playerId === me ? 'cardloss' : 'cardkill'); // you lose one vs. you knock one out
         break;

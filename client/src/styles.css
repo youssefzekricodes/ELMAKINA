@@ -771,6 +771,13 @@
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
   .fx-card { position: absolute; width: 78px; aspect-ratio: .61; border-radius: 8px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 14px 30px rgba(0,0,0,.7); will-change: transform; z-index: 5; backface-visibility: visible; }
+  /* a LOST card: rises from the seat, flips face-up centre-stage, then returns to the deck */
+  .fx-lost { position: absolute; width: 124px; aspect-ratio: .61; perspective: 800px; will-change: transform; z-index: 6; filter: drop-shadow(0 18px 40px rgba(0,0,0,.65)); }
+  .fxl-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; will-change: transform; }
+  .fxl-face { position: absolute; inset: 0; border-radius: 9px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 0 0 2px rgba(255,255,255,.3); }
+  .fxl-back { background: #fff url('/img/card-back.webp') center/cover; }
+  .fxl-front { transform: rotateY(180deg); background: #fff; }
+  .fxl-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* red impact ring bursting from the seat that lost a card */
   .fx-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--danger); box-shadow: 0 0 24px color-mix(in srgb, var(--danger) 70%, transparent), inset 0 0 18px color-mix(in srgb, var(--danger) 45%, transparent); will-change: transform, opacity; z-index: 4; }
   /* full-screen red sting when it's YOUR card */

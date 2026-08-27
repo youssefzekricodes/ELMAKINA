@@ -141,7 +141,7 @@ export class Game {
     const [card] = p.cards.splice(idx, 1);
     this.deck.push(card);
     this.addLog('loss', 'card.lost', { name: p.name, reason, left: p.cards.length });
-    this.event('card_lost', { playerId: p.id, killerId: killerId || null });
+    this.event('card_lost', { playerId: p.id, killerId: killerId || null, character: card }); // lost cards are public: shown face-up, then returned to the deck
     if (p.cards.length === 0) {
       p.alive = false;
       if (!this.outOrder.includes(p.id)) this.outOrder.push(p.id); // record finish order for trophies
