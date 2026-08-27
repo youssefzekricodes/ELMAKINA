@@ -4,8 +4,8 @@ import { UI, ERR_TN } from './i18n.strings';
 
 export type Lang = 'en' | 'tn';
 
-let lang: Lang = ((typeof localStorage !== 'undefined' && localStorage.getItem('mekina.lang')) as Lang) || 'en';
-if (!UI[lang]) lang = 'en';
+let lang: Lang = ((typeof localStorage !== 'undefined' && localStorage.getItem('mekina.lang')) as Lang) || 'tn';
+if (!UI[lang]) lang = 'tn';
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
@@ -16,7 +16,7 @@ function fill(s: string, params?: Record<string, unknown>, escape = false) {
 
 export const i18n = {
   get lang() { return lang; },
-  set(l: string) { lang = (UI[l] ? l : 'en') as Lang; localStorage.setItem('mekina.lang', lang); },
+  set(l: string) { lang = (UI[l] ? l : 'tn') as Lang; localStorage.setItem('mekina.lang', lang); },
   dir: () => (lang === 'tn' ? 'rtl' : 'ltr'),
   /** Plain text (params inserted as-is — render as text, never as HTML). */
   t(key: string, params?: Record<string, unknown>) {

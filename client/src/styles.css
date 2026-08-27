@@ -796,10 +796,6 @@
   .fx-card { position: absolute; width: 78px; aspect-ratio: .61; border-radius: 8px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 14px 30px rgba(0,0,0,.7); will-change: transform; z-index: 5; backface-visibility: visible; }
   /* a LOST card: its BACK rises centre-stage (identity stays secret), then returns to the deck */
   .fx-lost { position: absolute; width: 110px; aspect-ratio: .61; border-radius: 9px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 0 0 2px rgba(255,255,255,.3); will-change: transform; z-index: 6; filter: drop-shadow(0 18px 40px rgba(0,0,0,.65)); }
-  /* attacker → target arrow drawn across the table */
-  .fx-attack { position: absolute; inset: 0; pointer-events: none; z-index: 7; overflow: visible; }
-  .fx-attack path { stroke: var(--danger); stroke-width: 4; fill: none; stroke-linecap: round; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)) drop-shadow(0 0 8px color-mix(in srgb, var(--danger) 60%, transparent)); }
-  .fx-attack marker path { fill: var(--danger); stroke: none; }
   /* red impact ring bursting from the seat that lost a card */
   .fx-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--danger); box-shadow: 0 0 24px color-mix(in srgb, var(--danger) 70%, transparent), inset 0 0 18px color-mix(in srgb, var(--danger) 45%, transparent); will-change: transform, opacity; z-index: 4; }
   /* full-screen red sting when it's YOUR card */

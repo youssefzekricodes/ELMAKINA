@@ -60,7 +60,7 @@ const loadProfile = (): Profile => { try { return Object.assign({ avatar: 'boy-1
 
 let snap: Snapshot = {
   screen: 'home', connected: false, room: null, state: null, me: null,
-  lang: localStorage.getItem('mekina.lang') || 'en', soundOn: localStorage.getItem('mekina.sound') !== 'off',
+  lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
   targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, modal: null, tour: false, reactions: [],
   account: null, trophies: 0, friends: [], friendReqs: [], invite: null, tick: 0,
