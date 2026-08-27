@@ -47,27 +47,9 @@ const lib: Record<string, () => void> = {
   reveal: () => { tone(440, 0.12, 'sine', 0.08); tone(880, 0.25, 'sine', 0.08, 0.1); },
 };
 
-// ── recorded meme clips (mp3 files in /public/sfx), played for big game beats ──
-const CLIPS: Record<string, string> = {
-  cardkill: '/sfx/cardkill.mp3',   // someone knocks out another player's card
-  coup: '/sfx/coup.mp3',           // paid kill (7 coins)
-  bluff: '/sfx/bluff.mp3',         // a bluff gets exposed
-  death: '/sfx/death.mp3',         // a player is eliminated
-  cardloss: '/sfx/cardloss.mp3',   // you lose a card
-  blocked: '/sfx/blocked.mp3',     // your action gets blocked
-};
-const clips: Record<string, HTMLAudioElement> = {};
-const clipEl = (n: string) => {
-  let a = clips[n];
-  if (!a && CLIPS[n]) { a = new Audio(CLIPS[n]); a.preload = 'auto'; a.volume = 0.5; clips[n] = a; }
-  return a || null;
-};
-
 export const sfx = {
   get enabled() { return enabled; },
   toggle() { enabled = !enabled; localStorage.setItem('mekina.sound', enabled ? 'on' : 'off'); if (enabled) { ensure(); lib.click(); } return enabled; },
   play(n: string) { if (!enabled || (reducedMotion && n === 'click')) return; try { (lib[n] || (() => {}))(); } catch { /* ignore */ } },
-  /** Play a recorded clip (mp3). Restarts if already playing so rapid beats still fire. */
-  clip(n: string) { if (!enabled) return; const a = clipEl(n); if (!a) return; try { a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => {}); } catch { /* ignore */ } },
-  unlock() { ensure(); for (const n of Object.keys(CLIPS)) clipEl(n); },
+  unlock() { ensure(); },
 };
