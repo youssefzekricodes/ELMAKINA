@@ -696,6 +696,9 @@
   .win-av-wrap::after { content: ''; position: absolute; inset: -26px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--gold) 22%, transparent) 0%, transparent 70%); pointer-events: none; }
   .prompt-end .p-sub { color: #C9BCA4; }
   .prompt-end .standings { background: rgba(255,240,214,.05); border-color: rgba(255,240,214,.12); margin-top: 12px; }
+  .win-actions { display: flex; flex-direction: column; align-items: stretch; gap: 9px; width: min(280px, 100%); margin-top: 14px; }
+  .win-leave { color: #C9BCA4; border-color: rgba(255,240,214,.22); }
+  .win-leave:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 10%, transparent); }
   .prompt-end .standings li.is-out { opacity: .6; }
   .win-av-wrap .win-av { box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px var(--background), 0 0 30px color-mix(in srgb, var(--gold) 30%, transparent); }
   .win-crown { position: absolute; top: -20px; left: 50%; transform: translateX(-50%) rotate(-3deg); z-index: 2; color: var(--gold); filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); animation: bounce-y 1.6s ease-in-out infinite; }
