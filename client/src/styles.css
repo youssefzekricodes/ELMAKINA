@@ -680,15 +680,23 @@
   .timeline .tl { display: flex; gap: 11px; align-items: flex-start; padding: 7px 8px; border-radius: var(--radius-md); }
   .timeline .tl + .tl { border-top: 1px solid color-mix(in srgb, var(--separator) 55%, transparent); }
   .timeline .tl.k-challenge .tx, .timeline .tl.k-eliminated .tx { font-weight: 600; }
-  /* game over: a centred celebration overlay rather than the small top prompt */
-  .prompt-end { top: 50%; bottom: auto; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 24px)); max-height: calc(100dvh - 36px); animation: win-in .32s var(--ease); border-color: color-mix(in srgb, var(--gold) 40%, rgba(255,240,214,.1)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 30%, transparent), 0 30px 80px rgba(0,0,0,.7); }
-  @keyframes win-in { from { transform: translate(-50%, -50%) scale(.9); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
-  .winner { position: relative; text-align: center; padding: 14px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
-  .winner::before { content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 260px; height: 180px; background: radial-gradient(ellipse at center, color-mix(in srgb, var(--gold) 26%, transparent), transparent 70%); pointer-events: none; z-index: 0; }
-  .winner > * { position: relative; z-index: 1; }
-  .winner h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(38px, 11vw, 52px); margin: 0; letter-spacing: .03em; text-transform: uppercase; line-height: 1; background: linear-gradient(180deg, #F6DE9A 0%, var(--gold) 60%, #A9750F 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
-  .win-kicker { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; color: var(--gold); }
-  .win-av-wrap { position: relative; margin-top: 6px; }
+  /* game over: a quiet full-screen ceremony — dark stage, one spotlight on the champion */
+  .prompt.prompt-end { top: 0; left: 0; bottom: 0; right: 0; transform: none; width: 100%; max-width: none; max-height: none; height: 100dvh; border: 0; border-radius: 0;
+    background: radial-gradient(ellipse at 50% 32%, rgba(46,32,16,.94) 0%, rgba(14,10,6,.97) 62%, rgba(8,6,3,.99) 100%);
+    box-shadow: none; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: end-fade .5s var(--ease); }
+  @keyframes end-fade { from { opacity: 0; } to { opacity: 1; } }
+  .prompt-end .p-strip { display: none; }               /* the ceremony owns the whole screen */
+  .prompt-end .p-body { padding: 20px 18px calc(20px + var(--sab)); overflow-y: auto; max-height: 100dvh; width: min(400px, 100%); }
+  .winner { position: relative; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: winner-rise .55s var(--ease) both; }
+  @keyframes winner-rise { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .winner h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 8.5vw, 42px); margin: 2px 0 0; letter-spacing: .04em; text-transform: uppercase; line-height: 1.05; color: #F6EEDC; text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+  .win-kicker { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; color: var(--gold); }
+  .win-av-wrap { position: relative; margin-top: 10px; }
+  .win-av-wrap .win-av { width: 92px !important; height: 92px !important; }
+  .win-av-wrap::after { content: ''; position: absolute; inset: -26px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--gold) 22%, transparent) 0%, transparent 70%); pointer-events: none; }
+  .prompt-end .p-sub { color: #C9BCA4; }
+  .prompt-end .standings { background: rgba(255,240,214,.05); border-color: rgba(255,240,214,.12); margin-top: 12px; }
+  .prompt-end .standings li.is-out { opacity: .6; }
   .win-av-wrap .win-av { box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px var(--background), 0 0 30px color-mix(in srgb, var(--gold) 30%, transparent); }
   .win-crown { position: absolute; top: -20px; left: 50%; transform: translateX(-50%) rotate(-3deg); z-index: 2; color: var(--gold); filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); animation: bounce-y 1.6s ease-in-out infinite; }
   .standings { list-style: none; margin: 6px 0 2px; padding: 6px; width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 3px; background: var(--surface-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); }
@@ -783,13 +791,8 @@
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
   .fx-card { position: absolute; width: 78px; aspect-ratio: .61; border-radius: 8px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 14px 30px rgba(0,0,0,.7); will-change: transform; z-index: 5; backface-visibility: visible; }
-  /* a LOST card: rises from the seat, flips face-up centre-stage, then returns to the deck */
-  .fx-lost { position: absolute; width: 124px; aspect-ratio: .61; perspective: 800px; will-change: transform; z-index: 6; filter: drop-shadow(0 18px 40px rgba(0,0,0,.65)); }
-  .fxl-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; will-change: transform; }
-  .fxl-face { position: absolute; inset: 0; border-radius: 9px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 0 0 2px rgba(255,255,255,.3); }
-  .fxl-back { background: #fff url('/img/card-back.webp') center/cover; }
-  .fxl-front { transform: rotateY(180deg); background: #fff; }
-  .fxl-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* a LOST card: its BACK rises centre-stage (identity stays secret), then returns to the deck */
+  .fx-lost { position: absolute; width: 110px; aspect-ratio: .61; border-radius: 9px; background: #fff url('/img/card-back.webp') center/cover; box-shadow: 0 0 0 2px rgba(255,255,255,.3); will-change: transform; z-index: 6; filter: drop-shadow(0 18px 40px rgba(0,0,0,.65)); }
   /* attacker → target arrow drawn across the table */
   .fx-attack { position: absolute; inset: 0; pointer-events: none; z-index: 7; overflow: visible; }
   .fx-attack path { stroke: var(--danger); stroke-width: 4; fill: none; stroke-linecap: round; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)) drop-shadow(0 0 8px color-mix(in srgb, var(--danger) 60%, transparent)); }
