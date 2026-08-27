@@ -86,8 +86,8 @@ export function confetti() {
   }
 }
 let bannerTimer: any = null;
-export function banner(text: string) {
-  const id = Date.now(); store.set({ banner: { text, id } });
+export function banner(text: string, cls = '') {
+  const id = Date.now(); store.set({ banner: { text, id, cls } });
   clearTimeout(bannerTimer); bannerTimer = setTimeout(() => { if (store.get().banner?.id === id) store.set({ banner: null }); }, 2000);
 }
 

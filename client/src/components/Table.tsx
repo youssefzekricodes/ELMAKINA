@@ -2,7 +2,7 @@
 import { CH, IMG, type CharacterId } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore, type GPlayer } from '../lib/store';
-import { pickTarget, sendAction } from '../lib/net';
+import { tapTarget } from '../lib/net';
 import { CardBack, Coins, Icon, PlayerAvatar, SoundWaves } from './ui';
 import { validTargets } from '../lib/rules';
 import { useVoice, speakingOf, inCall } from '../lib/voice';
@@ -56,12 +56,7 @@ export function Table() {
   const meP = st.players.find((p) => p.id === me);
   const isMyTurn = st.turnPlayerId === me && st.phase === 'playing';
 
-  const onSeat = (pid: string, slot?: number) => {
-    if (!s.targeting || !targets || !targets.includes(pid)) return;
-    if (s.targeting.type === 'police') { if (s.targetId === pid && slot !== undefined) return sendAction({ type: 'police', targetId: pid, slot }); return pickTarget(pid); }
-    if (s.targeting.type === 'colonel') return pickTarget(pid);
-    sendAction({ type: s.targeting.type, targetId: pid });
-  };
+  const onSeat = tapTarget; // shared with the prompt's chip picker (see Prompt.tsx)
 
   return (
     <div className="table-area" id="table">
@@ -121,7 +116,7 @@ export function Table() {
           <div className="nm">{meP.name} <span className="you-chip">{t('game.you')}</span></div>
         </div>
       )}
-      {s.banner && <div key={s.banner.id} className="banner" role="status" aria-live="polite">{s.banner.text}</div>}
+      {s.banner && <div key={s.banner.id} className={`banner ${s.banner.cls || ''}`} role="status" aria-live="polite">{s.banner.text}</div>}
     </div>
   );
 }

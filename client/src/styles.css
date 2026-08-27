@@ -259,6 +259,8 @@
   .seats { position: absolute; inset: 0; }
   .banner { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-display); font-weight: 700; font-size: clamp(38px, 8vw, 78px); letter-spacing: .05em; text-transform: uppercase; color: var(--foreground); text-shadow: 0 8px 30px rgba(26,25,24,.18); pointer-events: none; z-index: 5; animation: banner-in 1.8s var(--ease) forwards; white-space: nowrap; }
   @keyframes banner-in { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } 25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
+  /* smaller announcement banner ("Karim claims Tax Man") — longer text, so it may wrap */
+  .banner.sm { font-size: clamp(20px, 4.5vw, 34px); white-space: normal; max-width: min(86%, 520px); text-align: center; line-height: 1.2; }
 
   /* seats */
   .seat { position: absolute; width: 150px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; transition: transform .35s var(--ease), filter .3s; }
@@ -276,7 +278,7 @@
   .seat.picking .hand .cardback:hover { transform: translateY(-6px) scale(1.08); }
   @keyframes pick-pulse { 50% { box-shadow: 0 0 0 5px var(--gold), 0 0 26px rgba(247,183,80,.9); } }
   .seat .status { min-height: 20px; }
-  .seat.turn .pavatar { box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--background), 0 0 0 5px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .seat.turn .pavatar { box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--background), 0 0 0 5px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 24px color-mix(in srgb, var(--accent) 55%, transparent); }
   /* lamp glow behind the active player */
   .seat.turn .av-wrap::before { content: ''; position: absolute; inset: -22px; z-index: -1; border-radius: 50%; background: radial-gradient(circle, var(--lamp), transparent 68%); animation: pulse 2.4s ease-in-out infinite; pointer-events: none; }
   /* spotlight focus: when someone is on turn, dim everyone else */
@@ -295,7 +297,7 @@
   .seat-status svg { flex-shrink: 0; opacity: .95; }
   .seat-status.claim { background: var(--accent); color: var(--accent-foreground); border-color: transparent; box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 30%, transparent); }
   .seat-status.deciding { color: var(--warning-soft-foreground); border-color: color-mix(in srgb, var(--warning) 35%, var(--border)); animation: claim-pop .22s var(--ease), chip-pulse 1.1s ease-in-out infinite .22s; }
-  .seat-status.playing { background: var(--foreground); color: var(--background); border-color: transparent; }
+  .seat-status.playing { background: var(--accent); color: var(--accent-foreground); border-color: transparent; box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 45%, transparent); animation: claim-pop .22s var(--ease), chip-pulse 1.2s ease-in-out infinite .22s; }
   .seat-status.passed { color: var(--muted); }
   .seat-status.auto { color: var(--warning-soft-foreground); border-color: color-mix(in srgb, var(--warning) 30%, var(--border)); }
   .seat-status.out { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
@@ -336,6 +338,21 @@
   .pick-banner { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--warning-soft); color: var(--warning-soft-foreground); font-weight: 700; font-size: 13px; padding: 6px 12px; border-radius: var(--radius-lg); animation: bounce-y .9s infinite; }
   .pick-banner.danger { background: var(--danger-soft); color: var(--danger-soft-foreground); }
   @keyframes bounce-y { 50% { transform: translateY(-4px); } }
+  /* ── targeting picker: every valid target as a chip inside the prompt (the seats stay tappable too).
+        Vital on phones, where some seats are cramped and your own seat is hidden entirely. ── */
+  .target-picker { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .tp-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-width: 0; }
+  .tp-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; max-width: 100%; min-width: 0; padding: 5px 12px; padding-inline-start: 7px; border-radius: 999px; border: 1px solid var(--border-tertiary); background: var(--surface-secondary); color: var(--foreground); font-weight: 700; font-size: 13px; cursor: pointer; transition: border-color .12s, background .12s, box-shadow .12s; }
+  .tp-chip:hover { border-color: var(--accent); }
+  .tp-chip.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+  .tp-chip .pavatar { flex-shrink: 0; }
+  .tp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14ch; }
+  .tp-check { color: var(--accent); flex-shrink: 0; }
+  .tp-slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-width: 0; }
+  .tp-slot { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 6px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--border)); background: var(--surface-secondary); color: var(--foreground); font-weight: 700; font-size: 13px; cursor: pointer; transition: border-color .12s, background .12s; }
+  .tp-slot:hover { border-color: var(--gold); background: var(--accent-soft); }
+  .tp-slot-n { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #241505; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .tp-slot-tx { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* coins & cards */
   .coins { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -612,6 +629,13 @@
   .cm-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
   .cm-btns .rx { display: grid; grid-template-columns: 22px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 18px; width: 100%; }
   .cm-btns .rx svg { justify-self: center; }
+  /* counter window: one loud primary ("Let it pass") + a quiet secondary bluff-call underneath */
+  .rx.let-pass { background: var(--accent); color: var(--accent-foreground); }
+  .rx.let-pass:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent); }
+  .cm-call-sub { align-self: center; display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; min-height: 36px; padding: 6px 14px; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer;
+    font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; transition: color .14s, border-color .14s, background .14s; }
+  .cm-call-sub svg { flex-shrink: 0; }
+  .cm-call-sub:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger) 8%, transparent); }
   .claim-min .p-waiting { margin-top: 4px; }
   .p-waiting { color: var(--muted); font-size: 13px; font-style: italic; }
   .result-head { display: flex; align-items: center; gap: 10px; }
@@ -630,6 +654,16 @@
   .verdict-strip.bad .vstamp { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
   .verdict-strip .vtext { font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--foreground); }
   .verdict-strip .vtext b { font-weight: 800; }
+  /* the third outcome — YOUR call failed — reads as a warning, not a win */
+  .verdict-strip.warn { border-inline-start-color: var(--warning); }
+  .verdict-strip.warn .vstamp { color: var(--warning-soft-foreground); background: color-mix(in srgb, var(--warning) 16%, transparent); }
+  .verdict-strip .vic { flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: var(--surface); color: var(--muted); }
+  .verdict-strip.ok .vic { background: var(--success-soft); color: var(--success); }
+  .verdict-strip.bad .vic { background: var(--danger-soft); color: var(--danger); }
+  .verdict-strip.warn .vic { background: var(--warning-soft); color: var(--warning-soft-foreground); }
+  .verdict-strip .vcol { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .verdict-strip .vrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .verdict-strip .vhead { font-weight: 800; font-size: 13.5px; letter-spacing: .01em; color: var(--foreground); }
   .timeline { list-style: none; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; background: var(--surface-secondary); border-radius: var(--radius-lg); font-size: 13px; line-height: 1.45; max-height: 190px; overflow: auto; }
   .timeline .tl { display: flex; gap: 11px; align-items: flex-start; padding: 7px 8px; border-radius: var(--radius-md); }
   .timeline .tl + .tl { border-top: 1px solid color-mix(in srgb, var(--separator) 55%, transparent); }
@@ -1150,6 +1184,20 @@
     .bc-name { font-size: 10px; }
     .bc-why { display: none; }
     .banner { font-size: 34px; }
+  }
+
+  /* ── touch targets on phones (portrait or landscape): nothing interactive below ~44px tall ── */
+  @media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
+    .cm-call-sub { min-height: 44px; }               /* the secondary "call the bluff" link-button */
+    .topbar-right button { min-height: 40px; }       /* topbar chrome: taller tap area without widening the crowded bar */
+    .log-head { min-height: 44px; }
+    /* police slot-picking on an opponent seat: keep the card-backs tappable but small enough
+       for the 3-across seat grid — and let them wrap instead of blowing the column open.
+       (The prompt's .tp-slot buttons are the primary affordance now.) */
+    .seat.picking .hand { flex-wrap: wrap; }
+    .seat.picking .hand .cardback { width: 34px; }
+    /* chips can go edge-to-edge inside the narrow prompt */
+    .tp-chip { flex: 1 1 auto; justify-content: center; }
   }
 
   @media (prefers-reduced-motion: reduce) {

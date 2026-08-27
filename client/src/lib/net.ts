@@ -14,6 +14,7 @@ import { ACTIONS, type ActionDef } from '../theme';
 
 let clockOffset = 0;
 let turnSeen: number | null = null;
+let claimSeen: number | null = null; // dedupes the "X claims Y" banner per reaction window (avoids reconnect spam)
 let channel: RealtimeChannel | null = null;
 let channelCode: string | null = null;
 let tickTimer: any = null, pollTimer: any = null, pingTimer: any = null;
@@ -74,6 +75,16 @@ function applyView(v: any) {
   if (myTurnNow && (prevTurn !== me || prevStage !== 'turn') && turnSeen !== v.pending.deadline) {
     turnSeen = v.pending.deadline; banner(t('banner.turn')); sfx.play('turn');
     try { navigator.vibrate && navigator.vibrate(40); } catch { /* ignore */ }
+  }
+  // Announce a fresh claim / counter with the big table banner (skip my own claim, skip replays on (re)join).
+  const rw = v.phase === 'playing' && v.pending && v.pending.window && v.pending.window.type === 'reaction' ? v.pending.window : null;
+  if (rw && rw.claim && claimSeen !== rw.deadline) {
+    const hadState = !!prev.state;
+    claimSeen = rw.deadline;
+    if (hadState && rw.claim.claimerId !== me) {
+      const nm = (v.players.find((p: any) => p.id === rw.claim.claimerId) || {}).name || '?';
+      banner(t(rw.claim.kind === 'action' ? 'banner.claim' : 'banner.counter', { name: nm, character: i18n.charName(rw.claim.character) }), 'sm');
+    }
   }
   scheduleTick(v);
 }
@@ -223,6 +234,18 @@ async function move(op: string, data?: any) { const r = await emit(op, data); if
 export async function sendAction(payload: any) { store.set({ targeting: null, targetId: null }); return move('game_action', { action: payload }); }
 export const cancelTargeting = () => store.set({ targeting: null, targetId: null });
 export const pickTarget = (id: string) => store.set({ targetId: id });
+/** Tap a target while aiming — shared by the table seats AND the prompt's chip picker.
+    Police goes player → slot, colonel goes player → guess; everything else fires immediately. */
+export function tapTarget(pid: string, slot?: number) {
+  const s = store.get(); const st = s.state;
+  if (!st || !s.targeting || !validTargets(st, s.me, s.targeting).includes(pid)) return;
+  if (s.targeting.type === 'police') {
+    if (s.targetId === pid && slot !== undefined) { sendAction({ type: 'police', targetId: pid, slot }); return; }
+    pickTarget(pid); return;
+  }
+  if (s.targeting.type === 'colonel') { pickTarget(pid); return; }
+  sendAction({ type: s.targeting.type, targetId: pid });
+}
 export const challenge = () => move('game_challenge');
 export const challengeTarget = (targetId: string) => move('game_challenge_target', { targetId });
 export const pass = () => move('game_pass');

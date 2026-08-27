@@ -38,7 +38,7 @@ export interface Snapshot {
   logOpen: boolean;
   logCollapsed: boolean;
   unread: number;
-  banner: { text: string; id: number } | null;
+  banner: { text: string; id: number; cls?: string } | null;
   modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews
   reactions: FloatingReaction[]; // ephemeral in-game emoji reactions (broadcast, not persisted)

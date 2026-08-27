@@ -4,7 +4,8 @@ import { Button, Card, Chip } from '@heroui/react';
 import { CH, CHARACTERS } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
-import { block, cancelTargeting, challenge, challengeTarget, decide, newGame, pass, sendAction } from '../lib/net';
+import { block, cancelTargeting, challenge, challengeTarget, decide, newGame, pass, sendAction, tapTarget } from '../lib/net';
+import { validTargets } from '../lib/rules';
 import { sfx } from '../lib/sfx';
 import { GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
 import { logCharacter } from './LogPanel';
@@ -30,6 +31,51 @@ function Timeline({ limit }: { limit: number }) {
         );
       })}
     </ol>
+  );
+}
+
+/** Every valid target as a tappable chip inside the prompt — mirrors tapping a seat. On phones some
+    seats are cramped or hidden entirely (yourself!), so the prompt always offers the full list.
+    After picking a police target the row grows big slot buttons so nobody hunts tiny card-backs. */
+function TargetPicker() {
+  const s = useStore(); const st = s.state!; const me = s.me;
+  const a = s.targeting;
+  if (!a) return null;
+  const ids = validTargets(st, me, a);
+  if (!ids.length) return null;
+  const chosen = s.targetId;
+  const chosenP = chosen ? st.players.find((p) => p.id === chosen) : null;
+  return (
+    <div className="target-picker">
+      <div className="tp-row" role="group" aria-label={t('pick.player')}>
+        {ids.map((id) => {
+          const p = st.players.find((pp) => pp.id === id)!;
+          const sel = chosen === id;
+          return (
+            <button key={id} type="button" className={`tp-chip ${sel ? 'selected' : ''}`} aria-pressed={sel} onClick={() => tapTarget(id)}>
+              <PlayerAvatar p={p} size="xs" />
+              <span className="tp-name">{id === me ? t('game.you') : p.name}</span>
+              {sel && <Icon name="check-circle" className="size-4 tp-check" />}
+            </button>
+          );
+        })}
+      </div>
+      {a.type === 'police' && chosen && chosenP && (
+        <div className="tp-slots">
+          {chosen === me
+            ? (st.you?.cards || []).map((c, i) => (
+              <button key={i} type="button" className="tp-slot" onClick={() => tapTarget(chosen, i)}>
+                <span className="tp-slot-n">{i + 1}</span><span className="tp-slot-tx">{i18n.charName(c)}</span>
+              </button>
+            ))
+            : Array.from({ length: chosenP.cardCount }, (_, i) => (
+              <button key={i} type="button" className="tp-slot" onClick={() => tapTarget(chosen, i)}>
+                <span className="tp-slot-n">{i + 1}</span><span className="tp-slot-tx">{t('pick.slotN', { n: i + 1 })}</span>
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -82,11 +128,11 @@ export function Prompt() {
     const a = s.targeting; key = 'target';
     head = <><span className="strip-note">{t('prompt.target.strip', { name: CH[a.type as keyof typeof CH] ? cname(a.type) : t(`action.${a.type}.name`) })}</span><Button size="sm" variant="tertiary" onPress={cancelTargeting}>{t('prompt.cancel')}</Button></>;
     if (a.type === 'police') {
-      body = <><PickBanner text={s.targetId ? (s.targetId === me ? t('pick.own') : t('pick.slot', { name: pname(s.targetId) })) : t('pick.player')} /><Html as="div" className="p-sub" html={s.targetId ? i18n.html('prompt.target.police.slot', { owner: s.targetId === me ? t('prompt.owner.you') : t('prompt.owner.of', { name: pname(s.targetId) }) }) : t('prompt.target.police.pick')} /></>;
+      body = <><PickBanner text={s.targetId ? (s.targetId === me ? t('pick.own') : t('pick.slot', { name: pname(s.targetId) })) : t('pick.player')} /><Html as="div" className="p-sub" html={s.targetId ? i18n.html('prompt.target.police.slot', { owner: s.targetId === me ? t('prompt.owner.you') : t('prompt.owner.of', { name: pname(s.targetId) }) }) : t('prompt.target.police.pick')} /><TargetPicker /></>;
     } else if (a.type === 'colonel' && s.targetId) {
-      body = <><Html as="div" className="p-sub" html={i18n.html('prompt.target.colonel', { name: pname(s.targetId) })} /><PickBanner text={t('pick.guess')} />
+      body = <><Html as="div" className="p-sub" html={i18n.html('prompt.target.colonel', { name: pname(s.targetId) })} /><TargetPicker /><PickBanner text={t('pick.guess')} />
         <div className="p-cards picking">{CHARACTERS.map((c) => <GameCard key={c} c={c} w={72} small pick onPress={() => sendAction({ type: 'colonel', targetId: s.targetId, guess: c })} />)}</div></>;
-    } else body = <><PickBanner text={t('pick.player')} /><div className="p-sub">{t('prompt.target.tap')}</div></>;
+    } else body = <><PickBanner text={t('pick.player')} /><div className="p-sub">{t('prompt.target.tap')}</div><TargetPicker /></>;
   } else if (w && w.type === 'reaction' && w.bwMulti) {
     // Business Woman calls the bluff on the skimming Tax Men — all shown at once, each independently.
     // You never act on your own skim: only players with someone ELSE to challenge get buttons.
@@ -119,10 +165,19 @@ export function Prompt() {
     const canPass = !!(meP && meP.alive && w.eligible.includes(me) && !w.passed.includes(me));
     urgent = canChallenge || canBlock;
     key = 'react' + w.deadline;
+    // A claim with kind !== 'action' is a COUNTER (block / veto / tax): the reaction already happened,
+    // so the copy states it as a fact and the only real choice left is "let it pass" vs "call the bluff".
+    const isCounter = !!(w.claim && w.claim.kind !== 'action');
     let title = '', cardC: string | null = null;
     if (w.claim) {
       const c = w.claim; cardC = c.character;
-      title = i18n.html('prompt.claims', { name: pname(c.claimerId), character: cname(c.character) });
+      if (c.kind === 'veto') title = i18n.html('claim.veto', { name: pname(c.claimerId) });
+      else if (c.kind === 'tax') title = i18n.html('claim.tax', { name: pname(c.claimerId) });
+      else if (c.kind === 'block') {
+        const at = p!.action && p!.action.type;
+        const actionLabel = at && CH[at as keyof typeof CH] ? cname(at) : t(`action.${at}.name`);
+        title = i18n.html('claim.block', { name: pname(c.claimerId), character: cname(c.character), actor, action: actionLabel });
+      } else title = i18n.html('prompt.claims', { name: pname(c.claimerId), character: cname(c.character) });
     } else if (w.block && w.block.kind === 'veto') { title = i18n.html('prompt.loan.title', { name: actor }); }
     else if (w.block && w.block.kind === 'tax') { cardC = 'businesswoman'; title = i18n.html('prompt.bw.title', { name: actor }); }
     else { cardC = p!.action.character; title = i18n.html('prompt.proven.title', { name: actor, character: cname(p!.action.character) }); }
@@ -146,11 +201,20 @@ export function Prompt() {
         <div className="cm-who"><PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" /><Html as="span" className="cm-title" html={title} /></div>
         {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
         {canPass || canBlock || canChallenge ? (
+          isCounter ? (
+            // Counter layout: one big primary "Let it pass"; challenging stays legal but secondary.
+            <div className="cm-btns">
+              {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
+              {canPass && <button type="button" className="rx let-pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span></button>}
+              {canChallenge && <button type="button" className="cm-call-sub" onClick={challenge}><Icon name="danger-triangle" className="size-4" /><span>{t('prompt.bluff.btn')}</span></button>}
+            </div>
+          ) : (
           <div className="cm-btns">
             {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
             {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
             {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span></button>}
           </div>
+          )
         ) : (
           <div className="p-waiting">{w.claim && w.claim.claimerId === me ? t('prompt.waiting.mine') : t('prompt.waiting.others')} {t('prompt.passed', { n: w.passed.length, total: w.eligible.length })}</div>
         )}
@@ -167,12 +231,24 @@ export function Prompt() {
           </span>
           <span className="result-title">{w.kind === 'turn_end' ? t('result.turnEnd') : t('result.title')}</span>
         </div>
-        {w.kind === 'challenge' && d.result && (
-          <div className={`verdict-strip ${d.result === 'true' ? 'ok' : 'bad'}`}>
-            <span className="vstamp">{d.result === 'true' ? t('stamp.true') : t('stamp.bluff')}</span>
-            <Html className="vtext" html={boldNames(d.result === 'true' ? t('result.true', { claimer: pname(d.claimerId), character: cname(d.character), challenger: pname(d.challengerId) }) : t('result.bluff', { claimer: pname(d.claimerId), character: cname(d.character) }), [pname(d.claimerId), pname(d.challengerId), cname(d.character)])} />
-          </div>
-        )}
+        {w.kind === 'challenge' && d.result && (() => {
+          // Three unmistakable outcomes: caught lying (bad), truthful claim (ok), and — for the
+          // challenger themselves — a failed call (warn): the claim was true and the call cost them.
+          const ok = d.result === 'true';
+          const failedCall = ok && d.challengerId === me;
+          const cls = ok ? (failedCall ? 'warn' : 'ok') : 'bad';
+          const icon = ok ? (failedCall ? 'shield-warning' : 'reveal') : 'danger-triangle';
+          const headline = ok ? (failedCall ? t('verdict.failed') : t('verdict.true')) : t('verdict.bluff');
+          return (
+            <div className={`verdict-strip ${cls}`}>
+              <span className="vic"><Icon name={icon} className="size-5" /></span>
+              <div className="vcol">
+                <div className="vrow"><span className="vstamp">{ok ? t('stamp.true') : t('stamp.bluff')}</span><span className="vhead">{headline}</span></div>
+                <Html className="vtext" html={boldNames(ok ? t('result.true', { claimer: pname(d.claimerId), character: cname(d.character), challenger: pname(d.challengerId) }) : t('result.bluff', { claimer: pname(d.claimerId), character: cname(d.character) }), [pname(d.claimerId), pname(d.challengerId), cname(d.character)])} />
+              </div>
+            </div>
+          );
+        })()}
         <Timeline limit={8} />
         {w.kind === 'turn_end' && <div className="p-waiting">{t('result.next')}</div>}
       </>
