@@ -93,6 +93,30 @@ export function flyCard(fromId: string, mine = false, character?: string) {
   shake(seatEl(fromId));
   flashSeat(fromId, 'hit');
 }
+let arrowSeq = 0;
+/** Attack indicator: a red arrow draws itself from the attacker's seat to the target's seat. */
+export function attackArrow(fromId: string, toId: string) {
+  if (reducedMotion) return;
+  // my own seat never renders on the table — fall back to the card board, then screen centre
+  const pt = (id: string) => rectOf(seatEl(id)) || rectOf(document.getElementById('console')) || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  const a = pt(fromId), b = pt(toId); const fx = fxRoot();
+  const id = 'fxarr' + ++arrowSeq;
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) || 1;
+  const bend = Math.min(70, len * 0.22);
+  const qx = mx - (dy / len) * bend, qy = my + (dx / len) * bend; // curve control point, perpendicular to the line
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'fx-attack'); svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
+  svg.innerHTML = `<defs><marker id="${id}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" /></marker></defs>` +
+    `<path d="M ${a.x} ${a.y} Q ${qx} ${qy} ${b.x} ${b.y}" marker-end="url(#${id})" />`;
+  fx.appendChild(svg);
+  const path = svg.querySelector('path[marker-end]') as SVGPathElement;
+  const total = path.getTotalLength();
+  path.style.strokeDasharray = String(total);
+  path.animate([{ strokeDashoffset: total }, { strokeDashoffset: 0 }], { duration: 450, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' });
+  svg.animate([{ opacity: 1 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' }).onfinish = () => svg.remove();
+}
+
 export function stamp(pid: string, text: string, cls = '') {
   const a = anchor(pid); const s = document.createElement('div'); s.className = 'fx-stamp ' + cls; s.textContent = text; s.style.left = a.x + 'px'; s.style.top = (a.y - 10) + 'px'; fxRoot().appendChild(s);
   sfx.play('stamp'); setTimeout(() => s.remove(), 3600);
@@ -127,7 +151,7 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
   fresh.forEach((e, i) => setTimeout(() => {
     switch (e.type) {
       case 'coins': flyCoins(e.from, e.to, e.n); break;
-      case 'coup': sfx.clip('coup'); break;                       // someone paid 7 to strike
+      case 'coup': sfx.clip('coup'); if (e.targetId) attackArrow(e.playerId, e.targetId); break; // someone paid 7 to strike
       case 'card_lost':
         flyCard(e.playerId, e.playerId === me, e.character); cameraShake(document.getElementById('table'));
         if (e.playerId === me) shake(document.getElementById('console'));

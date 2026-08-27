@@ -198,7 +198,15 @@ export function Prompt() {
       <div className="claim-min" style={cardC ? { ['--c' as any]: CH[cardC as keyof typeof CH]?.color } : undefined}>
         <TimerBar deadline={w.deadline} total={total} />
         {cardC && <div className="cm-card"><GameCard c={cardC} w={76} small /></div>}
-        <div className="cm-who"><PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" /><Html as="span" className="cm-title" html={title} /></div>
+        {p!.action && p!.action.targetId && !isCounter ? (
+          // targeted attack: attacker → target, arrow marching between them
+          <div className="cm-vs">
+            <span className="cm-vs-side"><PlayerAvatar p={pl(p!.action.actorId)} size="sm" /><b>{pname(p!.action.actorId)}</b></span>
+            <span className="cm-vs-arrow" aria-hidden="true"><Icon name="alt-arrow-right" className="size-4" /><Icon name="alt-arrow-right" className="size-4" /><Icon name="alt-arrow-right" className="size-4" /></span>
+            <span className="cm-vs-side"><PlayerAvatar p={pl(p!.action.targetId)} size="sm" /><b>{pname(p!.action.targetId)}</b></span>
+          </div>
+        ) : null}
+        <div className="cm-who">{!(p!.action && p!.action.targetId && !isCounter) && <PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" />}<Html as="span" className="cm-title" html={title} /></div>
         {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
         {canPass || canBlock || canChallenge ? (
           isCounter ? (

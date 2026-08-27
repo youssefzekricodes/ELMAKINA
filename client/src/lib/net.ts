@@ -6,7 +6,7 @@ import { supabase, supabaseConfigured } from './supabase';
 import { store, customAvatars, type Profile, type Room } from './store';
 import { i18n, t } from '../i18n';
 import { sfx } from './sfx';
-import { processEvents, resetEvents, banner } from './fx';
+import { processEvents, resetEvents, banner, attackArrow } from './fx';
 import { voiceOnRoomGone } from './voice';
 import { initSocial, syncProfile } from './social';
 import { validTargets } from './rules';
@@ -85,6 +85,9 @@ function applyView(v: any) {
       const nm = (v.players.find((p: any) => p.id === rw.claim.claimerId) || {}).name || '?';
       banner(t(rw.claim.kind === 'action' ? 'banner.claim' : 'banner.counter', { name: nm, character: i18n.charName(rw.claim.character) }), 'sm');
     }
+    // targeted attack (thief steals X, terrorist hits X…): draw the attacker → target arrow on the table
+    const act = v.pending.action;
+    if (hadState && rw.claim.kind === 'action' && act && act.targetId) attackArrow(act.actorId, act.targetId);
   }
   scheduleTick(v);
 }
