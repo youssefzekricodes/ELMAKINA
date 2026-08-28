@@ -68,7 +68,8 @@ export function Table() {
           <span className="bank-lbl">{t('game.bank')}</span>
         </div>
       </div>
-      <div className={`seats ${s.targeting ? 'targeting' : ''}`}>
+      {/* data-n = how many opponents are on screen: phones use it to keep every seat on ONE row (3/4/5 across). */}
+      <div className={`seats ${s.targeting ? 'targeting' : ''}`} data-n={opponents.length}>
         {opponents.map((p, i) => {
           const a = ((angles[i] !== undefined ? angles[i] : -90) * Math.PI) / 180;
           const isTurn = st.turnPlayerId === p.id && st.phase === 'playing';

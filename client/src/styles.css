@@ -1158,7 +1158,7 @@
 
   /* responsive */
   @media (max-width: 1023px) {
-    .game-grid, .game-grid.log-collapsed { grid-template-columns: 1fr; grid-template-areas: "table" "console"; min-height: 0; }
+    .game-grid, .game-grid.log-collapsed { grid-template-columns: minmax(0, 1fr); grid-template-areas: "table" "console"; min-height: 0; }
   }
   @media (max-width: 760px) {
     .topbar { padding: 6px 8px; gap: 6px; }
@@ -1166,31 +1166,65 @@
     .room-code, .leave-tx, .net-tx { display: none; }           /* code lives on the lobby screen; Leave becomes icon-only so the topbar fits */
     .topbar-right { gap: 3px; }                         /* tighten so the labelled guide button fits without overflow */
     .guide-btn { padding-inline: 8px; }
-    /* the page scrolls as one column so the actions below the fold are always reachable */
-    .game-screen { padding: 8px 8px calc(8px + var(--sab)); }
-    .game-grid, .game-grid.log-collapsed { min-height: 0; }
-    .table-area { min-height: 0; height: auto; padding: 10px 10px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; gap: 10px; }
-    /* compact centre strip so the opponents + your actions stay above the fold with 6 players */
-    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 22px); height: 122px; border-radius: 26px; margin: 8px auto 4px; gap: 16px; box-shadow: 0 0 0 8px #4a3016, 0 0 0 10px #241505, inset 0 3px 20px rgba(0,0,0,.35), 0 18px 44px rgba(0,0,0,.55); }
-    .felt::before { inset: 10px; border-radius: 18px; }
+    /* ── ONE-SCREEN PHONE LAYOUT ───────────────────────────────────────────────
+       The in-game app owns exactly the viewport and nothing scrolls vertically.
+       Height budget (= 100dvh):
+         topbar ~51px + 8px screen padding
+         + TABLE row  (felt + exactly ONE row of opponents)   ← the flexible minmax(0,1fr)
+         + 6px gap
+         + CONSOLE row (status line + My-cards strip + action row) ← `auto`, never squeezed
+         + var(--sab)
+       The console row is `auto`, so the action cards keep their size and the felt +
+       seats absorb any slack. The only scroller left is the horizontal action row. */
+    .app.in-game { height: 100vh; height: 100dvh; max-height: 100dvh; overflow: hidden; }
+    .topbar { flex-shrink: 0; }
+    .app.in-game .game-screen { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 4px 6px calc(4px + var(--sab)); }
+    .game-grid, .game-grid.log-collapsed { flex: 1 1 auto; min-height: 0; height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 6px; }
+
+    /* table region — felt over a single row of seats, both centred in whatever height is left.
+       overflow stays VISIBLE so the claim badges / "tap" pills that hang above a seat aren't cut off;
+       .game-screen above is the hidden one, so nothing can ever scroll the page. */
+    .table-area { min-height: 0; height: auto; padding: 10px 2px 2px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; justify-content: center; gap: 4px; overflow: visible; }
     .table-area::after { display: none; }
-    .table-logo { width: 42px; height: 42px; }
-    .deck { width: 40px; height: 62px; } .deck .cardback { width: 40px; }
-    .bank .pile { width: 50px; height: 38px; } .bank .pile img { width: 24px; height: 24px; }
-    /* opponents as small, dense cards — 3 across so up to 5 fit in two short rows */
-    .seats { position: relative; inset: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; gap: 3px; padding: 8px 5px 7px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
+    .felt { position: relative; left: auto; top: auto; transform: none; flex: 0 0 auto; width: calc(100% - 24px); height: 88px; border-radius: 22px; margin: 0 auto 8px; gap: 14px; box-shadow: 0 0 0 8px #4a3016, 0 0 0 10px #241505, inset 0 3px 20px rgba(0,0,0,.35), 0 18px 44px rgba(0,0,0,.55); }
+    .felt::before { inset: 9px; border-radius: 15px; }
+    .table-logo { width: 40px; height: 40px; }
+    .deck { width: 38px; height: 58px; } .deck .cardback { width: 38px; }
+    .deck-n { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; inset-inline-end: -10px; bottom: -8px; }
+    .bank .pile { width: 46px; height: 34px; } .bank .pile img { width: 22px; height: 22px; }
+    .bank .pile img:nth-child(1) { left: 0; top: 12px; } .bank .pile img:nth-child(2) { left: 14px; top: 13px; } .bank .pile img:nth-child(3) { left: 26px; top: 10px; }
+    .bank .pile img:nth-child(4) { left: 6px; top: 3px; } .bank .pile img:nth-child(5) { left: 20px; top: 2px; } .bank .pile img:nth-child(6) { left: 13px; top: -4px; }
+    .bank-lbl { font-size: 8.5px; letter-spacing: .1em; }
+    /* opponents: ALWAYS one row. 3 columns up to three of them, then 4- and 5-across
+       (data-n is set by Table.tsx) — two rows of seats never fit next to the card hand. */
+    .seats { position: relative; inset: auto; flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; align-content: center; justify-content: center; }
+    .seats[data-n="1"] { grid-template-columns: minmax(0, 170px); }
+    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 160px)); }
+    .seats[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .seats[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; min-width: 0; gap: 2px; padding: 5px 3px 4px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
     .seat.targetable:hover { transform: none; }
     .seat.turn { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
-    .seat .av-wrap { margin-bottom: 8px; }
-    .seat .pavatar { width: 42px !important; height: 42px !important; }
-    .seat .nm { font-size: 10.5px; max-width: 100%; }
-    .seat .coins { font-size: 10px; padding: 1px 6px 1px 4px; }
+    .seat .av-wrap { margin-bottom: 7px; }
+    .seat .pavatar { width: 40px !important; height: 40px !important; }
+    .seats[data-n="5"] .seat .pavatar { width: 36px !important; height: 36px !important; }
+    .seat .nm { font-size: 9.5px; line-height: 1.25; max-width: 100%; padding: 0; }
+    .seat .coins { font-size: 9.5px; padding: 0 5px 0 3px; }
+    .seat .coins img { width: 12px; height: 12px; }
     .seat .bot-chip { display: none; }
-    .seat .hand { min-height: 0; gap: 2px; }
-    .seat .hand .cardback { width: 15px; }
-    .seat .lamp { width: 9px; height: 9px; }
+    /* the card-back row keeps the felt-dock look but drops the desktop dock's 22px of padding —
+       that padding alone was ~1/5 of the seat card's height */
+    .seat .hand { min-height: 0; gap: 2px; padding: 2px 4px; border-radius: 8px; }
+    .seat .hand .cardback { width: 12px; }
+    /* police slot-pick blows the card-backs up to a real tap target: shrink the felt for the
+       duration so the taller seat still fits the table region instead of spilling on the console */
+    .table-area:has(.seat.picking) .felt { height: 64px; }
+    .seat .lamp { width: 8px; height: 8px; border-width: 1.5px; right: 0; bottom: 2px; }
     .seat .status { min-height: 0; }
+    /* the floating overlays on a seat must not widen a 5-across column */
+    .seat .claim-badge { width: 24px; top: -24px; }
+    .seat .seat-status { max-width: calc(100% + 14px); font-size: 9px; padding: 2px 6px 2px 5px; bottom: -9px; }
+    .seat .target-tap { font-size: 8.5px; padding: 2px 6px; top: -11px; }
     .seat.me { display: none; }
     .banner { position: fixed; font-size: 40px; }
     /* stack the console with the ACTIONS on top (column-reverse) so new players see the buttons first,
@@ -1198,37 +1232,61 @@
     .hand-row { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
     .hand { justify-content: center; gap: 8px; }
     .hand .gcard { width: min(22vw, 88px) !important; }
-    /* "My cards" stays a thin strip on phones so the action row is still above the fold */
-    .my-cards { padding: 5px 8px 6px; border-radius: 12px; gap: 2px; }
-    .mc-head { gap: 8px; }
-    .mc-label { font-size: 9.5px; letter-spacing: .1em; }
-    .mc-chars { font-size: 10px; padding: 2px 8px; }
-    .mc-hand { gap: 7px; padding: 2px 2px 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    /* ── console region: a fixed three-part stack, all of it on screen at once ── */
+    .console { min-height: 0; gap: 6px !important; padding: 0 !important; }
+    /* status strip on ONE line: coins + whose turn + countdown. The "YOUR HAND" caption and the
+       max/deck readout are dropped — the deck count is already printed on the felt and the strip
+       right below is labelled "My cards". */
+    .console-top { align-self: stretch; width: 100%; flex-wrap: nowrap; gap: 8px; padding: 3px 10px; margin-bottom: 0; }
+    .ct-title, .ct-deck { display: none; }
+    .ct-meta { gap: 8px; flex-shrink: 0; min-width: 0; }
+    .me-coins { transform: none; font-size: 16px; }
+    .me-coins img { width: 19px; height: 19px; }
+    .status-line { flex-wrap: nowrap; min-width: 0; overflow: hidden; gap: 7px; font-size: 12px; }
+    .status-line > span:not([class]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .countdown { flex-shrink: 0; padding: 2px 8px 2px 2px; gap: 5px; }
+    .countdown-clock { width: 18px; height: 18px; }
+    .countdown-body { min-width: 40px; gap: 2px; }
+    .countdown-num { font-size: 12px; }
+    .countdown-unit { font-size: 9px; }
+    /* "My cards" — your real grip as one low strip: caption on the lead edge, cards beside it
+       (duplicates still show twice). Sized off the viewport height so it shrinks on short phones. */
+    .my-cards { align-self: stretch; flex-direction: row; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 12px; }
+    .mc-head { flex-direction: column; align-items: flex-start; gap: 3px; flex-shrink: 0; }
+    .mc-label { font-size: 9px; letter-spacing: .08em; }
+    .mc-chars { font-size: 9.5px; padding: 1px 7px; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 7px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
-    .my-cards .hand .gcard { width: 56px !important; }
+    .my-cards .hand .gcard { width: 40px !important; }
     .mc-hand .hand-card { gap: 3px; flex-shrink: 0; }
-    .mc-hand .hc-name { max-width: 62px; font-size: 8.5px; }
+    .mc-hand .hc-name { max-width: 60px; font-size: 8px; }
     /* phone card hand: one swipeable row — upright cards on a subtle arc (no tilt), horizontal
-       scroll only, free momentum so one flick can reach the end. Your cards are sorted first. */
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 9px; padding: 24px 16px 10px; margin-inline: -2px; scrollbar-width: none; }
+       scroll only, free momentum so one flick can reach the end. Card size follows the viewport
+       height so the whole row always fits under the table. The trailing inline padding is the
+       parking space that lets you scroll the last card clear of the floating emoji button. */
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 16px 14px 6px; padding-inline-end: 58px; margin-inline: -2px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
-    .board-card { width: 98px; flex-shrink: 0; transform: var(--fan, none); }
-    /* subtle arc via height only — cards stay upright */
+    .board-card { width: 78px; flex-shrink: 0; transform: var(--fan, none); }
+    /* subtle arc via height only — cards stay upright (kept shallow: the row clips on the y axis) */
     .board-card:nth-child(1)  { --fan: translateY(0); }
-    .board-card:nth-child(2)  { --fan: translateY(2px); }
-    .board-card:nth-child(3)  { --fan: translateY(4px); }
-    .board-card:nth-child(4)  { --fan: translateY(6px); }
-    .board-card:nth-child(5)  { --fan: translateY(7px); }
-    .board-card:nth-child(6)  { --fan: translateY(8px); }
-    .board-card:nth-child(7)  { --fan: translateY(8px); }
-    .board-card:nth-child(8)  { --fan: translateY(9px); }
-    .board-card:nth-child(9)  { --fan: translateY(9px); }
-    .board-card:nth-child(10) { --fan: translateY(10px); }
+    .board-card:nth-child(2)  { --fan: translateY(1px); }
+    .board-card:nth-child(3)  { --fan: translateY(2px); }
+    .board-card:nth-child(4)  { --fan: translateY(3px); }
+    .board-card:nth-child(5)  { --fan: translateY(4px); }
+    .board-card:nth-child(6)  { --fan: translateY(4px); }
+    .board-card:nth-child(7)  { --fan: translateY(4px); }
+    .board-card:nth-child(8)  { --fan: translateY(5px); }
+    .board-card:nth-child(9)  { --fan: translateY(5px); }
+    .board-card:nth-child(10) { --fan: translateY(5px); }
     /* your framed cards still lift above the row */
-    .board-card.owned { transform: var(--fan, none) translateY(-9px); z-index: 2; }
-    .board-card.off.owned { transform: var(--fan, none) translateY(-9px); }
+    .board-card.owned { transform: var(--fan, none) translateY(-8px); z-index: 2; }
+    .board-card.off.owned { transform: var(--fan, none) translateY(-8px); }
     .board-card:not(.off):hover { transform: var(--fan, none) translateY(-5px); }
-    .bc-name { font-size: 11.5px; }
+    .bc-name { font-size: 11px; }
+    .bc-why { font-size: 8.5px; line-height: 1; }
+    /* the emoji launcher shrinks so it covers as little of the card row as possible */
+    .react-launch { width: 42px; height: 42px; }
+    .react-dock { bottom: calc(10px + var(--sab)); }
     .actions { width: 100%; }
     .act-grid.claims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     /* basic actions: full-width rows, all the same size, icon + text + cost aligned in one row */
@@ -1260,54 +1318,122 @@
     .invite-copy { width: 100%; }
     .seat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .ivc { min-width: 34px; height: 46px; font-size: 27px; }
+    /* Viewport-height-driven sizing: the felt, your grip and the action cards all grow with the
+       screen so the same one-screen budget holds from a 640px-tall phone up to an 844px one.
+       Kept in @supports (and NOT as a duplicate declaration) because the CSS minifier drops
+       same-property fallbacks — pre-dvh webviews keep the plain px sizes declared above. */
+    @supports (height: 1dvh) {
+      .felt { height: clamp(76px, 13.5dvh, 122px); }
+      .my-cards .hand .gcard { width: clamp(38px, 6.2dvh, 54px) !important; }
+      .board-card { width: clamp(64px, 13.8dvh, 96px); }
+    }
   }
   @media (max-width: 420px) {
-    .seats { gap: 6px; }                       /* keep 3 compact columns even on small phones */
-    .seat .pavatar { width: 38px !important; height: 38px !important; }
-    .seat .hand .cardback { width: 13px; }
+    /* narrow phones: the seat row still has to hold five columns, so trim the seat card itself */
+    .seats { gap: 4px; }
+    .seat { padding: 4px 2px 3px; }
+    .seat .pavatar { width: 36px !important; height: 36px !important; }
+    .seats[data-n="5"] .seat .pavatar { width: 32px !important; height: 32px !important; }
+    .seat .nm { font-size: 9px; }
+    .seat .coins { font-size: 9px; }
+    .seat .coins img { width: 11px; height: 11px; }
+    .seat .hand .cardback { width: 11px; }
+    .mc-label { font-size: 8.5px; }
+    .table-area:has(.seat.picking) .felt { height: 52px; }
     .hand .gcard { width: min(40vw, 100px) !important; }
     .brand-word { display: none; }
   }
 
-  /* ── landscape phones: short height — compress everything so the table + card hand fit ── */
+  /* ── landscape phones: very short but very wide — the felt moves BESIDE the seats so the
+     table costs one seat-height instead of two, which buys the card row its full size ── */
   @media (orientation: landscape) and (max-height: 520px) {
-    .topbar { padding: 4px 8px; }
+    .topbar { padding: 3px 8px; flex-shrink: 0; }
     .brand-word { display: none; }
-    .game-screen { height: auto; min-height: 0; padding: 4px 8px calc(4px + var(--sab)); overflow-y: auto; }
-    .game-grid, .game-grid.log-collapsed { grid-template-columns: 1fr; grid-template-areas: "table" "console"; min-height: 0; }
-    .table-area { min-height: 0; height: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; border-radius: var(--radius-2xl); }
+    .game-screen { height: auto; min-height: 0; overflow-y: auto; padding: 3px 8px calc(3px + var(--sab)); }
+    /* felt on the lead edge, the single row of opponents filling the rest of the width */
+    .table-area { min-height: 0; height: auto; padding: 2px 8px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; border-radius: var(--radius-2xl); overflow: visible; }
     .table-area::after { display: none; }
-    .felt { position: relative; left: auto; top: auto; transform: none; width: calc(100% - 18px); height: 70px; border-radius: 20px; margin: 6px auto 2px; gap: 12px; box-shadow: 0 0 0 6px #4a3016, 0 0 0 8px #241505, inset 0 2px 14px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.5); }
-    .felt::before { inset: 8px; border-radius: 14px; }
-    .table-logo { width: 36px; height: 36px; }
-    .deck { width: 34px; height: 52px; } .deck .cardback { width: 34px; }
-    .seats { position: relative; inset: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; gap: 2px; padding: 6px 4px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
+    .felt { position: relative; left: auto; top: auto; transform: none; flex: 0 0 auto; width: min(32%, 250px); height: 62px; border-radius: 18px; margin: 0; gap: 12px; box-shadow: 0 0 0 6px #4a3016, 0 0 0 8px #241505, inset 0 2px 14px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.5); }
+    .felt::before { inset: 7px; border-radius: 12px; }
+    .table-logo { width: 30px; height: 30px; }
+    .deck { width: 30px; height: 46px; } .deck .cardback { width: 30px; }
+    .deck-n { min-width: 20px; height: 20px; padding: 0 5px; font-size: 10px; inset-inline-end: -9px; bottom: -7px; }
+    .bank .pile { width: 42px; height: 30px; } .bank .pile img { width: 20px; height: 20px; }
+    .bank .pile img:nth-child(1) { left: 0; top: 10px; } .bank .pile img:nth-child(2) { left: 12px; top: 11px; } .bank .pile img:nth-child(3) { left: 23px; top: 9px; }
+    .bank .pile img:nth-child(4) { left: 5px; top: 2px; } .bank .pile img:nth-child(5) { left: 18px; top: 1px; } .bank .pile img:nth-child(6) { left: 11px; top: -4px; }
+    .bank-lbl { font-size: 8px; }
+    .seats { position: relative; inset: auto; flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-content: center; justify-content: center; }
+    .seats[data-n="1"] { grid-template-columns: minmax(0, 180px); }
+    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 170px)); }
+    .seats[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .seats[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; min-width: 0; gap: 2px; padding: 4px 4px 3px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
     .seat.targetable:hover, .seat.picking .hand .cardback:hover { transform: none; }
-    .seat .av-wrap { margin-bottom: 4px; }
+    .seat .av-wrap { margin-bottom: 6px; }
     .seat .pavatar { width: 34px !important; height: 34px !important; }
-    .seat .nm { font-size: 9px; max-width: 100%; }
-    .seat .coins { font-size: 9px; }
-    .seat .bot-chip, .seat .status { display: none; }
-    .seat .hand .cardback { width: 13px; }
+    .seat .nm { font-size: 9px; line-height: 1.2; max-width: 100%; padding: 0; }
+    .seat .coins { font-size: 9px; padding: 0 5px 0 3px; }
+    .seat .coins img { width: 11px; height: 11px; }
+    .seat .bot-chip { display: none; }
+    .seat .status { min-height: 0; }
+    .seat .hand { min-height: 0; gap: 2px; padding: 2px 4px; border-radius: 8px; }
+    .seat .hand .cardback { width: 11px; }
+    .seat .lamp { width: 8px; height: 8px; border-width: 1.5px; right: 0; bottom: 2px; }
+    .seat .claim-badge { width: 22px; top: -22px; }
+    .seat .seat-status { max-width: calc(100% + 12px); font-size: 8.5px; padding: 2px 5px; bottom: -8px; }
+    .seat .target-tap { font-size: 8px; padding: 2px 5px; top: -10px; }
     .seat.me { display: none; }
     /* the card hand: one swipeable row on a wide-but-short screen */
-    .console-top { padding: 3px 9px; }
-    .my-cards { padding: 3px 8px 4px; border-radius: 11px; gap: 1px; }
-    .mc-label { font-size: 9px; }
-    .mc-hand { gap: 6px; padding: 1px 2px 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-    .my-cards .hand .gcard { width: 44px !important; }
+    .console { min-height: 0; gap: 4px !important; padding: 0 !important; }
+    .console-top { align-self: stretch; width: 100%; flex-wrap: nowrap; gap: 8px; padding: 2px 9px; margin-bottom: 0; }
+    .ct-title, .ct-deck { display: none; }
+    .status-line { flex-wrap: nowrap; min-width: 0; overflow: hidden; gap: 7px; font-size: 11.5px; }
+    .status-line > span:not([class]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .me-coins { transform: none; font-size: 15px; }
+    .me-coins img { width: 18px; height: 18px; }
+    .countdown { flex-shrink: 0; padding: 1px 8px 1px 2px; gap: 5px; }
+    .countdown-clock { width: 16px; height: 16px; }
+    .countdown-body { min-width: 38px; gap: 2px; }
+    .countdown-num { font-size: 11px; }
+    .countdown-unit { font-size: 9px; }
+    .my-cards { align-self: stretch; flex-direction: row; align-items: center; padding: 3px 8px; border-radius: 11px; gap: 8px; }
+    .mc-head { flex-direction: column; align-items: flex-start; gap: 2px; flex-shrink: 0; }
+    .mc-label { font-size: 8.5px; }
+    .mc-chars { font-size: 9px; padding: 1px 6px; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 6px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .my-cards .hand .gcard { width: 34px !important; }
     .mc-hand .hand-card { gap: 2px; flex-shrink: 0; }
     .mc-hand .hc-name { max-width: 52px; font-size: 8px; }
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 20px 12px 8px; scrollbar-width: none; }
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 14px 12px 5px; padding-inline-end: 56px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
-    .board-card { width: 76px; flex-shrink: 0; transform: var(--fan, none); }
+    .board-card { width: 72px; flex-shrink: 0; transform: var(--fan, none); }
     .board-card:nth-child(n)  { --fan: translateY(0); }
-    .board-card.owned { transform: var(--fan, none) translateY(-8px); z-index: 2; }
-    .board-card.off.owned { transform: var(--fan, none) translateY(-8px); }
+    .board-card.owned { transform: var(--fan, none) translateY(-7px); z-index: 2; }
+    .board-card.off.owned { transform: var(--fan, none) translateY(-7px); }
     .bc-name { font-size: 10px; }
     .bc-why { display: none; }
-    .banner { font-size: 34px; }
+    .banner { position: fixed; font-size: 34px; }
+    .react-launch { width: 40px; height: 40px; }
+    .react-dock { bottom: calc(8px + var(--sab)); }
+    @supports (height: 1dvh) {
+      .felt { height: clamp(58px, 19dvh, 92px); }
+      .my-cards .hand .gcard { width: clamp(30px, 8dvh, 46px) !important; }
+      .board-card { width: clamp(58px, 22dvh, 96px); }
+    }
+  }
+  /* Phone-sized landscape only: there the log is a drawer, so the grid really is one column and
+     the whole game can be locked to one screen exactly like portrait. A wider short window (a
+     squashed desktop) still shows the log panel in its own grid column, so it keeps the old
+     scrolling flow rather than being clipped. */
+  @media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
+    .app.in-game { height: 100vh; height: 100dvh; max-height: 100dvh; overflow: hidden; }
+    .app.in-game .game-screen { flex: 1 1 auto; min-height: 0; height: auto; overflow: hidden; }
+    .game-grid, .game-grid.log-collapsed { flex: 1 1 auto; min-height: 0; height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "table" "console"; gap: 4px; }
+  }
+  /* under ~430px of height there is genuinely no room for both the My-cards strip and a legible
+     card row: drop the strip — the same cards stay gold-framed and badged "YOURS ×n" in the row. */
+  @media (orientation: landscape) and (max-height: 430px) {
+    .my-cards { display: none; }
   }
 
   /* ── touch targets on phones (portrait or landscape): nothing interactive below ~44px tall ── */
@@ -1318,8 +1444,10 @@
     /* police slot-picking on an opponent seat: keep the card-backs tappable but small enough
        for the 3-across seat grid — and let them wrap instead of blowing the column open.
        (The prompt's .tp-slot buttons are the primary affordance now.) */
-    .seat.picking .hand { flex-wrap: wrap; }
-    .seat.picking .hand .cardback { width: 34px; }
+    /* 28 x ~46px card-backs stay a real tap target; they overhang the narrow 5-across seat card by a
+       few px rather than wrapping onto a second row (which would double the height of the seat row). */
+    .seat.picking .hand { flex-wrap: nowrap; padding-inline: 0; margin-inline: -7px; }
+    .seat.picking .hand .cardback { width: 28px; }
     /* chips can go edge-to-edge inside the narrow prompt */
     .tp-chip { flex: 1 1 auto; justify-content: center; }
   }
