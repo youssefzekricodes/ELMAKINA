@@ -705,10 +705,12 @@
   .win-actions { display: flex; flex-direction: column; align-items: stretch; gap: 9px; width: min(280px, 100%); margin-top: 14px; }
   .win-actions > button { width: 100%; min-height: 48px; justify-content: center; gap: 8px; }
   .win-actions > button svg { flex-shrink: 0; }
-  .win-close { color: rgba(201,188,164,.8); border-color: rgba(255,240,214,.16); }
-  .win-close:hover, .win-close:focus-visible { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 10%, transparent); }
-  .win-leave { color: #C9BCA4; border-color: rgba(255,240,214,.22); }
-  .win-leave:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  /* three distinct colours: New game = accent (primary), Leave = gold (only affects you),
+     Close room = red (destroys the room for everyone) */
+  .win-leave { color: #E8C06A; border-color: color-mix(in srgb, var(--gold) 48%, transparent); }
+  .win-leave:hover, .win-leave:focus-visible { color: #F6DE9A; border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
+  .win-close { color: color-mix(in srgb, var(--danger) 72%, #F3E9D6); border-color: color-mix(in srgb, var(--danger) 42%, transparent); }
+  .win-close:hover, .win-close:focus-visible { color: #fff; border-color: var(--danger); background: color-mix(in srgb, var(--danger) 22%, transparent); }
   .prompt-end .standings li.is-out { opacity: .6; }
   .win-av-wrap .win-av { box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px var(--background), 0 0 30px color-mix(in srgb, var(--gold) 30%, transparent); }
   .win-crown { position: absolute; top: -20px; left: 50%; transform: translateX(-50%) rotate(-3deg); z-index: 2; color: var(--gold); filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); animation: bounce-y 1.6s ease-in-out infinite; }
