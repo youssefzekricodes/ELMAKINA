@@ -2,7 +2,7 @@ import { Badge, Button, Chip, Tooltip } from '@heroui/react';
 import { IMG } from '../theme';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { leaveRoom, setLanguage, toggleSound } from '../lib/net';
+import { leaveRoom, setLanguage } from '../lib/net';
 import { Icon } from './ui';
 
 function IconButton({ label, icon, onPress, className = '' }: { label: string; icon: string; onPress: () => void; className?: string }) {
@@ -41,7 +41,6 @@ export function TopBar() {
           <Button variant="tertiary" size="sm" onPress={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} className="font-semibold">{t('top.lang')}</Button>
           <Tooltip.Content>{t('top.lang.title')}</Tooltip.Content>
         </Tooltip>
-        <IconButton label={t('top.sound')} icon={s.soundOn ? 'volume-loud' : 'volume-cross'} onPress={toggleSound} />
         <Tooltip delay={400}>
           <Button variant="outline" size="sm" onPress={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} className="guide-btn">
             <Icon name="card-recive" className="size-4" /><span className="guide-btn-tx">{t('top.chars')}</span>
