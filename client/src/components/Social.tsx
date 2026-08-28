@@ -9,6 +9,8 @@ import { Icon, PlayerAvatar } from './ui';
 
 const asPlayer = (uid: string, avatar: string | null, avatarData: string | null) => ({ id: uid, avatar: avatar || 'boy-1', avatarData, color: null });
 const home = () => store.set({ screen: 'home' });
+/** Dismiss a sheet. Without this, `close` fell through to window.close() and did nothing. */
+const closeSheet = () => store.set({ modal: null });
 
 function PageHead({ icon, title }: { icon: string; title: string }) {
   return (
@@ -109,11 +111,11 @@ export function InviteModal() {
   const friends = s.friends.filter((f) => f.status === 'accepted');
   const invite = async (uid: string) => { if (!code) return; const r = await inviteToRoom(uid, code); if (r.ok) { setSent((m) => ({ ...m, [uid]: true })); notify(t('invite.sent'), true); } };
   return (
-    <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label={t('invite.title')} onClick={close}>
+    <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label={t('invite.title')} onClick={closeSheet}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h2 className="sheet-title"><Icon name="user-plus-rounded" className="size-5" />{t('invite.title')}</h2>
-          <button type="button" className="sheet-x" onClick={close} aria-label={t('preview.cancel')}><Icon name="close-circle" className="size-5" /></button>
+          <button type="button" className="sheet-x" onClick={closeSheet} aria-label={t('preview.cancel')}><Icon name="close-circle" className="size-5" /></button>
         </div>
         <div className="sheet-body">
           {friends.length === 0 ? <p className="sheet-empty">{t('invite.none')}</p> : friends.map((f) => (

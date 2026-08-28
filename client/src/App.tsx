@@ -37,7 +37,7 @@ export default function App() {
     for (const c of CHARACTERS) { new Image().src = CH[c].card; new Image().src = CH[c].cardSm; }
     connect();
     (window as any).__mekina = { store }; // debugging hook (inspect / inject state from the console)
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') store.set({ logOpen: false }); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') store.set({ logOpen: false, modal: null }); }; // Esc also dismisses any sheet
     document.addEventListener('keydown', esc);
     return () => document.removeEventListener('keydown', esc);
   }, []);
