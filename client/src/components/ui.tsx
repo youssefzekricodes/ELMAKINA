@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Avatar } from '@heroui/react';
 import { ICONS } from '../icons';
 import { CH, IMG, type CharacterId } from '../theme';
-import { avatarSrc } from '../lib/store';
+import { avatarSrc, setLearn, useStore } from '../lib/store';
 import { i18n, t } from '../i18n';
 import { useCountdown } from '../lib/hooks';
 import { sfx } from '../lib/sfx';
@@ -131,5 +131,23 @@ export function SoundWaves({ className = '', bars = 4 }: { className?: string; b
     <span className={`waves ${className}`} aria-hidden="true">
       {Array.from({ length: bars }, (_, i) => <span key={i} className="wave-bar" style={{ animationDelay: `${i * 0.12}s` }} />)}
     </span>
+  );
+}
+
+/** Persistent "learning mode" switch — coach-marks + card rules in every game. Shown on Home and in the Guide. */
+export function LearnToggle({ className = '' }: { className?: string }) {
+  const on = useStore().learn;
+  return (
+    <button
+      type="button" role="switch" aria-checked={on} aria-label={t('learn.title')}
+      className={`learn-toggle ${on ? 'on' : ''} ${className}`} onClick={() => setLearn(!on)}
+    >
+      <span className="lt-ic"><Icon name="hand-stars" className="size-4" /></span>
+      <span className="lt-tx">
+        <span className="lt-t">{t('learn.title')}</span>
+        <span className="lt-s">{t('learn.sub')}</span>
+      </span>
+      <span className="lt-sw" aria-hidden="true"><span className="lt-knob" /></span>
+    </button>
   );
 }

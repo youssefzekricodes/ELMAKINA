@@ -1,9 +1,9 @@
 /* Guided-play tour: coach-marks that spotlight your cards and the action buttons during a real
-   solo game. Active while store.tour is set. The dark backdrop is click-through (pointer-events:none)
+   solo game. Active while store.tour is set OR learning mode is on. The dark backdrop is click-through (pointer-events:none)
    so gameplay is never blocked — only the coach card itself is interactive. */
 import { useEffect, useState } from 'react';
 import { t } from '../i18n';
-import { useStore } from '../lib/store';
+import { isCoaching, useStore } from '../lib/store';
 import { Icon } from './ui';
 
 // Shown in order; each tip appears the first time its target exists and hasn't been dismissed.
@@ -30,7 +30,7 @@ function unionRect(sel: string): DOMRect | null {
 export function Tour() {
   const s = useStore();
   const meP = s.state?.players?.find((p) => p.id === s.me);
-  const active = !!(s.tour && s.screen === 'game' && meP && meP.alive); // stop coaching once eliminated / spectating
+  const active = !!(isCoaching(s) && s.screen === 'game' && meP && meP.alive); // guide tour OR learning mode; stop once eliminated / spectating
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [cur, setCur] = useState<string | null>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);

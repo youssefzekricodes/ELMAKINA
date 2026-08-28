@@ -2,16 +2,16 @@
 import { useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
-import { store, useStore } from '../lib/store';
+import { isCoaching, store, useStore } from '../lib/store';
 import { Icon } from './ui';
 
 const KEY = 'mekina.coachSeen';
 const seen = () => { try { return localStorage.getItem(KEY) === '1'; } catch { return true; } };
 
 export function Coach() {
-  const tour = useStore().tour;
+  const s = useStore();
   const [open, setOpen] = useState(!seen());
-  if (!open || tour) return null; // the guided tour is its own tutorial — don't double up
+  if (!open || s.tour) return null; // the guide's practice tour is its own tutorial — don't double up
   const dismiss = () => { try { localStorage.setItem(KEY, '1'); } catch { /* ignore */ } setOpen(false); };
   const tips: [string, string][] = [
     ['users-room', t('coach.hand')],
@@ -31,6 +31,12 @@ export function Coach() {
             <li key={i}><span className="coach-ic"><Icon name={icon} className="size-4" /></span><span>{text}</span></li>
           ))}
         </ul>
+        {/* learning mode: the character reference is one tap away before you play a single card */}
+        {isCoaching(s) && (
+          <button type="button" className="coach-chars" onClick={() => { dismiss(); store.set({ modal: 'chars' }); }}>
+            <Icon name="card-recive" className="size-4" />{t('chars.title')}
+          </button>
+        )}
         <div className="coach-actions">
           <Button variant="tertiary" onPress={() => { dismiss(); store.set({ modal: 'guide' }); }}>{t('coach.rules')}</Button>
           <Button variant="primary" onPress={dismiss}><Icon name="check-circle" className="size-4" />{t('coach.got')}</Button>

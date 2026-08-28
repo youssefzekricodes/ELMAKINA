@@ -1,6 +1,7 @@
 // ELMAKINA — the whole game server as one Supabase Edge Function.
 // POST { op, ...payload } with the player's (anonymous) Supabase JWT. See ./room.mjs for the ops.
-// Cron backstop: POST { op: 'tick_all' } with the service-role key as Bearer token.
+// Cron backstop: POST { op: 'tick_all' } with the service-role key as Bearer token — it ticks every
+// due room AND reaps dead ones (`{ op: 'reap' }` runs the sweep on its own).
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { handleOp } from './room.mjs';
 
@@ -48,6 +49,10 @@ function makeDb(sb: SupabaseClient) {
     async deleteViews(code: string) { await one(sb.from('game_views').delete().eq('code', code)); },
     async deleteView(id: string) { await one(sb.from('game_views').delete().eq('id', id)); },
     async listDueRooms(now: number) { const rows = await one(sb.from('rooms').select('code').lte('next_due', ts(now)).limit(100)); return (rows || []).map((r: any) => r.code); },
+    // ── reaper (see REAP_* in room.mjs) — both queries hit an index: rooms(updated_at), room_members(last_seen)
+    async listIdleRooms(before: number, limit = 200) { const rows = await one(sb.from('rooms').select('code').lt('updated_at', ts(before)).limit(limit)); return (rows || []).map((r: any) => r.code); },
+    async listStaleMemberRooms(before: number, limit = 200) { const rows = await one(sb.from('room_members').select('code').lt('last_seen', ts(before)).limit(limit)); return [...new Set((rows || []).map((r: any) => r.code))]; },
+    async deleteMembers(code: string) { await one(sb.from('room_members').delete().eq('code', code)); },
     async bumpScore(uid: string, delta: number, win: boolean) { const { error } = await sb.rpc('bump_score', { p_uid: uid, p_delta: delta, p_win: win }); if (error) throw error; },
   };
 }

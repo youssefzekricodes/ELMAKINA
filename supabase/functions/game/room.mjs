@@ -12,6 +12,10 @@
  *   listMembers(code) -> [{user_id,last_seen}] | getState(code) -> {state, version} | null
  *   saveState(code, state, expectedVersion) -> bool (insert when expectedVersion===0) | deleteState(code)
  *   upsertViews(rows:[{id, code, user_id, view}]) | deleteViews(code) | deleteView(id) (optional) | listDueRooms(now) -> [code]
+ *   reaper (all optional — a missing one just narrows the sweep):
+ *     listIdleRooms(before, limit) -> [code]          rooms whose updated_at is older than `before`
+ *     listStaleMemberRooms(before, limit) -> [code]   rooms holding a membership whose last_seen is older than `before`
+ *     deleteMembers(code)                             drop every membership of one room
  */
 import { Game, GameError, MIN_PLAYERS, MAX_PLAYERS, ACTION_GRACE } from './engine.mjs';
 import { BOT_NAMES, runBots, botsNextDue } from './bots.mjs';
@@ -20,6 +24,18 @@ export const DEFAULT_AVATARS = ['boy-1', 'boy-2', 'boy-3', 'boy-4', 'boy-5', 'bo
 export const PALETTE = ['#2f7d32', '#d7a800', '#1e4fb5', '#b3261e', '#4b6b2b', '#5b2d9e', '#b5561a'];
 const MAX_AVATAR_DATA = 120000;
 export const PRESENCE_MS = 45000; // a member is "connected" if seen within this
+// ── Room reaping ───────────────────────────────────────────────────────────────────────────────
+// Nothing else ever deletes a room, so a closed tab would keep its row (plus game_state and
+// game_views) in Postgres forever. Worst of all are solo/vs-bot games: `next_due` never runs out,
+// so the bots would keep "playing" for eternity. The service-only `reap` sweep (also folded into
+// `tick_all`) throws away rooms that are provably dead. Tune the thresholds here.
+export const REAP_LIVE_MS = 120000;      // a human heartbeat newer than this ⇒ the room is live: never reaped
+export const REAP_ABANDONED_MS = 600000; // 10 min with no human heartbeat at all ⇒ dead, whatever the phase
+export const REAP_ENDED_MS = 600000;     // 10 min: a finished game nobody restarted or closed
+export const REAP_LOBBY_MS = 1800000;    // 30 min: a lobby where nothing at all happened
+export const REAP_ORPHAN_MS = 300000;    //  5 min: a room that has no membership rows left at all
+export const REAP_MAX_AGE_MS = 43200000; // 12 h hard cap: nothing survives this long without a write
+export const REAP_BATCH = 200;           // rooms examined per sweep
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export const cleanName = (n) => String(n || '').trim().replace(/\s+/g, ' ').slice(0, 16) || 'Player';
@@ -80,7 +96,8 @@ class Ctx {
 export async function handleOp({ db, uid, body, now = Date.now(), isService = false }) {
   const op = body && body.op;
   try {
-    if (op === 'tick_all') { if (!isService) throw new GameError('Forbidden'); return await tickAll(db, now); }
+    if (op === 'tick_all') { if (!isService) throw new GameError('Forbidden'); return await tickAll(db, now, body); }
+    if (op === 'reap') { if (!isService) throw new GameError('Forbidden'); return await reapAll(db, now); }
     if (!uid) throw new GameError('Not signed in');
     for (let attempt = 0; attempt < 4; attempt++) {
       try { return await dispatch(new Ctx(db, uid, now), op, body || {}); }
@@ -224,24 +241,97 @@ async function tickRoom(ctx, code) {
   let changed = r.refreshPresence();
   if (r.game) { if (r.game.tick(now, ACTION_GRACE)) changed = true; if (r.runBots()) changed = true; }
   if (changed) await r.commit();
+  // Stop the bleeding at the source: the tick that finishes a game nobody is watching any more
+  // (typically a solo game whose human closed the tab) tears the room down straight away instead
+  // of leaving it for the reaper. Anyone still heart-beating keeps the room alive.
+  if ((r.game ? r.game.phase : room.phase) === 'ended' && now - lastHumanSeen(room, r.members) >= REAP_LIVE_MS) {
+    await reapRoom(db, room.code);
+    return { ok: true, changed, reaped: true };
+  }
   return { ok: true, changed };
 }
 
-async function tickAll(db, now) {
+/** Most recent heartbeat of a human who *still holds a membership row* (a forfeited/kicked seat does not count). */
+export function lastHumanSeen(room, members) {
+  let seen = 0;
+  for (const p of (room && room.players) || []) {
+    if (p.isBot) continue;
+    const t = members ? members[p.id] : null;
+    if (t == null) continue;
+    seen = Math.max(seen, t, p.lastSeen || 0);
+  }
+  return seen;
+}
+
+/** Why this room is garbage — or null when it must be kept. Pure, so it is trivial to reason about and test.
+ *  A room whose humans are still heart-beating (within REAP_LIVE_MS) is never touched, whatever its phase. */
+export function reapReason(room, members, now) {
+  if (!room) return 'gone';
+  const idleWrite = now - (room.updated_at || room.created_at || 0);
+  if (!members || Object.keys(members).length === 0) return idleWrite > REAP_ORPHAN_MS ? 'orphan' : null; // nobody is bound to it any more
+  const idleHuman = now - lastHumanSeen(room, members);
+  if (idleHuman < REAP_LIVE_MS) return idleWrite > REAP_MAX_AGE_MS ? 'max-age' : null; // somebody is right there — hands off
+  if (idleHuman > REAP_ABANDONED_MS) return 'abandoned';                               // solo/vs-bot rooms die here
+  if (room.phase === 'ended' && idleWrite > REAP_ENDED_MS) return 'ended';
+  if (room.phase === 'lobby' && idleWrite > REAP_LOBBY_MS) return 'lobby';
+  if (idleWrite > REAP_MAX_AGE_MS) return 'max-age';
+  return null;
+}
+
+/** Delete every trace of one room. Safe to call on a room that is already (partly) gone. */
+export async function reapRoom(db, code) {
+  await db.deleteViews(code);
+  await db.deleteState(code);
+  if (db.deleteMembers) await db.deleteMembers(code);           // scoped by code — never touches another room's membership
+  await db.deleteRoom(code);                                     // Postgres cascades members/state/views as a backstop
+}
+
+/** One sweep: cheap index-friendly queries pick candidates, then each one is re-checked against the
+ *  live rows before anything is deleted. Idempotent — a second run simply finds nothing. */
+export async function reapAll(db, now = Date.now(), limit = REAP_BATCH) {
+  const codes = new Set();
+  // (a) rooms with a stale heartbeat: catches solo/vs-bot games whose bots keep bumping updated_at
+  if (db.listStaleMemberRooms) for (const c of (await db.listStaleMemberRooms(now - REAP_ABANDONED_MS, limit)) || []) codes.add(c);
+  // (b) rooms nothing has written to in a while: catches idle lobbies, finished games and orphans
+  const idleCut = Math.min(REAP_ORPHAN_MS, REAP_ENDED_MS, REAP_LOBBY_MS, REAP_MAX_AGE_MS);
+  if (db.listIdleRooms) for (const c of (await db.listIdleRooms(now - idleCut, limit)) || []) codes.add(c);
+  let reaped = 0; const reasons = {};
+  for (const code of codes) {
+    try {
+      const room = await db.getRoom(code);
+      if (!room) { if (db.deleteMembers) await db.deleteMembers(code); continue; } // membership rows pointing at nothing
+      const members = {};
+      for (const m of (await db.listMembers(code)) || []) members[m.user_id] = memberSeen(m);
+      const reason = reapReason(room, members, now);
+      if (!reason) continue;
+      await reapRoom(db, code);
+      reaped++; reasons[reason] = (reasons[reason] || 0) + 1;
+    } catch (e) { /* one bad room must not stop the sweep */ }
+  }
+  return { ok: true, scanned: codes.size, reaped, reasons };
+}
+
+/** Cron entry point: one call reaps the dead rooms and then ticks the ones that are due.
+ *  Pass `{ op:'tick_all', reap:false }` if you schedule ticks very often and prefer a separate,
+ *  slower `{ op:'reap' }` schedule. */
+async function tickAll(db, now, body) {
+  const swept = body && body.reap === false ? { scanned: 0, reaped: 0, reasons: {} } : await reapAll(db, now); // reap first: no point ticking rooms that are about to go
   const codes = await db.listDueRooms(now);
   let n = 0;
   for (const code of codes) {
     try { const res = await handleOp({ db, uid: '__cron__', body: { op: 'tick', code }, now, isService: true }); if (res && res.changed) n++; } catch (e) { /* keep going */ }
   }
-  return { ok: true, rooms: codes.length, changed: n };
+  return { ok: true, rooms: codes.length, changed: n, scanned: swept.scanned, reaped: swept.reaped, reasons: swept.reasons };
 }
+
+const memberSeen = (m) => (typeof m.last_seen === 'number' ? m.last_seen : (m.last_seen ? new Date(m.last_seen).getTime() : 0));
 
 /** All room-bound operations + persistence. */
 class RoomOps {
   constructor(ctx, room) { this.ctx = ctx; this.db = ctx.db; this.now = ctx.now; this.room = room; this.game = null; this.state = null; this.version = 0; this.sched = {}; }
   async load() {
     this.members = {};
-    for (const m of (await this.db.listMembers(this.room.code)) || []) this.members[m.user_id] = typeof m.last_seen === 'number' ? m.last_seen : (m.last_seen ? new Date(m.last_seen).getTime() : 0);
+    for (const m of (await this.db.listMembers(this.room.code)) || []) this.members[m.user_id] = memberSeen(m);
     const st = await this.db.getState(this.room.code);
     if (st && st.state && st.state.game) { this.version = st.version; this.sched = st.state.bots || {}; this.awarded = !!st.state.awarded; this.game = Game.fromJSON(st.state.game, { now: () => this.now }); }
     else { this.version = st ? st.version : 0; }

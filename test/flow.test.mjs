@@ -25,6 +25,10 @@ function memDb() {
     async deleteViews(code) { for (const k of [...views.keys()]) if (k.startsWith(code + ':')) views.delete(k); },
     async deleteView(id) { views.delete(id); },
     async listDueRooms(now) { return [...rooms.values()].filter((r) => r.next_due != null && r.next_due <= now).map((r) => r.code); },
+    // reaper queries (mirror the indexed range scans in game/index.ts)
+    async listIdleRooms(before, limit = 200) { return [...rooms.values()].filter((r) => (r.updated_at || 0) < before).slice(0, limit).map((r) => r.code); },
+    async listStaleMemberRooms(before, limit = 200) { return [...new Set([...members.values()].filter((m) => (m.last_seen || 0) < before).slice(0, limit).map((m) => m.code))]; },
+    async deleteMembers(code) { for (const [u, m] of members) if (m.code === code) members.delete(u); },
   };
 }
 
@@ -209,6 +213,118 @@ await test('leaving a live game forfeits: eliminated, cards back to the deck, th
   assert.equal(db.rooms.has(code), false, 'no members left → room deleted');
   assert.equal(db.states.has(code), false);
   assert.equal([...db.views.keys()].some((k) => k.startsWith(code + ':')), false);
+});
+
+
+// ── Reaping ─────────────────────────────────────────────────────────────────────────────────────
+const reap = (db) => handleOp({ db, uid: null, body: { op: 'reap' }, now: NOW, isService: true });
+const traceOf = (db, code) => ({
+  room: db.rooms.has(code), state: db.states.has(code),
+  views: [...db.views.keys()].some((k) => k.startsWith(code + ':')),
+  members: [...db.members.values()].some((m) => m.code === code),
+});
+const GONE = { room: false, state: false, views: false, members: false };
+
+await test('reap: an abandoned solo/vs-bot room is reaped and every trace of it goes', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001';
+  const { code } = await call(db, A, { op: 'solo', name: 'Solo', bots: 3 });
+  assert.deepEqual(traceOf(db, code), { room: true, state: true, views: true, members: true });
+  // the human closes the tab; bots would otherwise keep the room `next_due` (and updated_at fresh) forever
+  NOW += 120_000; await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true });
+  assert.ok(db.rooms.has(code), 'still alive two minutes in — the bots are playing');
+  assert.ok(db.rooms.get(code).updated_at >= NOW - 1000, 'and its updated_at is fresh, so idleness alone cannot catch it');
+  NOW += 9 * 60_000; // > REAP_ABANDONED_MS since the last heartbeat
+  const res = await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true });
+  assert.ok(res.ok); assert.equal(res.reaped, 1); assert.equal(res.reasons.abandoned, 1);
+  assert.deepEqual(traceOf(db, code), GONE, 'room, hidden state, views and memberships all deleted');
+  assert.equal((await call(db, A, { op: 'hello' })).room, null);
+});
+
+await test('reap: an idle lobby and a finished game are collected; the service gate holds', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001', B = 'bbbbbbbb-0000-0000-0000-000000000002';
+  // (1) a lobby nobody ever did anything in, even though a client still pings now and then
+  const { code: lob } = await call(db, A, { op: 'create_room', name: 'Aay' });
+  await call(db, B, { op: 'join_room', name: 'Bee', code: lob });
+  NOW += 20 * 60_000; await call(db, A, { op: 'ping' }); await call(db, B, { op: 'ping' });
+  NOW += 3 * 60_000;                                    // present recently enough not to look abandoned
+  assert.equal((await reap(db)).reaped, 0, '23 min of doing nothing is not enough');
+  NOW += 9 * 60_000; await call(db, A, { op: 'ping' }); // keeps the abandoned rule from firing
+  NOW += 3 * 60_000;
+  let res = await reap(db);
+  assert.equal(res.reaped, 1); assert.equal(res.reasons.lobby, 1, '> 30 min without a single write');
+  assert.deepEqual(traceOf(db, lob), GONE);
+  // (2) a game that ended and that nobody restarted or closed
+  const { code } = await call(db, A, { op: 'create_room', name: 'Aay' });
+  await call(db, B, { op: 'join_room', name: 'Bee', code }); await call(db, B, { op: 'toggle_ready' });
+  assert.ok((await call(db, A, { op: 'start_game' })).ok);
+  assert.ok((await call(db, B, { op: 'leave_room' })).ok);           // forfeit → A wins, room sits on the winner screen
+  assert.equal(db.rooms.get(code).phase, 'ended');
+  NOW += 11 * 60_000; await call(db, A, { op: 'ping' });             // A is still around, just not restarting
+  NOW += 3 * 60_000;
+  res = await reap(db);
+  assert.equal(res.reaped, 1); assert.equal(res.reasons.ended, 1);
+  assert.deepEqual(traceOf(db, code), GONE);
+  // reaping is service-only
+  const { code: safe } = await call(db, A, { op: 'create_room', name: 'Aay' });
+  const denied = await handleOp({ db, uid: A, body: { op: 'reap' }, now: NOW });
+  assert.equal(denied.ok, false); assert.match(denied.error, /Forbidden/);
+  assert.ok(db.rooms.has(safe));
+});
+
+await test('reap: a room whose players are still pinging is never touched', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001', B = 'bbbbbbbb-0000-0000-0000-000000000002';
+  const { code } = await call(db, A, { op: 'create_room', name: 'Aay' });
+  await call(db, B, { op: 'join_room', name: 'Bee', code }); await call(db, B, { op: 'toggle_ready' });
+  assert.ok((await call(db, A, { op: 'start_game' })).ok);
+  for (let i = 0; i < 60; i++) { // an hour of play, heart-beating every minute like the client does
+    NOW += 60_000;
+    await call(db, A, { op: 'ping' }); await call(db, B, { op: 'ping' });
+    const res = await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true });
+    assert.equal(res.reaped, 0, `reaped a live room after ${i + 1} min`);
+    assert.ok(db.rooms.has(code));
+  }
+  assert.deepEqual(traceOf(db, code), { room: true, state: true, views: true, members: true });
+  // a solo room ticked by cron with a human who keeps pinging survives too
+  const C = 'cccccccc-0000-0000-0000-000000000003';
+  const { code: solo } = await call(db, C, { op: 'solo', name: 'Solo', bots: 2 });
+  for (let i = 0; i < 20; i++) { NOW += 60_000; await call(db, C, { op: 'ping' }); await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true }); }
+  assert.ok(db.rooms.has(solo), 'the solo room is still there');
+});
+
+await test('reap: idempotent — a second sweep is a harmless no-op', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001';
+  const { code } = await call(db, A, { op: 'solo', name: 'Solo', bots: 2 });
+  NOW += 11 * 60_000;
+  const first = await reap(db);
+  assert.equal(first.reaped, 1);
+  const second = await reap(db);
+  assert.ok(second.ok); assert.equal(second.reaped, 0); assert.deepEqual(second.reasons, {});
+  const third = await handleOp({ db, uid: null, body: { op: 'tick_all' }, now: NOW, isService: true });
+  assert.ok(third.ok); assert.equal(third.reaped, 0); assert.equal(third.rooms, 0);
+  const noReap = await handleOp({ db, uid: null, body: { op: 'tick_all', reap: false }, now: NOW, isService: true });
+  assert.ok(noReap.ok); assert.equal(noReap.scanned, 0, 'the sweep can be turned off for high-frequency tick schedules');
+  assert.deepEqual(traceOf(db, code), GONE);
+  assert.equal(db.members.size, 0); assert.equal(db.rooms.size, 0); assert.equal(db.states.size, 0); assert.equal(db.views.size, 0);
+});
+
+await test('reap: the tick that ends an unwatched game tears the room down on the spot', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001';
+  const { code } = await call(db, A, { op: 'solo', name: 'Solo', bots: 3 });
+  NOW += 3 * 60_000; // the tab is gone — but the bots happily keep playing the game to its end
+  // plain ticks, no reap sweep: whatever tears this room down can only be tickRoom itself
+  const tick = () => handleOp({ db, uid: '__cron__', body: { op: 'tick', code }, now: NOW, isService: true });
+  let guard = 0, last = null;
+  while (db.rooms.has(code) && guard++ < 2000) { NOW += 10_000; last = await tick(); }
+  assert.ok(guard < 2000, 'the bots finished the game');
+  assert.equal(last.reaped, true, 'the finishing tick reaped the room itself');
+  assert.deepEqual(traceOf(db, code), GONE);
+  assert.deepEqual(await tick(), { ok: true }, 'ticking a room that is already gone is a no-op');
+  console.log(`   (cron ticks until the abandoned solo game finished and was torn down: ${guard})`);
 });
 
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);

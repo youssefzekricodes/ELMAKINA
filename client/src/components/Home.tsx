@@ -6,7 +6,7 @@ import { createRoom, joinRoom, playSolo, notify, isConfigured } from '../lib/net
 import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { IMG } from '../theme';
-import { GoogleG, Html, Icon, PlayerAvatar } from './ui';
+import { GoogleG, Html, Icon, LearnToggle, PlayerAvatar } from './ui';
 
 export function Home() {
   const s = useStore();
@@ -112,6 +112,8 @@ export function Home() {
         </div>
 
         <div className="home-foot-row">
+          {/* learning mode: persistent coaching in every game (see lib/store setLearn) */}
+          <LearnToggle />
           <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>
             <Icon name="question-circle" className="size-4" />{t('coach.rules')}
           </button>

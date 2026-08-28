@@ -25,6 +25,7 @@ export interface GameState {
 export interface Snapshot {
   screen: 'home' | 'lobby' | 'game' | 'leaderboard' | 'friends';
   connected: boolean;
+  net: 'ok' | 'slow' | 'off';   // connection quality shown in the top bar
   room: Room | null;
   state: GameState | null;
   me: string | null;
@@ -40,7 +41,8 @@ export interface Snapshot {
   unread: number;
   banner: { text: string; id: number; cls?: string } | null;
   modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | null;
-  tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews
+  tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews (one game, from the guide)
+  learn: boolean; // persistent "learning mode": the same coaching in EVERY game until it's switched off
   reactions: FloatingReaction[]; // ephemeral in-game emoji reactions (broadcast, not persisted)
   account: Account | null;   // signed-in identity (Google) or guest
   trophies: number;          // my trophy total
@@ -56,13 +58,24 @@ export interface Account { uid: string; name: string; email: string | null; avat
 export interface Friend { id: string; uid: string; name: string; avatar: string | null; avatarData: string | null; status: 'pending' | 'accepted'; incoming: boolean }
 export interface RoomInvite { id: string; fromName: string; code: string }
 
+/** Learning mode: an explicit choice wins; otherwise a player who has never seen the briefing is a
+    newcomer and gets the help by default (a veteran who already dismissed it is left alone). */
+const loadLearn = (): boolean => {
+  try {
+    const v = localStorage.getItem('mekina.learn');
+    if (v === 'on') return true;
+    if (v === 'off') return false;
+    return localStorage.getItem('mekina.coachSeen') !== '1';
+  } catch { return true; }
+};
+
 const loadProfile = (): Profile => { try { return Object.assign({ avatar: 'boy-1', avatarData: null, color: null }, JSON.parse(localStorage.getItem('mekina.profile') || '{}')); } catch { return { avatar: 'boy-1', avatarData: null, color: null }; } };
 
 let snap: Snapshot = {
-  screen: 'home', connected: false, room: null, state: null, me: null,
+  screen: 'home', connected: false, net: (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'off' : 'ok', room: null, state: null, me: null,
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
-  targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, modal: null, tour: false, reactions: [],
+  targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
   account: null, trophies: 0, friends: [], friendReqs: [], invite: null, tick: 0,
 };
 const listeners = new Set<() => void>();
@@ -86,6 +99,11 @@ export const session = {
   save(s: unknown) { localStorage.setItem('mekina.session', JSON.stringify(s)); },
   clear() { localStorage.removeItem('mekina.session'); },
 };
+
+/** Flip learning mode and remember it (used by the Home + Guide toggles). */
+export const setLearn = (on: boolean) => { try { localStorage.setItem('mekina.learn', on ? 'on' : 'off'); } catch { /* ignore */ } store.set({ learn: on }); };
+/** True whenever the client should coach: the guide's one-off practice tour OR persistent learning mode. */
+export const isCoaching = (s: Snapshot) => !!(s.tour || s.learn);
 
 export const saveProfile = (p: Profile) => localStorage.setItem('mekina.profile', JSON.stringify(p));
 

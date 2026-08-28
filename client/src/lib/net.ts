@@ -22,14 +22,24 @@ let uid: string | null = null;
 export const now = () => Date.now() + clockOffset;
 export const myId = () => uid;
 
+/** Connection quality: browser offline events, request latency and the realtime channel all feed this. */
+const SLOW_MS = 2500;
+export function setNet(v: 'ok' | 'slow' | 'off') { if (store.get().net !== v) store.set({ net: v }); }
+if (typeof window !== 'undefined') {
+  window.addEventListener('offline', () => setNet('off'));
+  window.addEventListener('online', () => setNet('ok'));
+}
+
 export function notify(msg: string, ok = false) { if (ok) toast.success(msg); else toast.danger(msg); }
 
 /** Call the game Edge Function. Returns {ok, error?, ...}. */
 export async function emit(op: string, data?: any): Promise<any> {
   sfx.play('click');
   if (!supabase) return { ok: false, error: 'offline' };
+  const t0 = Date.now();
   try {
     const { data: res, error } = await supabase.functions.invoke('game', { body: { op, ...(data || {}) } });
+    setNet(navigator.onLine === false ? 'off' : Date.now() - t0 > SLOW_MS ? 'slow' : 'ok');
     if (error) {
       // supabase-js wraps non-2xx; try to read the JSON body
       let msg = error.message || 'Server error';
@@ -40,6 +50,7 @@ export async function emit(op: string, data?: any): Promise<any> {
     if (res && res.ok === false) { notify(i18n.err(res.error || t('toast.error'))); sfx.play('error'); }
     return res || {};
   } catch (e: any) {
+    setNet('off');
     notify(i18n.err(e?.message || t('toast.error'))); sfx.play('error');
     return { ok: false, error: e?.message };
   }
@@ -107,7 +118,11 @@ function scheduleTick(v: any) {
 }
 async function emitQuiet(op: string, data?: any) {
   if (!supabase) return;
-  try { await supabase.functions.invoke('game', { body: { op, ...(data || {}) } }); } catch { /* ignore */ }
+  const t0 = Date.now();
+  try {
+    await supabase.functions.invoke('game', { body: { op, ...(data || {}) } });
+    setNet(navigator.onLine === false ? 'off' : Date.now() - t0 > SLOW_MS ? 'slow' : 'ok');
+  } catch { setNet('off'); }
 }
 
 let exiting = false; // I'm deliberately leaving/closing — ignore the room-row echo of my own exit
@@ -138,7 +153,7 @@ function subscribe(code: string) {
       const r = payload.new; if (r && r.view) applyView(r.view);
     })
     .on('broadcast', { event: 'react' }, ({ payload }: any) => { if (payload && payload.uid !== uid) addReaction(payload); })
-    .subscribe((status) => { store.set({ connected: status === 'SUBSCRIBED' }); if (status === 'SUBSCRIBED') hello(); });
+    .subscribe((status) => { const up = status === 'SUBSCRIBED'; store.set({ connected: up }); if (up) { setNet(navigator.onLine === false ? 'off' : 'ok'); hello(); } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setNet('off'); });
   clearInterval(pingTimer);
   pingTimer = setInterval(() => { if (!document.hidden) emitQuiet('ping'); }, 20000);
 }

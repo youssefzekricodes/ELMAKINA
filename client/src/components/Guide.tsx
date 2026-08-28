@@ -7,7 +7,7 @@ import { i18n, t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { playSolo } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
-import { GameCard, Icon } from './ui';
+import { GameCard, Icon, LearnToggle } from './ui';
 
 const STEPS: { key: string; icon: string; chars?: boolean }[] = [
   { key: 'goal', icon: 'win' },
@@ -56,6 +56,9 @@ export function Guide() {
             <button key={k} type="button" className={`gdot ${k === i ? 'on' : ''} ${k < i ? 'done' : ''}`} aria-label={`${k + 1}`} aria-selected={k === i} onClick={() => setI(k)} />
           ))}
         </div>
+
+        {/* same persistent switch as Home, so it's discoverable from the walkthrough too */}
+        <LearnToggle className="guide-learn" />
 
         <div className="guide-actions">
           {i > 0
