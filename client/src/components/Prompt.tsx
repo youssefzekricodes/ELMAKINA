@@ -215,6 +215,13 @@ export function Prompt() {
           </div>
         ) : null}
         <div className="cm-who">{!(p!.action && p!.action.targetId && !isCounter) && <PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" />}<Html as="span" className="cm-title" html={title} /></div>
+        {p!.action && p!.action.type === 'colonel' && p!.action.guess && (
+          // everyone must see WHAT the Colonel is guessing before the window closes
+          <div className="cm-guess" style={{ ['--c' as any]: CH[p!.action.guess as keyof typeof CH]?.color }}>
+            <GameCard c={p!.action.guess} w={52} small />
+            <Html as="span" className="cm-guess-tx" html={i18n.html('prompt.colonelGuess', { name: actor, target: tgt, character: cname(p!.action.guess) })} />
+          </div>
+        )}
         {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
         {canPass || canBlock || canChallenge ? (
           isCounter ? (

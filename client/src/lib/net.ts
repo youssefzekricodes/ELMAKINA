@@ -84,7 +84,12 @@ function applyView(v: any) {
     claimSeen = rw.deadline;
     if (hadState && rw.claim.claimerId !== me) {
       const nm = (v.players.find((p: any) => p.id === rw.claim.claimerId) || {}).name || '?';
-      banner(t(rw.claim.kind === 'action' ? 'banner.claim' : 'banner.counter', { name: nm, character: i18n.charName(rw.claim.character) }), 'sm');
+      const act = v.pending.action;
+      // a Colonel claim announces the actual guess, so nobody misses what was called
+      if (rw.claim.character === 'colonel' && act && act.guess) {
+        const tn2 = (v.players.find((p: any) => p.id === act.targetId) || {}).name || '?';
+        banner(t('banner.colonelClaim', { name: nm, character: i18n.charName(act.guess), target: tn2 }), 'sm');
+      } else banner(t(rw.claim.kind === 'action' ? 'banner.claim' : 'banner.counter', { name: nm, character: i18n.charName(rw.claim.character) }), 'sm');
     }
   }
   scheduleTick(v);
