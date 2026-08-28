@@ -162,7 +162,7 @@ export function Console() {
                 ? <Button fullWidth variant="secondary" onPress={() => setPreview(null)}>{t('preview.ok')}</Button>
                 : <>
                     <Button variant="tertiary" onPress={() => setPreview(null)}>{t('preview.cancel')}</Button>
-                    <Button variant="primary" onPress={() => { const a = preview.a; setPreview(null); pressAction(a.type); }}><Icon name="hand-stars" className="size-4" />{t('preview.use')}</Button>
+                    <Button variant="primary" onPress={() => { const a = preview.a; setPreview(null); pressAction(a.type); }}><Icon name="hand-stars" className="size-4" />{t(preview.a.kind === 'claim' ? 'preview.use' : 'preview.useBasic')}</Button>
                   </>}
             </div>
           </div>

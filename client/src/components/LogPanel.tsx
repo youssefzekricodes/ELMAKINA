@@ -3,7 +3,7 @@ import { Card, Drawer } from '@heroui/react';
 import { i18n, t } from '../i18n';
 import { useStore, store, type LogEntry } from '../lib/store';
 import { useMediaQuery } from '../lib/hooks';
-import { CH, CHARACTERS, type CharacterId } from '../theme';
+import { ACTION_CARDS, CH, CHARACTERS, type CharacterId } from '../theme';
 import { Icon } from './ui';
 
 const logIcon = (e: LogEntry) => (e.key === 'game.win' ? 'win' : e.kind);
@@ -28,6 +28,14 @@ export function logCharacter(e: LogEntry): CharacterId | null {
   return null;                                                        // paidkill / income / loan.* / elim.* → no card
 }
 
+/** Basic moves have no character, but they DO have a card — show it in the log like a claim. */
+const BASIC_BY_KEY: Record<string, string> = { income: 'income', 'loan.ask': 'loan', 'loan.get': 'loan', 'loan.veto': 'loan', 'loan.vetoed': 'loan', 'loan.vetofail': 'loan', paidkill: 'paidkill' };
+export function logActionCard(e: LogEntry): string | null {
+  const key = e.key || '';
+  const type = BASIC_BY_KEY[key];
+  return type ? ACTION_CARDS[type] : null;
+}
+
 function Entries({ log }: { log: LogEntry[] }) {
   const box = useRef<HTMLDivElement>(null);
   const lastId = useRef(0);
@@ -45,7 +53,9 @@ function Entries({ log }: { log: LogEntry[] }) {
           <div key={e.id} className={`entry k-${e.kind}`}>
             {ch
               ? <span className="log-card" title={i18n.charName(ch)}><img src={CH[ch].cardSm} alt={i18n.charName(ch)} /></span>
-              : <span className="ic"><Icon name={logIcon(e)} className="size-4" /></span>}
+              : logActionCard(e)
+                ? <span className="log-card action"><img src={logActionCard(e)!} alt="" /></span>
+                : <span className="ic"><Icon name={logIcon(e)} className="size-4" /></span>}
             <span className="tx">{i18n.logText(e).replace(/^[☠🏆]\s*/, '')}</span>
           </div>
         );

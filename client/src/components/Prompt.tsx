@@ -8,7 +8,7 @@ import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, 
 import { validTargets } from '../lib/rules';
 import { sfx } from '../lib/sfx';
 import { GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
-import { logCharacter } from './LogPanel';
+import { logActionCard, logCharacter } from './LogPanel';
 
 const logIcon = (e: LogEntry) => (e.key === 'game.win' ? 'win' : e.kind);
 
@@ -25,7 +25,9 @@ function Timeline({ limit }: { limit: number }) {
           <li key={e.id} className={`tl k-${e.kind}`}>
             {ch
               ? <span className="log-card" title={i18n.charName(ch)}><img src={CH[ch].cardSm} alt={i18n.charName(ch)} /></span>
-              : <span className="ic"><Icon name={logIcon(e)} className="size-4" /></span>}
+              : logActionCard(e)
+                ? <span className="log-card action"><img src={logActionCard(e)!} alt="" /></span>
+                : <span className="ic"><Icon name={logIcon(e)} className="size-4" /></span>}
             <span className="tx">{i18n.logText(e)}</span>
           </li>
         );
@@ -225,11 +227,11 @@ export function Prompt() {
         {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
         {canPass || canBlock || canChallenge ? (
           isCounter ? (
-            // Counter layout: one big primary "Let it pass"; challenging stays legal but secondary.
+            // Counter layout: calling the bluff comes FIRST as a solid red button; letting it pass follows.
             <div className="cm-btns">
               {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
+              {canChallenge && <button type="button" className="rx call" onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
               {canPass && <button type="button" className="rx let-pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span></button>}
-              {canChallenge && <button type="button" className="cm-call-sub" onClick={challenge}><Icon name="danger-triangle" className="size-4" /><span>{t('prompt.bluff.btn')}</span></button>}
             </div>
           ) : (
           <div className="cm-btns">
@@ -244,38 +246,9 @@ export function Prompt() {
       </div>
     );
   } else if (w && w.type === 'result') {
-    key = 'res' + w.deadline; const d = w.data || {};
-    head = <><span className="strip-note">{t('steps.result')}</span><Ring deadline={w.deadline} total={w.kind === 'turn_end' ? st.timings.turnPause : st.timings.resultPause} /></>;
-    body = (
-      <>
-        <div className="result-head">
-          <span className={`result-ic ${w.kind === 'challenge' ? (d.result === 'true' ? 'ok' : 'bad') : ''}`}>
-            <Icon name={w.kind === 'turn_end' ? 'restart' : w.kind === 'challenge' ? (d.result === 'true' ? 'reveal' : 'danger-triangle') : 'info-circle'} className="size-5" />
-          </span>
-          <span className="result-title">{w.kind === 'turn_end' ? t('result.turnEnd') : t('result.title')}</span>
-        </div>
-        {w.kind === 'challenge' && d.result && (() => {
-          // Three unmistakable outcomes: caught lying (bad), truthful claim (ok), and — for the
-          // challenger themselves — a failed call (warn): the claim was true and the call cost them.
-          const ok = d.result === 'true';
-          const failedCall = ok && d.challengerId === me;
-          const cls = ok ? (failedCall ? 'warn' : 'ok') : 'bad';
-          const icon = ok ? (failedCall ? 'shield-warning' : 'reveal') : 'danger-triangle';
-          const headline = ok ? (failedCall ? t('verdict.failed') : t('verdict.true')) : t('verdict.bluff');
-          return (
-            <div className={`verdict-strip ${cls}`}>
-              <span className="vic"><Icon name={icon} className="size-5" /></span>
-              <div className="vcol">
-                <div className="vrow"><span className="vstamp">{ok ? t('stamp.true') : t('stamp.bluff')}</span><span className="vhead">{headline}</span></div>
-                <Html className="vtext" html={boldNames(ok ? t('result.true', { claimer: pname(d.claimerId), character: cname(d.character), challenger: pname(d.challengerId) }) : t('result.bluff', { claimer: pname(d.claimerId), character: cname(d.character) }), [pname(d.claimerId), pname(d.challengerId), cname(d.character)])} />
-              </div>
-            </div>
-          );
-        })()}
-        <Timeline limit={8} />
-        {w.kind === 'turn_end' && <div className="p-waiting">{t('result.next')}</div>}
-      </>
-    );
+    // No result modal: the pause is for the table animations, stamps, banner and log to land —
+    // covering the board with a recap card hid exactly what players wanted to watch.
+    body = null;
   } else if (w && w.type === 'decision') {
     key = 'dec' + w.deadline + w.playerId + (w.data ? 1 : 0);
     if (w.playerId === me && w.data) {
