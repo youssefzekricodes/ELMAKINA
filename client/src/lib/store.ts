@@ -4,7 +4,7 @@ import type { ActionDef } from '../theme';
 
 export interface Profile { avatar: string; avatarData: string | null; color: string | null }
 export interface RoomPlayer { id: string; name: string; ready: boolean; connected: boolean; isHost: boolean; isBot?: boolean; avatar?: string; avatarData?: string | null; color?: string | null }
-export interface Room { code: string; you: string; hostId: string; players: RoomPlayer[]; phase: string; minPlayers: number; maxPlayers: number; canStart: boolean }
+export interface Room { code: string; you: string; hostId: string; players: RoomPlayer[]; phase: string; minPlayers: number; maxPlayers: number; canStart: boolean; reactionSecs?: number; minReactionSecs?: number; maxReactionSecs?: number }
 export interface GPlayer { id: string; name: string; coins: number; cardCount: number; alive: boolean; connected: boolean; isBot?: boolean; avatar?: string; color?: string }
 export interface LogEntry { id: number; t: number; kind: string; key?: string; params?: any; text?: string }
 export interface GameState {

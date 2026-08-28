@@ -19,8 +19,8 @@ function makeDb(sb: SupabaseClient) {
   const one = async (q: any) => { const { data, error } = await q; if (error) throw error; return data; };
   const ts = (n: number | null) => (n == null ? null : new Date(n).toISOString());
   const ms = (s: string | null) => (s ? new Date(s).getTime() : null);
-  const rowToRoom = (r: any) => r && ({ code: r.code, host_id: r.host_id, phase: r.phase, players: r.players || [], next_due: ms(r.next_due), version: r.version, created_at: ms(r.created_at), updated_at: ms(r.updated_at) });
-  const roomToRow = (room: any) => ({ code: room.code, host_id: room.host_id, phase: room.phase, players: room.players, next_due: ts(room.next_due), version: room.version, updated_at: ts(room.updated_at) });
+  const rowToRoom = (r: any) => r && ({ code: r.code, host_id: r.host_id, phase: r.phase, players: r.players || [], settings: r.settings || {}, next_due: ms(r.next_due), version: r.version, created_at: ms(r.created_at), updated_at: ms(r.updated_at) });
+  const roomToRow = (room: any) => ({ code: room.code, host_id: room.host_id, phase: room.phase, players: room.players, settings: room.settings || {}, next_due: ts(room.next_due), version: room.version, updated_at: ts(room.updated_at) });
   return {
     async getRoom(code: string) { return rowToRoom(await one(sb.from('rooms').select('*').eq('code', code).maybeSingle())); },
     async insertRoom(room: any) { await one(sb.from('rooms').insert({ ...roomToRow(room), created_at: ts(room.created_at) })); },

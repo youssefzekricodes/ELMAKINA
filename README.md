@@ -194,7 +194,7 @@ test/                                   engine tests + in-memory end-to-end flow
 * Terrorist special case: if the target challenges a truthful Terrorist they lose 2 cards total
   (one for the challenge, then one for the kill — which they still choose, and may still try to block).
 * Killed players (Terrorist / Paid Kill) secretly choose which card to lose; challenge losses and wrong
-  Colonel guesses remove a random card. Lost cards are never revealed.
+  A wrong Colonel guess costs only the 4 coins paid (they go to the target). Lost cards are never revealed.
 * Elimination on the last card. The eliminated player's **coins go to the player who took that last
   card** (Terrorist / Paid Kill / correct Colonel guess; the claimer when a bluff call fails; the
   challenger when a bluff is caught; the target when a Colonel guesses wrong) — capped at 14, the excess

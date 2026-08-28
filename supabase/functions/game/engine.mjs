@@ -23,8 +23,8 @@ const ACTION_CHARACTER = { businesswoman: 'businesswoman', taxman: 'taxman', pol
 const DEFAULT_ACTIONS = ['income', 'loan', 'paidkill'];
 
 export const DEFAULT_TIMINGS = {
-  challenge: 15000,       // reaction window when a claim can be challenged
-  block: 15000,           // counter-only window (veto / tax / block after a proven claim)
+  challenge: 12000,       // reaction window when a claim can be challenged (host-configurable per room)
+  block: 12000,           // counter-only window (veto / tax / block after a proven claim)
   decision: 20000,        // choose card to lose, pay to survive, police keep/swap
   resultPause: 3200,      // pause to show the outcome of a bluff call before continuing
   turnPause: 2200,        // pause at the end of a turn so everyone can read what happened
@@ -392,7 +392,8 @@ export class Game {
           this.addLog('loss', 'colonel.right', { target: target.name, guess: action.guess }); this.loseSpecificCard(target, action.guess, 'colonel_correct', actor.id);
         } else {
           this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: false });
-          this.addLog('loss', 'colonel.wrong', { target: target.name, guess: action.guess, name: actor.name, gain: this.gainText(target, 4) }); this.loseRandomCard(actor, 'wrong_guess', target.id);
+          // A wrong guess costs the actor no card: the 4 coins they already paid to play Colonel are the whole penalty, and they go to the target.
+          this.addLog('coins', 'colonel.wrong', { target: target.name, guess: action.guess, name: actor.name, gain: this.gainText(target, 4) });
         }
         if (this.checkGameOver()) return; return this.endTurn();
       }

@@ -327,4 +327,77 @@ await test('reap: the tick that ends an unwatched game tears the room down on th
   console.log(`   (cron ticks until the abandoned solo game finished and was torn down: ${guard})`);
 });
 
+await test('set_timings: host-only, lobby-only, clamped, stored on the room and applied to the live windows', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001', B = 'bbbbbbbb-0000-0000-0000-000000000002';
+  const r0 = await call(db, A, { op: 'create_room', name: 'Host' });
+  const code = r0.code;
+  assert.equal(r0.room.reactionSecs, 12, 'lobby shows the 12s default');
+  assert.equal(r0.room.minReactionSecs, 5); assert.equal(r0.room.maxReactionSecs, 60);
+  await call(db, B, { op: 'join_room', name: 'Bee', code });
+  // host only
+  let r = await call(db, B, { op: 'set_timings', seconds: 30 });
+  assert.equal(r.ok, false); assert.match(r.error, /host/i);
+  assert.equal(db.rooms.get(code).settings.reactionSecs, 12, 'the guest changed nothing');
+  // garbage is refused, out-of-range is clamped (friendlier for a slider)
+  assert.equal((await call(db, A, { op: 'set_timings', seconds: 'soon' })).ok, false);
+  assert.equal((await call(db, A, { op: 'set_timings' })).ok, false, 'missing payload');
+  assert.equal((await call(db, A, { op: 'set_timings', seconds: 900 })).room.reactionSecs, 60, 'clamped up to the max');
+  assert.equal((await call(db, A, { op: 'set_timings', seconds: 0 })).room.reactionSecs, 5, 'clamped down to the min');
+  assert.equal((await call(db, A, { op: 'set_timings', seconds: -20 })).room.reactionSecs, 5);
+  r = await call(db, A, { op: 'set_timings', seconds: 20.4 });
+  assert.ok(r.ok, r.error);
+  assert.equal(r.room.reactionSecs, 20, 'rounded'); assert.equal(r.room.code, code, 'the fresh lobby payload comes back');
+  assert.equal(db.rooms.get(code).settings.reactionSecs, 20, 'stored on the room row');
+  assert.equal((await call(db, B, { op: 'hello' })).room.reactionSecs, 20, 'everyone sees it');
+  // it reaches the engine: the in-game countdowns read viewFor().timings
+  await call(db, B, { op: 'toggle_ready' });
+  assert.ok((await call(db, A, { op: 'start_game' })).ok);
+  const v = viewOf(db, code, A);
+  assert.equal(v.timings.challenge, 20000); assert.equal(v.timings.block, 20000);
+  assert.equal(v.timings.turn, 60000, 'the other timings keep their defaults');
+  // and the window really is 20s long
+  assert.equal(db.states.get(code).state.game.T.challenge, 20000);
+  // lobby only
+  r = await call(db, A, { op: 'set_timings', seconds: 8 });
+  assert.equal(r.ok, false); assert.match(r.error, /running/i);
+  assert.equal(db.rooms.get(code).settings.reactionSecs, 20, 'unchanged mid-game');
+});
+
+await test('set_timings: the room setting survives a new game; guided games keep their long windows', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001';
+  const { code } = await call(db, A, { op: 'create_room', name: 'Host' });
+  assert.ok((await call(db, A, { op: 'add_bot' })).ok);
+  assert.equal((await call(db, A, { op: 'set_timings', seconds: 25 })).room.reactionSecs, 25);
+  assert.ok((await call(db, A, { op: 'start_game' })).ok);
+  assert.equal(viewOf(db, code, A).timings.challenge, 25000);
+  // play it out (A just takes income; the bot does the rest) so a new game can be started
+  let v = viewOf(db, code, A), guard = 0;
+  while (v.phase === 'playing' && guard++ < 5000) {
+    const p = v.pending, w = p && p.window;
+    if (p && p.stage === 'turn' && p.actorId === A) await call(db, A, { op: 'game_action', action: { type: 'income' } });
+    else if (w && w.type === 'reaction' && w.eligible.includes(A) && !w.passed.includes(A)) await call(db, A, { op: 'game_pass' });
+    else if (w && w.type === 'decision' && w.playerId === A) await call(db, A, { op: 'game_decision', choice: { index: 0 } });
+    else { NOW += 5000; await call(db, A, { op: 'tick' }); }
+    v = viewOf(db, code, A);
+  }
+  assert.equal(v.phase, 'ended', 'the game finished');
+  assert.ok((await call(db, A, { op: 'new_game' })).ok);
+  assert.equal(db.rooms.get(code).settings.reactionSecs, 25, 'the setting outlives the game');
+  assert.equal(viewOf(db, code, A).timings.challenge, 25000, 'and is applied to the new one');
+  assert.equal(viewOf(db, code, A).timings.block, 25000);
+  // a guided (tutorial) game keeps its long beginner windows — guided wins over the room setting
+  const G = 'gggggggg-0000-0000-0000-000000000009';
+  const guided = await call(db, G, { op: 'solo', name: 'Newbie', bots: 2, guided: true });
+  assert.ok(guided.ok, guided.error);
+  const gv = viewOf(db, guided.code, G);
+  assert.equal(gv.timings.challenge, 45000); assert.equal(gv.timings.block, 45000); assert.equal(gv.timings.turn, 120000);
+  // a plain solo room uses the 12s default
+  const S = 'ssssssss-0000-0000-0000-000000000008';
+  const solo = await call(db, S, { op: 'solo', name: 'Solo', bots: 2 });
+  assert.equal(solo.room.reactionSecs, 12);
+  assert.equal(viewOf(db, solo.code, S).timings.challenge, 12000);
+});
+
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);

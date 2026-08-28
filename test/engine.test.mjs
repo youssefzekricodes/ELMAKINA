@@ -165,7 +165,7 @@ await test('paid kill: target can pay 9 to survive; otherwise chooses card', () 
   assert.equal(b.cards.length, 2);
 });
 
-await test('colonel: correct guess removes exact card; wrong guess costs random card and pays target (capped)', () => {
+await test('colonel: correct guess removes exact card; wrong guess only costs the 4 coins, paid to the target (capped)', () => {
   const g = newGame(2); g.start();
   const a = g.active, b = g.players.find((p) => p.id !== a.id);
   a.coins = 14; b.coins = 12; giveCard(g, a.id, 'colonel'); giveCard(g, b.id, 'thief');
@@ -174,9 +174,28 @@ await test('colonel: correct guess removes exact card; wrong guess costs random 
   assert.ok(g.events.some((e) => e.type === 'guess' && e.playerId === a.id && e.targetId === b.id && e.character === 'thief' && e.right === true), 'guess event for the client animation');
   g.declareAction(b.id, { type: 'income' });
   withoutCard(g, b.id, 'politician');
+  const handBefore = a.cards.slice(), deckBefore = g.deck.length;
   g.declareAction(a.id, { type: 'colonel', targetId: b.id, guess: 'politician' }); g.pass(b.id);
-  assert.equal(a.cards.length, 2); assert.equal(b.coins, MAX_COINS); assert.equal(a.coins, 6);
+  assert.deepEqual(a.cards, handBefore, 'a wrong guess never costs the actor a card');
+  assert.equal(g.deck.length, deckBefore, 'and nothing goes back to the deck');
+  assert.ok(!g.log.some((e) => e.key === 'card.lost' && e.params.reason === 'wrong_guess'), 'no card-loss line for a wrong guess');
+  assert.equal(b.coins, MAX_COINS, 'the target still receives the 4 coins, capped'); assert.equal(a.coins, 6);
+  assert.ok(g.log.some((e) => e.key === 'colonel.wrong' && !/loses a random card/.test(e.text)), 'the log no longer threatens a card');
   assert.ok(g.events.some((e) => e.type === 'guess' && e.playerId === a.id && e.targetId === b.id && e.character === 'politician' && e.right === false), 'wrong guesses are announced too');
+  // the turn still ends normally and play carries on (turnPause is 0 in the test timings)
+  assert.equal(g.phase, 'playing');
+  assert.equal(g.active.id, b.id, 'turn passed to the next player');
+  assert.equal(g.pending.stage, 'turn'); assert.ok(g.deadline != null, 'the next turn is on the clock');
+});
+
+await test('colonel: a wrong guess never eliminates the actor, even on their last card', () => {
+  const g = newGame(2); g.start();
+  const a = g.active, b = g.players.find((p) => p.id !== a.id);
+  a.coins = 5; while (a.cards.length > 1) g.deck.push(a.cards.pop());
+  giveCard(g, a.id, 'colonel'); withoutCard(g, b.id, 'thief');
+  g.declareAction(a.id, { type: 'colonel', targetId: b.id, guess: 'thief' }); g.pass(b.id);
+  assert.equal(a.cards.length, 1, 'still holding their last card'); assert.equal(a.alive, true);
+  assert.equal(g.phase, 'playing'); assert.equal(a.coins, 1);
 });
 
 await test('business woman with reactive tax man; thief steal; tax man wealth tax', () => {
@@ -392,25 +411,30 @@ await test('random games survive players walking out at any moment (no hangs, ca
   }
 });
 
-await test('reaction windows last 15s (block + challenge) and still time out', () => {
-  assert.equal(DEFAULT_TIMINGS.block, 15000); assert.equal(DEFAULT_TIMINGS.challenge, 15000);
+await test('reaction windows last 12s (block + challenge) and still time out', () => {
+  assert.equal(DEFAULT_TIMINGS.block, 12000); assert.equal(DEFAULT_TIMINGS.challenge, 12000);
   const g = new Game(mk(3), { now: clock }); // real timings, not the fast test ones
   g.start();
   const a = g.active;
   g.declareAction(a.id, { type: 'loan' });                       // block-only window (Tax Man veto)
   assert.equal(g.pending.window.type, 'reaction'); assert.equal(g.pending.window.block.kind, 'veto');
-  assert.equal(g.pending.window.deadline, NOW + 15000, '15s to veto');
-  advance(g, 14000); assert.equal(g.pending.window.type, 'reaction', 'still open at 14s');
+  assert.equal(g.pending.window.deadline, NOW + 12000, '12s to veto');
+  advance(g, 11000); assert.equal(g.pending.window.type, 'reaction', 'still open at 11s');
   advance(g, 1100);
-  assert.equal(g.player(a.id).coins, 4, 'loan paid out when the 15s window expired');
+  assert.equal(g.player(a.id).coins, 4, 'loan paid out when the 12s window expired');
   advance(g, DEFAULT_TIMINGS.turnPause + 100);                   // let the turn-end pause finish
   const b = g.active;
   g.declareAction(b.id, { type: 'politician' });                 // challenge-only window
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(g.pending.window.claim);
-  assert.equal(g.pending.window.deadline, NOW + 15000, '15s to call the bluff');
-  advance(g, 14000); assert.ok(g.pending.window.claim, 'still challengeable at 14s');
+  assert.equal(g.pending.window.deadline, NOW + 12000, '12s to call the bluff');
+  advance(g, 11000); assert.ok(g.pending.window.claim, 'still challengeable at 11s');
   advance(g, 1100);
-  assert.ok(g.log.some((e) => e.key === 'politician.swap'), 'claim resolved after the 15s window');
+  assert.ok(g.log.some((e) => e.key === 'politician.swap'), 'claim resolved after the 12s window');
+  // a room may widen or narrow those two windows; everything else keeps its default
+  const slow = new Game(mk(3), { timings: { challenge: 30000, block: 30000 }, now: clock });
+  assert.equal(slow.T.challenge, 30000); assert.equal(slow.T.block, 30000);
+  assert.equal(slow.T.turn, DEFAULT_TIMINGS.turn); assert.equal(slow.T.decision, DEFAULT_TIMINGS.decision);
+  assert.equal(slow.viewFor('p0').timings.challenge, 30000, 'clients read the window length from the view');
 });
 
 await test('forfeit: leaving mid-game eliminates the player and the game moves on', () => {

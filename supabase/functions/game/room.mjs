@@ -24,6 +24,19 @@ export const DEFAULT_AVATARS = ['boy-1', 'boy-2', 'boy-3', 'boy-4', 'boy-5', 'bo
 export const PALETTE = ['#2f7d32', '#d7a800', '#1e4fb5', '#b3261e', '#4b6b2b', '#5b2d9e', '#b5561a'];
 const MAX_AVATAR_DATA = 120000;
 export const PRESENCE_MS = 45000; // a member is "connected" if seen within this
+// ── Room settings ──────────────────────────────────────────────────────────────────────────────
+// How long every reaction window lasts (challenge + block). Host-configurable from the lobby via
+// the `set_timings` op and stored on the room row (`settings.reactionSecs`), so it survives
+// `new_game`. Out-of-range values are clamped rather than rejected — friendlier for a slider UI.
+export const REACTION_SECS_DEFAULT = 12;
+export const REACTION_SECS_MIN = 5;
+export const REACTION_SECS_MAX = 60;
+export const clampReactionSecs = (n) => Math.max(REACTION_SECS_MIN, Math.min(REACTION_SECS_MAX, Math.round(n)));
+/** The reaction window (seconds) a room plays with — its own setting, or the default. */
+export function reactionSecsOf(room) {
+  const raw = room && room.settings ? Number(room.settings.reactionSecs) : NaN;
+  return Number.isFinite(raw) ? clampReactionSecs(raw) : REACTION_SECS_DEFAULT;
+}
 // ── Room reaping ───────────────────────────────────────────────────────────────────────────────
 // Nothing else ever deletes a room, so a closed tab would keep its row (plus game_state and
 // game_views) in Postgres forever. Worst of all are solo/vs-bot games: `next_due` never runs out,
@@ -85,6 +98,7 @@ export function lobbyView(room) {
     code: room.code, hostId: room.host_id, phase: room.phase, minPlayers: MIN_PLAYERS, maxPlayers: MAX_PLAYERS,
     players: room.players.map((p) => ({ id: p.id, name: p.name, ready: !!p.ready, connected: !!p.connected, isHost: p.id === room.host_id, isBot: !!p.isBot, avatar: p.avatar, avatarData: p.avatar === 'custom' ? p.avatarData || null : null, color: p.color })),
     canStart: room.phase === 'lobby' && room.players.length >= MIN_PLAYERS && room.players.every((p) => p.ready || p.id === room.host_id) && room.players.filter((p) => p.connected).length >= MIN_PLAYERS,
+    reactionSecs: reactionSecsOf(room), minReactionSecs: REACTION_SECS_MIN, maxReactionSecs: REACTION_SECS_MAX,
   };
 }
 
@@ -140,6 +154,7 @@ async function dispatch(ctx, op, body) {
     case 'add_bot': return r.addBot(me);
     case 'remove_bot': return r.removeBot(me);
     case 'kick': return r.kick(me, body.targetId);
+    case 'set_timings': return r.setTimings(me, body.seconds);
     case 'close_room': return r.closeRoom(me);
     case 'start_game': return r.startGame(me);
     case 'back_to_lobby': return r.backToLobby(me);
@@ -174,7 +189,7 @@ async function createRoom(ctx, body, solo) {
   if (cur) { const old = await db.getRoom(cur.code); if (old && old.players.some((p) => p.id === uid)) throw fail('Leave your current room first'); await db.removeMember(cur.code, uid); }
   let code; for (let i = 0; i < 20; i++) { code = genCode(); if (!(await db.getRoom(code))) break; }
   const player = { id: uid, name: cleanName(body.name), ready: solo, connected: true, isBot: false, lastSeen: now, ...cleanProfile(body.profile) };
-  const room = { code, host_id: uid, phase: 'lobby', players: [player], next_due: null, version: 0, created_at: now, updated_at: now };
+  const room = { code, host_id: uid, phase: 'lobby', players: [player], settings: { reactionSecs: REACTION_SECS_DEFAULT }, next_due: null, version: 0, created_at: now, updated_at: now };
   applyDefaults(room.players, player);
   await db.insertRoom(room);
   await db.addMember(code, uid, now);
@@ -415,6 +430,18 @@ class RoomOps {
     if (!gone.isBot && this.db.deleteView) { try { await this.db.deleteView(`${room.code}:${gone.id}`); } catch (e) { /* best effort */ } }
     return res;
   }
+  /** Host sets how long every reaction window (challenge + block) lasts. Lobby only; the value is
+   *  clamped to REACTION_SECS_MIN..REACTION_SECS_MAX and stored on the room, so it survives `new_game`. */
+  setTimings(me, seconds) {
+    const room = this.room;
+    if (room.host_id !== me.id) throw fail('Only the host can change the reaction time');
+    if (this.game && this.game.phase === 'playing') throw fail('You cannot change the reaction time while the game is running');
+    if (room.phase !== 'lobby') throw fail('Go back to the lobby first to change the reaction time');
+    const n = Number(seconds);
+    if (!Number.isFinite(n)) throw fail(`Pick a reaction time between ${REACTION_SECS_MIN} and ${REACTION_SECS_MAX} seconds`);
+    room.settings = { ...(room.settings || {}), reactionSecs: clampReactionSecs(n) };
+    return this.done({ room: lobbyView(room) });
+  }
   /** Host closes the room for everyone, in any phase: room, state, views and memberships all go. */
   async closeRoom(me) {
     const room = this.room;
@@ -441,8 +468,14 @@ class RoomOps {
     for (const p of room.players) applyDefaults(room.players, p);
     this.sched = {};
     this.awarded = false; // fresh game must award trophies again (flag persists across ops in state)
-    // Guided (tutorial) games give beginners much longer windows so they can read the coach-marks.
-    const timings = opts.guided ? { turn: 120000, challenge: 45000, block: 45000, decision: 60000, resultPause: 5000, turnPause: 3500 } : undefined;
+    // The host's reaction time (challenge + block windows) applies to every game this room plays.
+    // Guided (tutorial) games give beginners much longer windows so they can read the coach-marks —
+    // those win over the room setting, on purpose.
+    const secs = reactionSecsOf(room);
+    const timings = Object.assign(
+      { challenge: secs * 1000, block: secs * 1000 },
+      opts.guided ? { turn: 120000, challenge: 45000, block: 45000, decision: 60000, resultPause: 5000, turnPause: 3500 } : null,
+    );
     this.game = new Game(room.players.map((p) => ({ id: p.id, name: p.name, connected: p.connected, isBot: !!p.isBot, avatar: p.avatar, color: p.color })), { now: () => this.now, timings });
     this.game.start();
     this.runBots();

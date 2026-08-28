@@ -60,7 +60,7 @@ export async function emit(op: string, data?: any): Promise<any> {
 function roomFromLobby(l: any): Room | null {
   if (!l) return null;
   for (const p of l.players) if (p.avatar === 'custom' && p.avatarData) customAvatars[p.id] = p.avatarData;
-  return { code: l.code, you: uid || '', hostId: l.hostId, players: l.players, phase: l.phase, minPlayers: l.minPlayers, maxPlayers: l.maxPlayers, canStart: l.canStart };
+  return { code: l.code, you: uid || '', hostId: l.hostId, players: l.players, phase: l.phase, minPlayers: l.minPlayers, maxPlayers: l.maxPlayers, canStart: l.canStart, reactionSecs: l.reactionSecs, minReactionSecs: l.minReactionSecs, maxReactionSecs: l.maxReactionSecs };
 }
 
 function applyRoom(l: any) {
@@ -177,7 +177,8 @@ function unsubscribe() {
 function lobbyFromRow(r: any) {
   const players = (r.players || []).map((p: any) => ({ id: p.id, name: p.name, ready: !!p.ready, connected: !!p.connected, isHost: p.id === r.host_id, isBot: !!p.isBot, avatar: p.avatar, avatarData: p.avatar === 'custom' ? p.avatarData || null : null, color: p.color }));
   const canStart = r.phase === 'lobby' && players.length >= 2 && players.every((p: any) => p.ready || p.isHost) && players.filter((p: any) => p.connected).length >= 2;
-  return { code: r.code, hostId: r.host_id, phase: r.phase, minPlayers: 2, maxPlayers: 6, players, canStart };
+  const rs = (r.settings && r.settings.reactionSecs) || 12;
+  return { code: r.code, hostId: r.host_id, phase: r.phase, minPlayers: 2, maxPlayers: 6, players, canStart, reactionSecs: rs, minReactionSecs: 5, maxReactionSecs: 60 };
 }
 
 /** Fetch the current room + view (on load, reconnect, and after subscribing). */
@@ -232,6 +233,7 @@ export const addBot = () => lobbyOp('add_bot');
 export const removeBot = () => lobbyOp('remove_bot');
 /** Host removes somebody from the lobby (works on bots too). */
 export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });
+export const setReactionSecs = (seconds: number) => lobbyOp('set_timings', { seconds });
 export async function newGame() { const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
 /** Save my look (and optionally rename myself). In a room the server also gets the new name and
     hands back a fresh lobby view, so every other seat re-labels straight away. */
