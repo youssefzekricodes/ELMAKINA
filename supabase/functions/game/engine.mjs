@@ -108,7 +108,7 @@ export class Game {
     this.log.push({ id: ++this.seq, t: this.now(), kind, key, params, text: MSG.format('en', key, params) });
     if (this.log.length > 300) this.log.splice(0, this.log.length - 300);
   }
-  event(type, data = {}) { this.events.push({ id: ++this.evSeq, t: this.now(), type, ...data }); if (this.events.length > 40) this.events.splice(0, this.events.length - 40); }
+  event(type, data = {}) { this.events.push({ ...data, id: ++this.evSeq, t: this.now(), type }); if (this.events.length > 40) this.events.splice(0, this.events.length - 40); }
   sync() { this.changes++; if (this.onUpdate) this.onUpdate(this); }
 
   /** Schedule the continuation `cont` to run at now+ms (replaces any previous schedule). */
@@ -244,6 +244,7 @@ export class Game {
     const actor = this.player(actorId);
     this.addLog('system', actor.connected ? 'timeout' : 'disconnected', { name: actor.name });
     this.pending = { stage: 'resolving', actorId: actor.id, action: { type: 'income', actorId: actor.id }, window: null };
+    this.event('play', { playerId: actor.id, move: 'income' }); // a timed-out turn still takes the coin — show the card for it
     this.addLog('action', 'income', { name: actor.name, gain: this.gainText(actor, 1) });
     this.endTurn();
   }
@@ -289,7 +290,7 @@ export class Game {
     const tn = target ? target.name : '';
     // A basic move opens no claim window, so nothing on the table would show it. Announce it as an
     // event instead: every client (the actor's included) flashes the card, and nothing waits on it.
-    if (DEFAULT_ACTIONS.includes(type)) this.event('play', { playerId: actor.id, type });
+    if (DEFAULT_ACTIONS.includes(type)) this.event('play', { playerId: actor.id, move: type });
     switch (type) {
       case 'income': this.addLog('action', 'income', { name: actor.name, gain: this.gainText(actor, 1) }); return this.endTurn();
       case 'loan': this.addLog('action', 'loan.ask', { name: actor.name });

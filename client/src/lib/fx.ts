@@ -127,7 +127,7 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
   fresh.forEach((e, i) => setTimeout(() => {
     switch (e.type) {
       case 'coins': flyCoins(e.from, e.to, e.n); break;
-      case 'play': if (e.playerId !== me || Date.now() - localPlayAt > 4000) playedCard(e.type); break; // a basic move: the card is the announcement
+      case 'play': if (e.playerId !== me || Date.now() - localPlayAt > 4000) playedCard(e.move); break; // a basic move: the card is the announcement
       case 'coup': sfx.play('boom'); cameraShake(document.getElementById('table'), true); break; // someone paid 7 to strike
       case 'card_lost':
         flyCard(e.playerId, e.playerId === me); cameraShake(document.getElementById('table'));

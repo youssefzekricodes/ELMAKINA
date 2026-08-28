@@ -1,7 +1,7 @@
 /* The bottom prompt card: targeting, reaction window, result recap, decisions, game over. */
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, Chip } from '@heroui/react';
-import { ACTION_CARDS, CH, CHARACTERS } from '../theme';
+import { CH, CHARACTERS } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
 import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
@@ -79,23 +79,6 @@ function TargetPicker() {
       )}
     </div>
   );
-}
-
-/** A verdict button: the choice on top, what it costs you underneath. */
-function RxBtn({ cls, icon, main, sub, onPress, disabled = false }: { cls: string; icon: string; main: string; sub?: string; onPress: () => void; disabled?: boolean }) {
-  return (
-    <button type="button" className={`rx ${cls}`} disabled={disabled} onClick={onPress}>
-      <Icon name={icon} className="size-5" />
-      <span className="rx-tx"><span className="rx-main">{main}</span>{sub && <span className="rx-sub">{sub}</span>}</span>
-    </button>
-  );
-}
-
-/** Any move as a card image — characters and the three basic actions alike. */
-function ActionCard({ type, w = 56, className = '', label }: { type: string; w?: number; className?: string; label?: string }) {
-  const src = CH[type as keyof typeof CH]?.card || ACTION_CARDS[type];
-  if (!src) return null;
-  return <span className={`cm-actcard ${className}`} style={{ width: w }}><img src={src} alt="" draggable={false} />{label && <b>{label}</b>}</span>;
 }
 
 function KeyBtn({ variant, onPress, main, sub, icon, disabled = false, className = '' }: { variant: any; onPress: () => void; main: string; sub?: string; icon?: string; disabled?: boolean; className?: string }) {
@@ -219,66 +202,46 @@ export function Prompt() {
     else if (w.block && w.block.kind === 'veto') effect = t('effect.veto');
     else if (w.block) effect = t('effect.' + (p!.action.type || 'block'), { name: actor, target: tgt });
     const total = w.claim ? st.timings.challenge : st.timings.block;
-    const act = p!.action;
-    const targeted = !!(act && act.targetId && !isCounter);
-    const iAmTarget = !!(targeted && act.targetId === me);
-    const claimerId = w.claim ? w.claim.claimerId : p!.actorId;
-    // On a counter the ORIGINAL move is what's at stake — show it struck out behind the counter card
-    // so the whole exchange reads in one glance instead of only its last move.
-    const counteredCard = isCounter && act && act.type ? act.type : null;
     head = <><span className="strip-note">{t('steps.react')}</span><Ring deadline={w.deadline} total={total} tick={urgent} /></>;
-    // One horizontal statement: the card on the left, who → whom and what happens on the right,
-    // then the verdicts. Each verdict carries its own consequence so nobody has to guess the odds.
+    // Minimal centred claim: small card, one sentence, stacked full-width verdicts.
     body = (
-      <div className={`claim-min ${iAmTarget ? 'at-me' : ''}`} style={cardC ? { ['--c' as any]: CH[cardC as keyof typeof CH]?.color } : undefined}>
+      <div className="claim-min" style={cardC ? { ['--c' as any]: CH[cardC as keyof typeof CH]?.color } : undefined}>
         <TimerBar deadline={w.deadline} total={total} />
-        <div className="cm-hero">
-          {(cardC || counteredCard) && (
-            <div className="cm-cards">
-              {counteredCard && <ActionCard type={counteredCard} w={56} className="cm-ghost" label={t('prompt.countered')} />}
-              {cardC && <div className="cm-card"><GameCard c={cardC} w={counteredCard ? 74 : 88} small /></div>}
-            </div>
-          )}
-          <div className="cm-say">
-            <div className="cm-who">
-              <PlayerAvatar p={pl(claimerId)} size="xs" />
-              {targeted && <>
-                <span className="cm-to" aria-hidden="true"><Icon name="alt-arrow-right" className="size-3.5" /></span>
-                <PlayerAvatar p={pl(act.targetId)} size="xs" className="cm-target-av" />
-              </>}
-              {iAmTarget && <span className="cm-youtag">{t('prompt.youAreTarget')}</span>}
-            </div>
-            <Html as="div" className="cm-title" html={title} />
-            {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
+        {cardC && <div className="cm-card"><GameCard c={cardC} w={76} small /></div>}
+        {p!.action && p!.action.targetId && !isCounter ? (
+          // targeted attack: attacker → target, arrow marching between them
+          <div className="cm-vs">
+            <span className="cm-vs-side"><PlayerAvatar p={pl(p!.action.actorId)} size="sm" /><b>{pname(p!.action.actorId)}</b></span>
+            <span className="cm-vs-arrow" aria-hidden="true"><Icon name="alt-arrow-right" className="size-4" /><Icon name="alt-arrow-right" className="size-4" /><Icon name="alt-arrow-right" className="size-4" /></span>
+            <span className="cm-vs-side"><PlayerAvatar p={pl(p!.action.targetId)} size="sm" /><b>{pname(p!.action.targetId)}</b></span>
           </div>
-        </div>
-        {act && act.type === 'colonel' && act.guess && (
+        ) : null}
+        <div className="cm-who">{!(p!.action && p!.action.targetId && !isCounter) && <PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" />}<Html as="span" className="cm-title" html={title} /></div>
+        {p!.action && p!.action.type === 'colonel' && p!.action.guess && (
           // everyone must see WHAT the Colonel is guessing before the window closes
-          <div className="cm-guess" style={{ ['--c' as any]: CH[act.guess as keyof typeof CH]?.color }}>
-            <GameCard c={act.guess} w={52} small />
-            <Html as="span" className="cm-guess-tx" html={i18n.html('prompt.colonelGuess', { name: actor, target: tgt, character: cname(act.guess) })} />
+          <div className="cm-guess" style={{ ['--c' as any]: CH[p!.action.guess as keyof typeof CH]?.color }}>
+            <GameCard c={p!.action.guess} w={52} small />
+            <Html as="span" className="cm-guess-tx" html={i18n.html('prompt.colonelGuess', { name: actor, target: tgt, character: cname(p!.action.guess) })} />
           </div>
         )}
+        {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
         {canPass || canBlock || canChallenge ? (
-          // Counter windows put CALL THE BLUFF first and solid red; a fresh claim leads with the block.
+          isCounter ? (
+            // Counter layout: calling the bluff comes FIRST as a solid red button; letting it pass follows.
+            <div className="cm-btns">
+              {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
+              {canChallenge && <button type="button" className="rx call" onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
+              {canPass && <button type="button" className="rx let-pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span></button>}
+            </div>
+          ) : (
           <div className="cm-btns">
-            {canBlock && <RxBtn cls="r-block" icon="shield-warning" main={blockLabel} sub={blockDesc} onPress={block} />}
-            {isCounter
-              ? canChallenge && <RxBtn cls="call" icon="danger-triangle" main={t('prompt.bluff.btn')} sub={t('prompt.bluffDesc')} onPress={challenge} />
-              : w.claim && <RxBtn cls="call" icon="danger-triangle" main={t('prompt.bluff.btn')} sub={t('prompt.bluffDesc')} onPress={challenge} disabled={!canChallenge} />}
-            {canPass && <RxBtn cls={isCounter ? 'let-pass' : 'pass'} icon="check-circle" onPress={pass}
-              main={isCounter ? t('prompt.letPass') : canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}
-              sub={canBlock || canChallenge ? t('prompt.passDesc') : ''} />}
+            {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
+            {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
+            {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span></button>}
           </div>
+          )
         ) : (
-          <div className="p-waiting">{w.claim && w.claim.claimerId === me ? t('prompt.waiting.mine') : t('prompt.waiting.others')}</div>
-        )}
-        {/* who is still thinking — one dot per player the window is waiting on */}
-        {w.eligible.length > 0 && (
-          <div className="cm-dots" title={t('prompt.reacted', { n: w.passed.length, total: w.eligible.length })}>
-            {w.eligible.map((id: string) => <span key={id} className={`cm-dot ${w.passed.includes(id) ? 'done' : ''} ${id === me ? 'mine' : ''}`} />)}
-            <span className="cm-dots-tx">{t('prompt.reacted', { n: w.passed.length, total: w.eligible.length })}</span>
-          </div>
+          <div className="p-waiting">{w.claim && w.claim.claimerId === me ? t('prompt.waiting.mine') : t('prompt.waiting.others')} {t('prompt.passed', { n: w.passed.length, total: w.eligible.length })}</div>
         )}
       </div>
     );
