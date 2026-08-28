@@ -6,8 +6,8 @@ const names = {
   tn: { taxman: 'القبّاض', businesswoman: 'مرا بزنس', police: 'البوليس', terrorist: 'الإرهابي', colonel: 'الكولونال', politician: 'السياسي', thief: 'السارق' },
 };
 const reasons = {
-  en: { paidkill: 'Paid Kill', terrorist: 'Terrorist', colonel_correct: 'Colonel guessed correctly', lost_challenge: 'lost challenge', caught_bluffing: 'caught bluffing', wrong_guess: 'wrong Colonel guess', paidkill_timeout: 'Paid Kill, timed out', terrorist_timeout: 'Terrorist, timed out', lost_challenge_timeout: 'lost challenge, timed out', caught_bluffing_timeout: 'caught bluffing, timed out' },
-  tn: { paidkill: 'قتلة خالصة', terrorist: 'الإرهابي', colonel_correct: 'الكولونال عرفها', lost_challenge: 'خسر التحدّي', caught_bluffing: 'انكشف الكذّاب', wrong_guess: 'الكولونال غلط', paidkill_timeout: 'قتلة خالصة، خرج الوقت', terrorist_timeout: 'الإرهابي، خرج الوقت', lost_challenge_timeout: 'خسر التحدّي، خرج الوقت', caught_bluffing_timeout: 'انكشف الكذّاب، خرج الوقت' },
+  en: { paidkill: 'Paid Kill', terrorist: 'Terrorist', colonel_correct: 'Colonel guessed correctly', lost_challenge: 'lost challenge', caught_bluffing: 'caught bluffing', wrong_guess: 'wrong Colonel guess', paidkill_timeout: 'Paid Kill, timed out', terrorist_timeout: 'Terrorist, timed out', lost_challenge_timeout: 'lost challenge, timed out', caught_bluffing_timeout: 'caught bluffing, timed out', left: 'left the game' },
+  tn: { paidkill: 'قتلة خالصة', terrorist: 'الإرهابي', colonel_correct: 'الكولونال عرفها', lost_challenge: 'خسر التحدّي', caught_bluffing: 'انكشف الكذّاب', wrong_guess: 'الكولونال غلط', paidkill_timeout: 'قتلة خالصة، خرج الوقت', terrorist_timeout: 'الإرهابي، خرج الوقت', lost_challenge_timeout: 'خسر التحدّي، خرج الوقت', caught_bluffing_timeout: 'انكشف الكذّاب، خرج الوقت', left: 'خرج من اللعبة' },
 };
 const whats = {
   en: { inspection: 'the inspection', kill: 'the kill', theft: 'the theft' },
@@ -23,6 +23,7 @@ const log = {
     'elim.bounty': '☠ {name} is eliminated! Their {bounty} coins go to {killer} ({gain}).',
     'elim.bank': '☠ {name} is eliminated! Their {bounty} coins return to the bank.',
     'elim.plain': '☠ {name} is eliminated!',
+    'elim.left': '🚪 {name} left the game — their cards go back to the deck.',
     'income': '{name} takes Income ({gain}).',
     'timeout': '{name} ran out of time — Income taken automatically.',
     'disconnected': '{name} is disconnected — Income taken automatically.',
@@ -77,6 +78,7 @@ const log = {
     'elim.bounty': '☠ {name} خرج من اللعبة! الـ{bounty} دينار متاعو مشاو لـ {killer} ({gain}).',
     'elim.bank': '☠ {name} خرج من اللعبة! الـ{bounty} دينار متاعو رجعو للبنكة.',
     'elim.plain': '☠ {name} خرج من اللعبة!',
+    'elim.left': '🚪 {name} مشا و خلّى اللعبة — كروتو رجعو للكومة.',
     'income': '{name} خذا الدخل ({gain}).',
     'timeout': '{name} خرجلو الوقت — خذا الدخل وحدو.',
     'disconnected': '{name} مقطوع — خذا الدخل وحدو.',

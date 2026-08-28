@@ -1,6 +1,6 @@
 // Engine scenario tests (serverless engine: fake clock + tick()). Run: node test/engine.test.mjs
 import assert from 'node:assert';
-import { Game, Queue, CHARACTERS, MAX_COINS, ACTION_GRACE } from '../supabase/functions/game/engine.mjs';
+import { Game, Queue, CHARACTERS, MAX_COINS, ACTION_GRACE, DEFAULT_TIMINGS } from '../supabase/functions/game/engine.mjs';
 
 const T = { challenge: 40, block: 40, decision: 40, turn: 200, disconnectedTurn: 30, disconnectedDecision: 20, resultPause: 0, turnPause: 0 };
 let NOW = 1_000_000;
@@ -171,10 +171,12 @@ await test('colonel: correct guess removes exact card; wrong guess costs random 
   a.coins = 14; b.coins = 12; giveCard(g, a.id, 'colonel'); giveCard(g, b.id, 'thief');
   g.declareAction(a.id, { type: 'colonel', targetId: b.id, guess: 'thief' }); g.pass(b.id);
   assert.equal(b.cards.length, 2); assert.equal(a.coins, 10);
+  assert.ok(g.events.some((e) => e.type === 'guess' && e.playerId === a.id && e.targetId === b.id && e.character === 'thief' && e.right === true), 'guess event for the client animation');
   g.declareAction(b.id, { type: 'income' });
   withoutCard(g, b.id, 'politician');
   g.declareAction(a.id, { type: 'colonel', targetId: b.id, guess: 'politician' }); g.pass(b.id);
   assert.equal(a.cards.length, 2); assert.equal(b.coins, MAX_COINS); assert.equal(a.coins, 6);
+  assert.ok(g.events.some((e) => e.type === 'guess' && e.playerId === a.id && e.targetId === b.id && e.character === 'politician' && e.right === false), 'wrong guesses are announced too');
 });
 
 await test('business woman with reactive tax man; thief steal; tax man wealth tax', () => {
@@ -348,6 +350,128 @@ await test('full random game always terminates with a winner and conserves cards
     for (const c of CHARACTERS) assert.equal(all.filter((x) => x === c).length, 3);
     assert.ok(g.players.every((p) => p.coins <= MAX_COINS && p.coins >= 0));
   }
+});
+
+await test('random games survive players walking out at any moment (no hangs, cards conserved)', () => {
+  for (let run = 0; run < 20; run++) {
+    const n = 3 + (run % 4);
+    let g = new Game(mk(n), { timings: { ...T, turn: 20, decision: 15, challenge: 15, block: 15 }, now: clock });
+    g.start();
+    let steps = 0, quit = 0;
+    while (g.phase === 'playing' && steps++ < 20000) {
+      if (steps % 11 === 0) g = reload(g);
+      if (quit < n - 1 && Math.random() < 0.01) { // somebody rage-quits mid-window
+        const alive = g.alivePlayers();
+        if (alive.length > 1) { g.forfeit(alive[Math.floor(Math.random() * alive.length)].id); quit++; continue; }
+      }
+      const p = g.pending;
+      if (p) {
+        if (p.stage === 'turn' && Math.random() < 0.8) {
+          const a = g.player(p.actorId); const others = g.alivePlayers().filter((x) => x.id !== a.id);
+          const t = others[Math.floor(Math.random() * others.length)];
+          if (t) {
+            const opts = [{ type: 'income' }, { type: 'loan' }, { type: 'businesswoman' }, { type: 'politician' }, { type: 'police', targetId: t.id, slot: 0 }];
+            if (a.coins >= 7) opts.push({ type: 'paidkill', targetId: t.id });
+            if (a.coins >= 3) opts.push({ type: 'terrorist', targetId: t.id });
+            if (a.coins >= 4) opts.push({ type: 'colonel', targetId: t.id, guess: CHARACTERS[Math.floor(Math.random() * 7)] });
+            g.declareAction(a.id, opts[Math.floor(Math.random() * opts.length)]);
+          }
+        } else if (p.window && p.window.type === 'reaction' && p.window.claim && Math.random() < 0.4) {
+          const e = p.window.challengeEligible; if (e.length) g.challenge(e[Math.floor(Math.random() * e.length)]);
+        } else if (p.window && p.window.type === 'decision' && Math.random() < 0.7) {
+          const pl = g.player(p.window.playerId);
+          if (pl.cards.length) g.decide(pl.id, p.window.kind === 'police' ? { swap: true } : { index: Math.floor(Math.random() * pl.cards.length) });
+        }
+      }
+      advance(g, 5);
+    }
+    assert.equal(g.phase, 'ended', `game ${run} did not end (${quit} walkouts)`);
+    const all = [...g.deck.toArray(), ...g.players.flatMap((p) => p.cards)];
+    assert.equal(all.length, 21, 'cards conserved despite walkouts');
+    for (const c of CHARACTERS) assert.equal(all.filter((x) => x === c).length, 3);
+  }
+});
+
+await test('reaction windows last 15s (block + challenge) and still time out', () => {
+  assert.equal(DEFAULT_TIMINGS.block, 15000); assert.equal(DEFAULT_TIMINGS.challenge, 15000);
+  const g = new Game(mk(3), { now: clock }); // real timings, not the fast test ones
+  g.start();
+  const a = g.active;
+  g.declareAction(a.id, { type: 'loan' });                       // block-only window (Tax Man veto)
+  assert.equal(g.pending.window.type, 'reaction'); assert.equal(g.pending.window.block.kind, 'veto');
+  assert.equal(g.pending.window.deadline, NOW + 15000, '15s to veto');
+  advance(g, 14000); assert.equal(g.pending.window.type, 'reaction', 'still open at 14s');
+  advance(g, 1100);
+  assert.equal(g.player(a.id).coins, 4, 'loan paid out when the 15s window expired');
+  advance(g, DEFAULT_TIMINGS.turnPause + 100);                   // let the turn-end pause finish
+  const b = g.active;
+  g.declareAction(b.id, { type: 'politician' });                 // challenge-only window
+  assert.equal(g.pending.window.type, 'reaction'); assert.ok(g.pending.window.claim);
+  assert.equal(g.pending.window.deadline, NOW + 15000, '15s to call the bluff');
+  advance(g, 14000); assert.ok(g.pending.window.claim, 'still challengeable at 14s');
+  advance(g, 1100);
+  assert.ok(g.log.some((e) => e.key === 'politician.swap'), 'claim resolved after the 15s window');
+});
+
+await test('forfeit: leaving mid-game eliminates the player and the game moves on', () => {
+  const cards = (g) => g.deck.length + g.players.reduce((n, p) => n + p.cards.length, 0);
+  // (a) the active player walks out → their cards go back and the turn moves on
+  let g = newGame(3); g.start();
+  let a = g.active;
+  assert.equal(g.forfeit(a.id), true);
+  assert.equal(g.player(a.id).alive, false); assert.equal(g.player(a.id).cards.length, 0);
+  assert.equal(cards(g), 21, 'every card returned to the deck');
+  assert.ok(g.outOrder.includes(a.id), 'finish order recorded for trophies/standings');
+  assert.ok(g.events.some((e) => e.type === 'eliminated' && e.playerId === a.id));
+  assert.ok(g.log.some((e) => e.key === 'elim.left'));
+  assert.equal(g.phase, 'playing');
+  assert.notEqual(g.active.id, a.id, 'the turn advanced past the forfeiting player');
+  assert.equal(g.pending.stage, 'turn'); assert.ok(g.deadline != null, 'the clock is running again');
+  assert.equal(g.forfeit(a.id), false, 'forfeiting twice is a no-op');
+  assert.deepEqual(reload(g).toJSON(), g.toJSON(), 'state still round-trips');
+
+  // (b) a player inside a reaction window walks out → counts as a pass, nothing hangs
+  g = newGame(3); g.start();
+  a = g.active; const [b, c] = g.players.filter((p) => p.id !== a.id);
+  a.coins = 5; giveCard(g, a.id, 'terrorist');
+  g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
+  assert.equal(g.pending.window.type, 'reaction');
+  g.forfeit(c.id);
+  assert.equal(g.phase, 'playing');
+  assert.equal(g.pending.window.type, 'reaction'); assert.ok(g.pending.window.passed.includes(c.id), 'treated as passed');
+  g.pass(b.id);
+  assert.equal(g.pending.window.type, 'decision', 'the kill went ahead');
+  g.decide(b.id, { index: 0 });
+  assert.equal(cards(g), 21); assert.ok(g.deadline != null);
+
+  // (c) the claimer walks out mid-window → the claim dies with them, the action fails
+  g = newGame(3); g.start();
+  a = g.active; const d = g.players.find((p) => p.id !== a.id);
+  a.coins = 5;
+  g.declareAction(a.id, { type: 'terrorist', targetId: d.id });
+  g.forfeit(a.id);
+  assert.equal(g.phase, 'playing');
+  assert.equal(g.player(d.id).cards.length, 3, 'the kill never resolved');
+  assert.ok(g.log.some((e) => e.key === 'action.fail'));
+  assert.notEqual(g.active.id, a.id); assert.ok(g.deadline != null); assert.equal(cards(g), 21);
+
+  // (d) the player owing a decision walks out → resolved exactly like a timeout
+  g = newGame(3); g.start();
+  a = g.active; const f = g.players.find((p) => p.id !== a.id);
+  a.coins = 7; f.coins = 0;
+  g.declareAction(a.id, { type: 'paidkill', targetId: f.id });
+  assert.equal(g.pending.window.type, 'decision'); assert.equal(g.pending.window.playerId, f.id);
+  g.forfeit(f.id);
+  assert.equal(g.player(f.id).alive, false); assert.equal(g.phase, 'playing');
+  assert.ok(g.deadline != null, 'no hang after an abandoned decision'); assert.equal(cards(g), 21);
+
+  // (e) forfeiting can end the game
+  g = newGame(2); g.start();
+  a = g.active; const last = g.players.find((p) => p.id !== a.id);
+  g.forfeit(last.id);
+  assert.equal(g.phase, 'ended'); assert.equal(g.winnerId, a.id);
+  assert.ok(g.outOrder.includes(last.id)); assert.equal(cards(g), 21);
+  assert.equal(g.forfeit(a.id), false, 'nothing to forfeit once the game is over');
 });
 
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);

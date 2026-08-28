@@ -53,6 +53,7 @@ function roomFromLobby(l: any): Room | null {
 
 function applyRoom(l: any) {
   const room = roomFromLobby(l);
+  if (room) exiting = false;
   if (!room) { unsubscribe(); voiceOnRoomGone(); store.set({ room: null, state: null, me: uid, screen: 'home', tour: false }); return; }
   store.set((s) => ({ room, me: uid, screen: room.phase === 'lobby' ? 'lobby' : (s.state ? 'game' : s.screen) }));
   if (room.phase === 'lobby') { resetEvents(); store.set({ state: null, targeting: null, targetId: null, screen: 'lobby' }); }
@@ -104,6 +105,14 @@ async function emitQuiet(op: string, data?: any) {
   try { await supabase.functions.invoke('game', { body: { op, ...(data || {}) } }); } catch { /* ignore */ }
 }
 
+let exiting = false; // I'm deliberately leaving/closing — ignore the room-row echo of my own exit
+/** Tear everything down and land on the home screen (shared by leave / kick / close / room-deleted). */
+function exitToHome(msg?: string) {
+  unsubscribe(); resetEvents(); voiceOnRoomGone();
+  store.set({ room: null, state: null, screen: 'home', tour: false });
+  if (msg) notify(msg);
+}
+
 function subscribe(code: string) {
   if (!supabase || !uid) return;
   if (channel && channelCode === code) return;
@@ -112,9 +121,13 @@ function subscribe(code: string) {
   channel = supabase
     .channel('room-' + code)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${code}` }, (payload: any) => {
-      if (payload.eventType === 'DELETE') { unsubscribe(); store.set({ room: null, state: null, screen: 'home' }); notify(i18n.err('Room closed')); return; }
+      if (exiting) return;
+      if (payload.eventType === 'DELETE') { exitToHome(i18n.err('Room closed')); return; }
       const r = payload.new; if (!r) return;
-      applyRoom(lobbyFromRow(r));
+      const l = lobbyFromRow(r);
+      // I was kicked (or my seat vanished) — the row still exists, I'm just not on it any more.
+      if (uid && store.get().room && !l.players.some((p: any) => p.id === uid)) { exitToHome(t('toast.kicked')); return; }
+      applyRoom(l);
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_views', filter: `id=eq.${code}:${uid}` }, (payload: any) => {
       const r = payload.new; if (r && r.view) applyView(r.view);
@@ -178,17 +191,25 @@ async function afterJoin(res: any) {
 export async function createRoom(name: string) { return afterJoin(await emit('create_room', { name, profile: profileOf() })); }
 export async function joinRoom(name: string, code: string) { const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) clearInviteParam(); return r; }
 export async function playSolo(name: string, guided = false) { return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
-export async function leaveRoom() { await emit('leave_room'); unsubscribe(); resetEvents(); voiceOnRoomGone(); store.set({ room: null, state: null, screen: 'home', tour: false }); }
-async function lobbyOp(op: string) { const r = await emit(op); if (r && r.room) applyRoom(r.room); return r; }
+export async function leaveRoom() { exiting = true; await emit('leave_room'); exitToHome(); }
+/** Host closes the room for everyone; the others get the rooms-row DELETE over Realtime. */
+export async function closeRoom() { exiting = true; const r = await emit('close_room'); if (r && r.ok) exitToHome(); else exiting = false; return r; }
+async function lobbyOp(op: string, data?: any) { const r = await emit(op, data); if (r && r.room) applyRoom(r.room); return r; }
 export const toggleReady = () => lobbyOp('toggle_ready');
 export const startGame = () => emit('start_game');
 export const addBot = () => lobbyOp('add_bot');
 export const removeBot = () => lobbyOp('remove_bot');
+/** Host removes somebody from the lobby (works on bots too). */
+export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });
 export async function newGame() { const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
-export function commitProfile(p: Profile) {
+/** Save my look (and optionally rename myself). In a room the server also gets the new name and
+    hands back a fresh lobby view, so every other seat re-labels straight away. */
+export function commitProfile(p: Profile, name?: string) {
   store.set({ profile: p }); localStorage.setItem('mekina.profile', JSON.stringify(p));
   if (p.avatar === 'custom' && p.avatarData) customAvatars.me = p.avatarData;
-  if (store.get().room) emit('set_profile', { profile: p });
+  const nm = name === undefined ? '' : name.trim().replace(/\s+/g, ' ').slice(0, 16);
+  if (nm) { store.set({ name: nm }); localStorage.setItem('mekina.name', nm); }
+  if (store.get().room) lobbyOp('set_profile', { profile: p, ...(nm ? { name: nm } : {}) });
   syncProfile(); // keep the persistent profile row (leaderboard/friends) in step with the avatar
 }
 export async function copyInvite(code: string) {

@@ -23,8 +23,8 @@ const ACTION_CHARACTER = { businesswoman: 'businesswoman', taxman: 'taxman', pol
 const DEFAULT_ACTIONS = ['income', 'loan', 'paidkill'];
 
 export const DEFAULT_TIMINGS = {
-  challenge: 12000,       // reaction window when a claim can be challenged
-  block: 10000,           // counter-only window (veto / tax / block after a proven claim)
+  challenge: 15000,       // reaction window when a claim can be challenged
+  block: 15000,           // counter-only window (veto / tax / block after a proven claim)
   decision: 20000,        // choose card to lose, pay to survive, police keep/swap
   resultPause: 3200,      // pause to show the outcome of a bluff call before continuing
   turnPause: 2200,        // pause at the end of a turn so everyone can read what happened
@@ -387,8 +387,13 @@ export class Game {
       }
       case 'colonel': {
         if (!target.alive) { this.addLog('system', 'colonel.targetout', { name: target.name }); return this.endTurn(); }
-        if (target.cards.includes(action.guess)) { this.addLog('loss', 'colonel.right', { target: target.name, guess: action.guess }); this.loseSpecificCard(target, action.guess, 'colonel_correct', actor.id); }
-        else { this.addLog('loss', 'colonel.wrong', { target: target.name, guess: action.guess, name: actor.name, gain: this.gainText(target, 4) }); this.loseRandomCard(actor, 'wrong_guess', target.id); }
+        if (target.cards.includes(action.guess)) {
+          this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: true });
+          this.addLog('loss', 'colonel.right', { target: target.name, guess: action.guess }); this.loseSpecificCard(target, action.guess, 'colonel_correct', actor.id);
+        } else {
+          this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: false });
+          this.addLog('loss', 'colonel.wrong', { target: target.name, guess: action.guess, name: actor.name, gain: this.gainText(target, 4) }); this.loseRandomCard(actor, 'wrong_guess', target.id);
+        }
         if (this.checkGameOver()) return; return this.endTurn();
       }
       case 'politician': {
@@ -586,8 +591,63 @@ export class Game {
     this.run(onChoice, choice || {});
   }
 
+  // ───────────────────────── forfeit (leaving a live game) ─────────────────────────
+  /**
+   * A player walks out mid-game: they are eliminated on the spot (same path as any elimination —
+   * cards go back to the deck, `outOrder` records the finish, the `eliminated` event fires), then the
+   * flow is repaired around them: their turn is passed on, their claim is voided, their reaction counts
+   * as a pass and their open decision resolves the way a timeout would. Returns true if anything changed.
+   */
+  forfeit(playerId) {
+    if (this.phase !== 'playing') return false;
+    const p = this.player(playerId);
+    if (!p) return false;
+    p.connected = false;
+    if (!p.alive) { this.sync(); return false; }
+    this.addLog('eliminated', 'elim.left', { name: p.name });
+    while (p.alive && p.cards.length) this.loseCardAt(p, 0, 'left', null); // returns every card to the deck
+    if (p.alive) { // safety net: no cards left to lose, close the seat by hand
+      p.alive = false;
+      if (!this.outOrder.includes(p.id)) this.outOrder.push(p.id);
+      this.event('eliminated', { playerId: p.id, killerId: null });
+      const bounty = p.coins; p.coins = 0;
+      if (bounty > 0) this.addLog('eliminated', 'elim.bank', { name: p.name, bounty }); else this.addLog('eliminated', 'elim.plain', { name: p.name });
+    }
+    if (this.checkGameOver()) return true;
+    this.resumeAfterForfeit(playerId);
+    if (this.phase === 'playing' && this.deadline == null && !(this.pending && this.pending.window)) this._endTurnNow(); // never leave the game without a clock
+    this.sync();
+    return true;
+  }
+  /** Repair whatever window/turn the forfeiting player was holding up. */
+  resumeAfterForfeit(playerId) {
+    const pend = this.pending, w = pend ? pend.window : null;
+    if (pend && pend.bw) { // a Business Woman skim by someone who walked out is void
+      const i = pend.bw.taxers.indexOf(playerId);
+      if (i >= 0) { pend.bw.taxers.splice(i, 1); if (!pend.bw.resolved.includes(playerId)) pend.bw.resolved.push(playerId); }
+    }
+    if (w && w.type === 'reaction') {
+      if (w.claim && w.claim.claimerId === playerId) { // the claim leaves with the claimer → treat it as failed
+        this.clearDue(); const cbs = w.cb; this.closeWindow();
+        return this.run(cbs.onFail || cbs.onProceed);
+      }
+      if (w.eligible && w.eligible.includes(playerId)) return this.pass(playerId); // counts as passing
+      return;
+    }
+    if (w && w.type === 'decision') {
+      if (w.playerId !== playerId) return;
+      this.clearDue(); const cbs = w.cb; this.closeWindow();
+      return this.run(cbs.onTimeout); // same as running out of time
+    }
+    if (w && w.type === 'result') return; // the readable pause keeps running on its own
+    if (pend && pend.stage === 'turn' && pend.actorId === playerId) { // it was their turn: hand it on
+      this.pending = { stage: 'resolving', actorId: playerId, action: null, window: null };
+      return this.endTurn();
+    }
+  }
+
   // ───────────────────────── connectivity / cosmetics ─────────────────────────
-  setProfile(playerId, { avatar, color }) { const p = this.player(playerId); if (!p) return; if (avatar) p.avatar = avatar; if (color) p.color = color; this.sync(); }
+  setProfile(playerId, { avatar, color, name }) { const p = this.player(playerId); if (!p) return; if (avatar) p.avatar = avatar; if (color) p.color = color; if (name) p.name = name; this.sync(); }
   setConnected(playerId, connected) {
     const p = this.player(playerId); if (!p || p.connected === connected) return;
     p.connected = connected;

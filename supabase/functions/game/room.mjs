@@ -11,7 +11,7 @@
  *   getMembership(uid) -> {code} | null   | addMember(code, uid, now) | removeMember(code, uid) | touchMember(code, uid, now)
  *   listMembers(code) -> [{user_id,last_seen}] | getState(code) -> {state, version} | null
  *   saveState(code, state, expectedVersion) -> bool (insert when expectedVersion===0) | deleteState(code)
- *   upsertViews(rows:[{id, code, user_id, view}]) | deleteViews(code) | listDueRooms(now) -> [code]
+ *   upsertViews(rows:[{id, code, user_id, view}]) | deleteViews(code) | deleteView(id) (optional) | listDueRooms(now) -> [code]
  */
 import { Game, GameError, MIN_PLAYERS, MAX_PLAYERS, ACTION_GRACE } from './engine.mjs';
 import { BOT_NAMES, runBots, botsNextDue } from './bots.mjs';
@@ -60,6 +60,8 @@ function standings(game) {
     .map(({ id, rank }) => ({ id, delta: delta(rank), win: rank === 1 }));
 }
 const pickHost = (room) => { if (!room.players.find((p) => p.id === room.host_id) && room.players.length) room.host_id = (humans(room)[0] || room.players[0]).id; };
+/** Hand the host badge to a human who is still a member of the room (used when the host walks out mid-game). */
+const pickHostFrom = (room, members) => { const h = humans(room).find((p) => p.id !== room.host_id && members && members[p.id] != null); if (h) room.host_id = h.id; };
 
 /** Public lobby payload (same for everyone; clients know their own id). */
 export function lobbyView(room) {
@@ -116,10 +118,12 @@ async function dispatch(ctx, op, body) {
   await r.load();
   r.touch(me);
   switch (op) {
-    case 'set_profile': return r.setProfile(me, body.profile);
+    case 'set_profile': return r.setProfile(me, body.profile, body.name);
     case 'toggle_ready': return r.toggleReady(me);
     case 'add_bot': return r.addBot(me);
     case 'remove_bot': return r.removeBot(me);
+    case 'kick': return r.kick(me, body.targetId);
+    case 'close_room': return r.closeRoom(me);
     case 'start_game': return r.startGame(me);
     case 'back_to_lobby': return r.backToLobby(me);
     case 'new_game': return r.newGame(me);
@@ -187,6 +191,8 @@ async function joinRoom(ctx, body) {
   return { ok: true, code, room: lobbyView(r.room), view: null };
 }
 
+/** Leaving a *live* game is a forfeit: the player is eliminated on the spot (cards back to the deck) but
+ *  the seat row stays so names/standings/log still resolve. In the lobby (or after the game) the seat goes. */
 async function leaveRoom(ctx) {
   const { db, uid } = ctx;
   const m = await db.getMembership(uid);
@@ -194,10 +200,16 @@ async function leaveRoom(ctx) {
   const room = await db.getRoom(m.code);
   await db.removeMember(m.code, uid);
   if (!room) return { ok: true };
-  const r = new RoomOps(ctx, room); await r.load();
-  if (r.game && r.game.phase === 'playing') { const p = room.players.find((x) => x.id === uid); if (p) { p.connected = false; p.lastSeen = 0; } r.game.setConnected(uid, false); }
-  else { room.players = room.players.filter((p) => p.id !== uid); pickHost(room); }
-  if (!humans(room).length) { await db.deleteRoom(room.code); await db.deleteState(room.code); await db.deleteViews(room.code); return { ok: true }; }
+  const r = new RoomOps(ctx, room); await r.load(); // members are re-read *after* the removal, so `uid` is gone
+  if (r.game && r.game.phase === 'playing') {
+    const p = room.players.find((x) => x.id === uid);
+    if (p) { p.connected = false; p.lastSeen = 0; }
+    r.game.forfeit(uid);
+    r.runBots();
+    if (room.host_id === uid) pickHostFrom(room, r.members); // never leave the room without a reachable host
+  } else { room.players = room.players.filter((p) => p.id !== uid); pickHost(room); }
+  // nobody with a live membership is left → tear the whole room down (a forfeited seat does not count)
+  if (!humans(room).some((p) => r.members[p.id] != null)) { await db.deleteRoom(room.code); await db.deleteState(room.code); await db.deleteViews(room.code); return { ok: true }; }
   await r.commit();
   return { ok: true };
 }
@@ -274,13 +286,19 @@ class RoomOps {
     }
   }
   // ── lobby ops ──
-  setProfile(me, raw) {
+  setProfile(me, raw, rawName) {
     const pr = cleanProfile(raw);
     if (pr.avatar) { me.avatar = pr.avatar; me.avatarData = pr.avatarData; }
     if (pr.color) me.color = pr.color;
+    // players may also rename themselves from inside the room; duplicates get a suffix like joining does
+    if (rawName != null) {
+      let name = cleanName(rawName);
+      if (this.room.players.some((p) => p.id !== me.id && p.name.toLowerCase() === name.toLowerCase())) name = `${name.slice(0, 13)}#${this.room.players.indexOf(me) + 1}`;
+      me.name = name;
+    }
     applyDefaults(this.room.players, me);
-    if (this.game) this.game.setProfile(me.id, { avatar: me.avatar, color: me.color });
-    return this.done();
+    if (this.game) this.game.setProfile(me.id, { avatar: me.avatar, color: me.color, name: me.name });
+    return this.done({ room: lobbyView(this.room) });
   }
   toggleReady(me) { if (this.room.phase !== 'lobby') throw fail('Game in progress'); me.ready = !me.ready; return this.done({ ready: me.ready, room: lobbyView(this.room) }); }
   pushBot() {
@@ -291,6 +309,33 @@ class RoomOps {
     room.players.push(bot); applyDefaults(room.players, bot); return bot;
   }
   addBot(me) { if (this.room.host_id !== me.id) throw fail('Only the host can add bots'); if (this.room.phase !== 'lobby') throw fail('Game in progress'); this.pushBot(); return this.done({ room: lobbyView(this.room) }); }
+  /** Host removes somebody from the lobby (works for bots too). Lobby only — nobody gets thrown out mid-game. */
+  async kick(me, targetId) {
+    const room = this.room;
+    if (room.host_id !== me.id) throw fail('Only the host can remove players');
+    if (this.game && this.game.phase === 'playing') throw fail('You cannot remove players while the game is running');
+    if (room.phase !== 'lobby') throw fail('Go back to the lobby first to remove players');
+    if (!targetId || targetId === me.id) throw fail('You cannot remove yourself');
+    const idx = room.players.findIndex((p) => p.id === targetId);
+    if (idx < 0) throw fail('That player is not in the room');
+    const [gone] = room.players.splice(idx, 1);
+    pickHost(room);
+    if (!gone.isBot) await this.db.removeMember(room.code, gone.id); // their next hello/ping finds no room
+    const res = await this.done({ room: lobbyView(room) });
+    if (!gone.isBot && this.db.deleteView) { try { await this.db.deleteView(`${room.code}:${gone.id}`); } catch (e) { /* best effort */ } }
+    return res;
+  }
+  /** Host closes the room for everyone, in any phase: room, state, views and memberships all go. */
+  async closeRoom(me) {
+    const room = this.room;
+    if (room.host_id !== me.id) throw fail('Only the host can close the room');
+    const code = room.code;
+    await this.db.deleteViews(code);
+    await this.db.deleteState(code);
+    for (const id of Object.keys(this.members || {})) await this.db.removeMember(code, id); // only members of *this* room
+    await this.db.deleteRoom(code);
+    return { ok: true, closed: true };
+  }
   removeBot(me) {
     if (this.room.host_id !== me.id) throw fail('Only the host can remove bots'); if (this.room.phase !== 'lobby') throw fail('Game in progress');
     const idx = this.room.players.map((p) => p.isBot).lastIndexOf(true); if (idx < 0) throw fail('No bot to remove');

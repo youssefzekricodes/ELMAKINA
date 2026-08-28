@@ -1,5 +1,5 @@
 /* Rules (case file) and avatar picker — both HeroUI Modals controlled from the store. */
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Modal, Tooltip } from '@heroui/react';
 import { CHARACTERS, DEFAULT_AVATARS, IMG, PALETTE } from '../theme';
 import { i18n, t } from '../i18n';
@@ -71,12 +71,24 @@ export function CharactersModal() {
   );
 }
 
+/** Name + avatar + colour — the one place you edit who you are, from home OR from inside a room. */
 export function AvatarPicker() {
   const s = useStore();
   const open = s.modal === 'avatar';
   const file = useRef<HTMLInputElement>(null);
   const p = s.profile;
+  const [nm, setNm] = useState(s.name);
+  useEffect(() => { if (open) setNm(store.get().name); }, [open]);
   const set = (patch: Partial<Profile>) => commitProfile({ ...p, ...patch });
+  /** Push the typed name (locally + to the server when in a room). Returns false when it's blank. */
+  const saveName = (quiet = false) => {
+    const v = nm.trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (!v) { if (!quiet) notify(t('toast.name')); setNm(store.get().name); return false; }
+    if (v !== store.get().name) commitProfile(store.get().profile, v);
+    setNm(v);
+    return true;
+  };
+  const close = () => { if (saveName()) store.set({ modal: null }); };
   const preview = { id: 'me', avatar: p.avatar, avatarData: p.avatarData, color: p.color };
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files && e.target.files[0]; if (!f) return; e.target.value = '';
@@ -91,12 +103,21 @@ export function AvatarPicker() {
     } catch { notify(t('toast.error')); }
   };
   return (
-    <Modal.Backdrop isOpen={open} onOpenChange={(o) => store.set({ modal: o ? 'avatar' : null })}>
+    <Modal.Backdrop isOpen={open} onOpenChange={(o) => { if (!o) saveName(true); store.set({ modal: o ? 'avatar' : null }); }}>
       <Modal.Container size="md" scroll="inside">
-        <Modal.Dialog aria-label={t('profile.pick')}>
+        <Modal.Dialog aria-label={t('profile.edit')}>
           <Modal.CloseTrigger />
-          <Modal.Header><Modal.Heading className="modal-title">{t('profile.pick')}</Modal.Heading></Modal.Header>
+          <Modal.Header><Modal.Heading className="modal-title">{t('profile.edit')}</Modal.Heading></Modal.Header>
           <Modal.Body className="flex flex-col gap-5">
+            <label className="pf-field">
+              <span className="pf-label">{t('home.name')}</span>
+              <input
+                className="pf-name" value={nm} maxLength={16} autoComplete="off" placeholder={t('home.name.ph')} aria-label={t('home.name')}
+                onChange={(e) => setNm(e.target.value)}
+                onBlur={() => saveName(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLInputElement).blur(); saveName(); } }}
+              />
+            </label>
             <div className="flex flex-wrap items-center gap-5">
               <PlayerAvatar p={preview} size="xl" />
               <div className="flex flex-col gap-2">
@@ -128,7 +149,7 @@ export function AvatarPicker() {
               <input ref={file} type="file" accept="image/*" className="hidden" onChange={onFile} />
             </div>
           </Modal.Body>
-          <Modal.Footer><Button slot="close" variant="primary">{t('profile.done')}</Button></Modal.Footer>
+          <Modal.Footer><Button variant="primary" onPress={close}>{t('profile.done')}</Button></Modal.Footer>
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>

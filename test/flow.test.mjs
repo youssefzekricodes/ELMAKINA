@@ -23,6 +23,7 @@ function memDb() {
     async deleteState(code) { states.delete(code); },
     async upsertViews(rows) { for (const r of rows) views.set(r.id, clone(r)); },
     async deleteViews(code) { for (const k of [...views.keys()]) if (k.startsWith(code + ':')) views.delete(k); },
+    async deleteView(id) { views.delete(id); },
     async listDueRooms(now) { return [...rooms.values()].filter((r) => r.next_due != null && r.next_due <= now).map((r) => r.code); },
   };
 }
@@ -61,10 +62,12 @@ await test('lobby: create, join, ready, start; views are private; leave', async 
   assert.equal(viewOf(db, code, A).pending.window.type, 'result');
   NOW += 3600; await call(db, B, { op: 'tick' }); // turnPause 2200 + ACTION_GRACE 1200
   assert.equal(viewOf(db, code, A).turnPlayerId, other);
-  // leaving mid-game keeps the seat (disconnected), host passes if needed
+  // leaving mid-game is a forfeit: the seat stays (names/standings) but the player is out of the game
   assert.ok((await call(db, B, { op: 'leave_room' })).ok);
   assert.equal(db.members.has(B), false);
-  assert.equal(viewOf(db, code, A).players.find((p) => p.id === B).connected, false);
+  const seatB = viewOf(db, code, A).players.find((p) => p.id === B);
+  assert.equal(seatB.connected, false); assert.equal(seatB.alive, false, 'the leaver forfeits');
+  assert.equal(viewOf(db, code, A).phase, 'ended'); assert.equal(viewOf(db, code, A).winnerId, A, 'last one standing wins');
 });
 
 await test('solo: bots play by themselves through ticks until the game ends; new game restarts', async () => {
@@ -129,6 +132,83 @@ await test('optimistic concurrency: a stale write is retried, not lost', async (
   const res = await call(db, A, { op: 'tick' });
   assert.ok(res.ok, 'retried after conflict');
   assert.ok(injected);
+});
+
+await test('kick: host-only, lobby-only, and the kicked player is really gone', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001', B = 'bbbbbbbb-0000-0000-0000-000000000002', C = 'cccccccc-0000-0000-0000-000000000003';
+  const { code } = await call(db, A, { op: 'create_room', name: 'Host' });
+  await call(db, B, { op: 'join_room', name: 'Bee', code });
+  await call(db, C, { op: 'join_room', name: 'Cee', code });
+  let r = await call(db, B, { op: 'kick', targetId: C }); assert.equal(r.ok, false, 'only the host may kick'); assert.match(r.error, /host/i);
+  r = await call(db, A, { op: 'kick', targetId: A }); assert.equal(r.ok, false, 'cannot kick yourself');
+  r = await call(db, A, { op: 'kick', targetId: 'nope' }); assert.equal(r.ok, false, 'unknown target');
+  r = await call(db, A, { op: 'kick', targetId: C }); assert.ok(r.ok, r.error);
+  assert.equal(r.room.players.length, 2); assert.ok(!r.room.players.some((p) => p.id === C), 'lobbyView returned without the kicked player');
+  assert.equal(db.rooms.get(code).players.some((p) => p.id === C), false, 'seat removed');
+  assert.equal(db.members.has(C), false, 'membership row removed');
+  assert.equal(db.views.has(`${code}:${C}`), false, 'view row removed');
+  const h = await call(db, C, { op: 'hello' }); assert.ok(h.ok); assert.equal(h.room, null, 'the kicked client learns it on the next hello');
+  assert.equal((await call(db, C, { op: 'toggle_ready' })).ok, false, 'no room-bound ops after being kicked');
+  // bots can be kicked too
+  assert.ok((await call(db, A, { op: 'add_bot' })).ok);
+  const botId = db.rooms.get(code).players.find((p) => p.isBot).id;
+  assert.ok((await call(db, A, { op: 'kick', targetId: botId })).ok);
+  assert.equal(db.rooms.get(code).players.some((p) => p.isBot), false);
+  // …but never mid-game
+  await call(db, B, { op: 'toggle_ready' }); assert.ok((await call(db, A, { op: 'start_game' })).ok);
+  r = await call(db, A, { op: 'kick', targetId: B }); assert.equal(r.ok, false); assert.match(r.error, /running/i);
+});
+
+await test('close_room: the host ejects everyone and every trace of the room is gone', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001', B = 'bbbbbbbb-0000-0000-0000-000000000002';
+  const { code } = await call(db, A, { op: 'create_room', name: 'Host' });
+  await call(db, B, { op: 'join_room', name: 'Bee', code });
+  assert.equal((await call(db, B, { op: 'close_room' })).ok, false, 'only the host may close');
+  await call(db, B, { op: 'toggle_ready' }); assert.ok((await call(db, A, { op: 'start_game' })).ok);
+  assert.equal(db.rooms.get(code).phase, 'playing', 'closing works mid-game too');
+  const res = await call(db, A, { op: 'close_room' });
+  assert.deepEqual(res, { ok: true, closed: true });
+  assert.equal(db.rooms.has(code), false, 'room row gone');
+  assert.equal(db.states.has(code), false, 'game_state gone');
+  assert.equal([...db.views.keys()].some((k) => k.startsWith(code + ':')), false, 'views gone');
+  assert.equal(db.members.size, 0, 'every membership gone');
+  assert.equal((await call(db, B, { op: 'hello' })).room, null);
+  assert.equal((await call(db, A, { op: 'hello' })).room, null);
+});
+
+await test('leaving a live game forfeits: eliminated, cards back to the deck, the game carries on', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001', B = 'bbbbbbbb-0000-0000-0000-000000000002', C = 'cccccccc-0000-0000-0000-000000000003';
+  const { code } = await call(db, A, { op: 'create_room', name: 'Aay' });
+  await call(db, B, { op: 'join_room', name: 'Bee', code }); await call(db, B, { op: 'toggle_ready' });
+  await call(db, C, { op: 'join_room', name: 'Cee', code }); await call(db, C, { op: 'toggle_ready' });
+  assert.ok((await call(db, A, { op: 'start_game' })).ok);
+  const cards = () => { const g = db.states.get(code).state.game; return g.deck.length + g.players.reduce((n, p) => n + p.cards.length, 0); };
+  assert.equal(cards(), 21);
+  assert.ok((await call(db, B, { op: 'leave_room' })).ok);
+  let v = viewOf(db, code, A);
+  assert.equal(v.players.find((p) => p.id === B).alive, false, 'the leaver is eliminated');
+  assert.ok(v.log.some((e) => e.key === 'elim.left'), 'logged in both locales via the elim.left key');
+  assert.equal(cards(), 21, 'their cards went back to the deck');
+  assert.equal(db.rooms.get(code).players.some((p) => p.id === B), true, 'the seat row stays');
+  assert.equal(db.members.has(B), false, 'but the membership is gone');
+  assert.equal(v.phase, 'playing', 'two players left → the game continues');
+  assert.ok(v.pending, 'the game is not stuck');
+  NOW += 4000; await call(db, A, { op: 'tick' });   // clear any turn-end pause the forfeit opened
+  v = viewOf(db, code, A);
+  assert.notEqual(v.turnPlayerId, B, 'the turn moved on');
+  assert.ok(v.nextDue, 'the clock keeps running');
+  // the second leaver ends the game; the last human leaving deletes the room outright
+  assert.ok((await call(db, C, { op: 'leave_room' })).ok);
+  v = viewOf(db, code, A);
+  assert.equal(v.phase, 'ended'); assert.equal(v.winnerId, A);
+  assert.equal(cards(), 21);
+  assert.ok((await call(db, A, { op: 'leave_room' })).ok);
+  assert.equal(db.rooms.has(code), false, 'no members left → room deleted');
+  assert.equal(db.states.has(code), false);
+  assert.equal([...db.views.keys()].some((k) => k.startsWith(code + ':')), false);
 });
 
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);

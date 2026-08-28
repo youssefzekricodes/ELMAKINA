@@ -1,7 +1,7 @@
 import { Button, Tooltip } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { addBot, copyInvite, leaveRoom, removeBot, startGame, toggleReady } from '../lib/net';
+import { addBot, copyInvite, kickPlayer, leaveRoom, removeBot, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
 import { Icon, PlayerAvatar } from './ui';
 import { AddFriendButton } from './Social';
@@ -18,6 +18,7 @@ export function Lobby() {
   const hint = n < room.minPlayers ? t('lobby.hint.more', { n, max: room.maxPlayers }) : isHost ? (room.canStart ? t('lobby.hint.canStart') : t('lobby.hint.wait')) : t('lobby.hint.guest');
   const cap = Math.min(room.maxPlayers, 6);
   const empties = Math.max(0, cap - n);
+  const openEditor = () => store.set({ modal: 'avatar' });
 
   return (
     <section className="screen lobby-screen">
@@ -54,20 +55,42 @@ export function Lobby() {
           {room.players.map((p, i) => {
             const ready = p.ready || p.isHost || p.isBot;
             const talking = speakingOf(p.id);
+            const mine = p.id === room.you;
+            const canKick = isHost && !mine;
+            const editLabel = t('profile.editSeat');
+            const kickLabel = t('lobby.kick', { name: p.name });
             return (
-              <li key={p.id} className={`pcard ${ready ? 'ready' : 'waiting'} ${p.connected ? '' : 'off'} ${p.id === room.you ? 'me' : ''}`}>
+              <li
+                key={p.id}
+                className={`pcard ${ready ? 'ready' : 'waiting'} ${p.connected ? '' : 'off'} ${mine ? 'me editable' : ''}`}
+                {...(mine ? { role: 'button', tabIndex: 0, title: editLabel, 'aria-label': editLabel, onClick: openEditor, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditor(); } } } : {})}
+              >
                 <span className="pcard-num">{i + 1}</span>
                 {ready && <span className="pcard-stamp">{t('lobby.readyTag')}</span>}
                 <span className={`pcard-av ${inCall(p.id) ? 'in-call' : ''} ${talking ? 'speaking' : ''}`}>
                   <PlayerAvatar p={p} size="lg" />
                   {inCall(p.id) && <span className="seat-mic"><Icon name={p.id in v.peers && v.peers[p.id].muted ? 'microphone-off' : 'microphone'} className="size-3" /></span>}
+                  {mine && (
+                    <button type="button" className="pcard-badge edit" title={editLabel} aria-label={editLabel} onClick={(e) => { e.stopPropagation(); openEditor(); }}>
+                      <Icon name="gallery-add" className="size-4" />
+                    </button>
+                  )}
+                  {canKick && (
+                    <button
+                      type="button" className="pcard-badge kick" title={kickLabel} aria-label={kickLabel}
+                      onClick={(e) => { e.stopPropagation(); if (confirm(t('lobby.kickConfirm', { name: p.name }))) kickPlayer(p.id); }}
+                    >
+                      <Icon name="close-circle" className="size-4" />
+                    </button>
+                  )}
                 </span>
-                {!p.isBot && p.id !== room.you && <AddFriendButton uid={p.id} name={p.name} />}
+                {!p.isBot && !mine && <AddFriendButton uid={p.id} name={p.name} />}
                 <div className="pcard-name">{p.name}</div>
                 <div className="pcard-tags">
                   {p.isHost && <span className="ptag host"><Icon name="crown" className="size-3" />{t('lobby.host')}</span>}
                   {p.isBot && <span className="ptag bot"><Icon name="cpu-bolt" className="size-3" />{t('seat.bot')}</span>}
-                  {p.id === room.you && <span className="ptag you">{t('lobby.you')}</span>}
+                  {mine && <span className="ptag you">{t('lobby.you')}</span>}
+                  {mine && <span className="ptag edit"><Icon name="gallery-add" className="size-3" />{t('lobby.editTag')}</span>}
                   {!ready && <span className="ptag wait">{t('lobby.notreadyTag')}</span>}
                 </div>
               </li>
@@ -92,8 +115,8 @@ export function Lobby() {
       <div className="lobby-bar">
         <div className="lobby-bar-left">
           <Tooltip delay={400}>
-            <Button isIconOnly size="md" variant="secondary" aria-label={t('profile.change')} onPress={() => store.set({ modal: 'avatar' })}><Icon name="gallery-add" className="size-5" /></Button>
-            <Tooltip.Content>{t('profile.change')}</Tooltip.Content>
+            <Button isIconOnly size="md" variant="secondary" aria-label={t('profile.editSeat')} onPress={openEditor}><Icon name="gallery-add" className="size-5" /></Button>
+            <Tooltip.Content>{t('profile.editSeat')}</Tooltip.Content>
           </Tooltip>
           <Tooltip delay={400}>
             <Button isIconOnly size="md" variant="tertiary" aria-label={t('top.chars')} onPress={() => store.set({ modal: 'chars' })}><Icon name="card-recive" className="size-5" /></Button>

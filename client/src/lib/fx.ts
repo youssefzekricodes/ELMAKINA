@@ -3,7 +3,7 @@
 import { IMG, CH } from '../theme';
 import { sfx } from './sfx';
 import { store } from './store';
-import { t } from '../i18n';
+import { i18n, t } from '../i18n';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fxRoot = () => document.getElementById('fx') as HTMLElement;
@@ -95,6 +95,8 @@ export function banner(text: string, cls = '') {
   clearTimeout(bannerTimer); bannerTimer = setTimeout(() => { if (store.get().banner?.id === id) store.set({ banner: null }); }, 2000);
 }
 
+const nameOf = (id: string) => (store.get().state?.players.find((p) => p.id === id) || ({} as any)).name || '?';
+
 let lastEventId: number | null = null;
 export function resetEvents() { lastEventId = null; }
 export function processEvents(s: { events?: any[] }, me: string | null) {
@@ -112,6 +114,14 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
         if (e.playerId === me) shake(document.getElementById('console'));
         break;
       case 'reveal': reveal(e.character); cameraShake(document.getElementById('table'), true); stamp(e.playerId, t('stamp.true'), 'ok'); setTimeout(() => stamp(e.challengerId, t('stamp.wrong')), 600); break;
+      // Colonel called a card on somebody: show the guessed card to the whole table, say who/at whom,
+      // then stamp the guesser TRUE!/WRONG!. The card_lost that follows keeps the real hand secret.
+      case 'guess': {
+        banner(t('banner.guess', { name: nameOf(e.playerId), character: i18n.charName(e.character), target: nameOf(e.targetId) }), 'sm');
+        reveal(e.character); cameraShake(document.getElementById('table'), true);
+        setTimeout(() => stamp(e.playerId, t(e.right ? 'stamp.true' : 'stamp.wrong'), e.right ? 'ok' : ''), 600);
+        break;
+      }
       case 'bluff': stamp(e.playerId, t('stamp.bluff')); flashSeat(e.playerId, 'hit'); cameraShake(document.getElementById('table'), true); break;
       case 'block': stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); break;
       case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); flashSeat(e.playerId, 'out'); cameraShake(document.getElementById('table'), true); sfx.play('lose'); break;

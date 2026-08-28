@@ -4,7 +4,7 @@ import { Button, Card, Chip } from '@heroui/react';
 import { CH, CHARACTERS } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
-import { block, cancelTargeting, challenge, challengeTarget, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
+import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
 import { validTargets } from '../lib/rules';
 import { sfx } from '../lib/sfx';
 import { GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
@@ -123,6 +123,11 @@ export function Prompt() {
         </ul>
         <div className="win-actions">
           {isHost ? <Button size="lg" variant="primary" onPress={newGame}><Icon name="restart" className="size-5" />{t('end.new')}</Button> : <div className="p-waiting">{t('end.wait')}</div>}
+          {isHost && (
+            <button type="button" className="win-close" onClick={() => { if (confirm(t('end.closeConfirm'))) closeRoom(); }}>
+              <Icon name="close-circle" className="size-4" />{t('end.close')}
+            </button>
+          )}
           <Button size="lg" variant="outline" className="win-leave" onPress={leaveRoom}><Icon name="logout-2" className="size-5" />{t('lobby.leave')}</Button>
         </div>
       </div>
