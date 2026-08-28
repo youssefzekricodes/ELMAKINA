@@ -883,8 +883,11 @@
   .pcard-badge { position: absolute; inset-inline-start: -6px; bottom: -6px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%; cursor: pointer; z-index: 4; transition: transform .12s, background .15s, border-color .15s, color .15s; }
   .pcard-badge.edit { background: var(--accent); border: 2px solid rgba(20,14,9,.92); color: var(--accent-foreground); }
   .pcard-badge.edit:hover { transform: scale(1.08); }
-  .pcard-badge.kick { background: rgba(14,10,6,.78); border: 1px solid rgba(255,240,214,.24); color: rgba(245,236,221,.72); }
-  .pcard-badge.kick:hover, .pcard-badge.kick:focus-visible { transform: scale(1.08); color: #fff; background: var(--danger); border-color: var(--danger); }
+  /* host-only remove-player badge: solid red so it reads as "kick" at a glance */
+  .pcard-badge.kick { width: 34px; height: 34px; background: var(--danger); border: 2px solid rgba(20,14,9,.92); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 0 3px color-mix(in srgb, var(--danger) 22%, transparent); }
+  .pcard-badge.kick:hover, .pcard-badge.kick:focus-visible { transform: scale(1.12); background: var(--danger-hover); box-shadow: 0 3px 12px rgba(0,0,0,.55), 0 0 0 5px color-mix(in srgb, var(--danger) 30%, transparent); }
+  /* the seat itself hints it can be removed while the host hovers the badge */
+  .pcard:has(.pcard-badge.kick:hover) { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
   .pcard.editable { cursor: pointer; }
   .pcard.editable:hover { transform: translateY(-2px); border-color: var(--accent); }
   .pcard.editable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

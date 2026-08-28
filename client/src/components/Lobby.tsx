@@ -80,7 +80,7 @@ export function Lobby() {
                       type="button" className="pcard-badge kick" title={kickLabel} aria-label={kickLabel}
                       onClick={(e) => { e.stopPropagation(); if (confirm(t('lobby.kickConfirm', { name: p.name }))) kickPlayer(p.id); }}
                     >
-                      <Icon name="close-circle" className="size-4" />
+                      <Icon name="user-minus-rounded" className="size-4" />
                     </button>
                   )}
                 </span>
