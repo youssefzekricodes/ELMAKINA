@@ -72,7 +72,7 @@ export function Lobby() {
                   {inCall(p.id) && <span className="seat-mic"><Icon name={p.id in v.peers && v.peers[p.id].muted ? 'microphone-off' : 'microphone'} className="size-3" /></span>}
                   {mine && (
                     <button type="button" className="pcard-badge edit" title={editLabel} aria-label={editLabel} onClick={(e) => { e.stopPropagation(); openEditor(); }}>
-                      <Icon name="gallery-add" className="size-4" />
+                      <Icon name="pen" className="size-4" />
                     </button>
                   )}
                   {canKick && (
@@ -90,7 +90,7 @@ export function Lobby() {
                   {p.isHost && <span className="ptag host"><Icon name="crown" className="size-3" />{t('lobby.host')}</span>}
                   {p.isBot && <span className="ptag bot"><Icon name="cpu-bolt" className="size-3" />{t('seat.bot')}</span>}
                   {mine && <span className="ptag you">{t('lobby.you')}</span>}
-                  {mine && <span className="ptag edit"><Icon name="gallery-add" className="size-3" />{t('lobby.editTag')}</span>}
+                  {mine && <span className="ptag edit"><Icon name="pen" className="size-3" />{t('lobby.editTag')}</span>}
                   {!ready && <span className="ptag wait">{t('lobby.notreadyTag')}</span>}
                 </div>
               </li>
@@ -115,7 +115,7 @@ export function Lobby() {
       <div className="lobby-bar">
         <div className="lobby-bar-left">
           <Tooltip delay={400}>
-            <Button isIconOnly size="md" variant="secondary" aria-label={t('profile.editSeat')} onPress={openEditor}><Icon name="gallery-add" className="size-5" /></Button>
+            <Button isIconOnly size="md" variant="secondary" aria-label={t('profile.editSeat')} onPress={openEditor}><Icon name="pen" className="size-5" /></Button>
             <Tooltip.Content>{t('profile.editSeat')}</Tooltip.Content>
           </Tooltip>
           <Tooltip delay={400}>

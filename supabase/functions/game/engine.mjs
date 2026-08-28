@@ -287,6 +287,9 @@ export class Game {
     const action = { type, actorId: actor.id, targetId: target ? target.id : null, guess: a.guess || null, slot, character: ACTION_CHARACTER[type] || null };
     this.pending = { stage: 'resolving', actorId: actor.id, action, window: null, logStart: this.seq };
     const tn = target ? target.name : '';
+    // A basic move opens no claim window, so nothing on the table would show it. Announce it as an
+    // event instead: every client (the actor's included) flashes the card, and nothing waits on it.
+    if (DEFAULT_ACTIONS.includes(type)) this.event('play', { playerId: actor.id, type });
     switch (type) {
       case 'income': this.addLog('action', 'income', { name: actor.name, gain: this.gainText(actor, 1) }); return this.endTurn();
       case 'loan': this.addLog('action', 'loan.ask', { name: actor.name });

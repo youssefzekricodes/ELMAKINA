@@ -89,14 +89,14 @@ function applyView(v: any) {
     turnSeen = v.pending.deadline; banner(t('banner.turn')); sfx.play('turn');
     try { navigator.vibrate && navigator.vibrate(40); } catch { /* ignore */ }
   }
-  // Flash the played card for EVERY action — including the basic ones (income / loan / paid kill),
-  // which have no character claim and were previously invisible.
+  // Flash a character claim for the players watching it. Basic moves (income / loan / paid kill)
+  // arrive as a `play` event instead, so the actor sees their own card too.
   const pa = v.pending && v.pending.action;
   if (pa && prev.state) {
     const sig = `${v.pending.logStart}:${pa.actorId}:${pa.type}`;
     if (actionSeen !== sig) {
       actionSeen = sig;
-      if (pa.actorId !== me) playedCard(pa.type);
+      if (pa.actorId !== me && pa.character) playedCard(pa.type);
     }
   } else if (!pa) actionSeen = '';
   // Announce a fresh claim / counter with the big table banner (skip my own claim, skip replays on (re)join).
@@ -284,7 +284,14 @@ export function startAction(type: string) {
 }
 /** Emit a game move and apply the server's returned view immediately (snappy, no Realtime wait). */
 async function move(op: string, data?: any) { const r = await emit(op, data); if (r && r.view) applyView(r.view); return r; }
-export async function sendAction(payload: any) { store.set({ targeting: null, targetId: null }); return move('game_action', { action: payload }); }
+const BASIC = ['income', 'loan', 'paidkill'];
+export async function sendAction(payload: any) {
+  store.set({ targeting: null, targetId: null });
+  // Show your own basic move the instant you commit to it, rather than a round trip later. Everyone
+  // else gets it from the server's `play` event; myPlaySeen keeps the two from doubling up.
+  if (BASIC.includes(payload.type)) playedCard(payload.type, true);
+  return move('game_action', { action: payload });
+}
 export const cancelTargeting = () => store.set({ targeting: null, targetId: null });
 export const pickTarget = (id: string) => store.set({ targetId: id });
 /** Tap a target while aiming — shared by the table seats AND the prompt's chip picker.

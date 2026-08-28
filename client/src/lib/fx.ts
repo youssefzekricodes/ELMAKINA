@@ -77,8 +77,11 @@ export function stamp(pid: string, text: string, cls = '') {
   const a = anchor(pid); const s = document.createElement('div'); s.className = 'fx-stamp ' + cls; s.textContent = text; s.style.left = a.x + 'px'; s.style.top = (a.y - 10) + 'px'; fxRoot().appendChild(s);
   sfx.play('stamp'); setTimeout(() => s.remove(), 3600);
 }
-/** Flash the card that was just played — character claims AND the basic action cards. */
-export function playedCard(type: string) {
+let localPlayAt = 0; // when I last flashed my OWN move optimistically, so the server echo doesn't repeat it
+/** Flash the card that was just played — character claims AND the basic action cards.
+    `local` = fired from my own click, before the server has echoed it back. */
+export function playedCard(type: string, local = false) {
+  if (local) localPlayAt = Date.now();
   const src = CH[type as keyof typeof CH]?.card || ACTION_CARDS[type];
   if (!src) return;
   sfx.play('play');
@@ -124,6 +127,7 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
   fresh.forEach((e, i) => setTimeout(() => {
     switch (e.type) {
       case 'coins': flyCoins(e.from, e.to, e.n); break;
+      case 'play': if (e.playerId !== me || Date.now() - localPlayAt > 4000) playedCard(e.type); break; // a basic move: the card is the announcement
       case 'coup': sfx.play('boom'); cameraShake(document.getElementById('table'), true); break; // someone paid 7 to strike
       case 'card_lost':
         flyCard(e.playerId, e.playerId === me); cameraShake(document.getElementById('table'));
