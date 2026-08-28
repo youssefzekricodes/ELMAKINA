@@ -1,7 +1,7 @@
 import { Button, Tooltip } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { addBot, copyInvite, kickPlayer, leaveRoom, removeBot, setReactionSecs, startGame, toggleReady } from '../lib/net';
+import { addBot, copyInvite, kickPlayer, leaveRoom, removeBot, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
 import { Icon, PlayerAvatar } from './ui';
 import { AddFriendButton } from './Social';
@@ -107,24 +107,6 @@ export function Lobby() {
             );
           })}
         </ul>
-
-        {/* host-only room setting: how long players get to react to a claim */}
-        {(() => {
-          const secs = room.reactionSecs ?? 12;
-          const min = room.minReactionSecs ?? 5, max = room.maxReactionSecs ?? 60;
-          if (!isHost) return <p className="room-setting ro"><Icon name="hourglass" className="size-4" />{t('lobby.reactTime', { n: secs })}</p>;
-          return (
-            <div className="room-setting">
-              <span className="rs-label"><Icon name="hourglass" className="size-4" />{t('lobby.reactTime', { n: secs })}</span>
-              <span className="rs-ctrls">
-                <button type="button" className="rs-btn" aria-label={t('lobby.reactLess')} disabled={secs <= min} onClick={() => setReactionSecs(Math.max(min, secs - 1))}>&#8722;</button>
-                <input className="rs-range" type="range" min={min} max={max} step={1} value={secs}
-                  aria-label={t('lobby.reactTime', { n: secs })} onChange={(e) => setReactionSecs(Number(e.target.value))} />
-                <button type="button" className="rs-btn" aria-label={t('lobby.reactMore')} disabled={secs >= max} onClick={() => setReactionSecs(Math.min(max, secs + 1))}>+</button>
-              </span>
-            </div>
-          );
-        })()}
 
         <p className="hint">{hint}</p>
       </div>

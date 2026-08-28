@@ -233,7 +233,6 @@ export const addBot = () => lobbyOp('add_bot');
 export const removeBot = () => lobbyOp('remove_bot');
 /** Host removes somebody from the lobby (works on bots too). */
 export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });
-export const setReactionSecs = (seconds: number) => lobbyOp('set_timings', { seconds });
 export async function newGame() { const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
 /** Save my look (and optionally rename myself). In a room the server also gets the new name and
     hands back a fresh lobby view, so every other seat re-labels straight away. */

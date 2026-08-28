@@ -950,16 +950,6 @@
   .ptag.edit { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
   .seat-mic { position: absolute; inset-inline-end: -2px; bottom: -2px; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--overlay); box-shadow: 0 0 0 2px var(--overlay); color: var(--muted); }
 
-  /* room setting: reaction window length (host edits, guests just read it) */
-  .room-setting { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 4px; padding: 8px 12px; border-radius: 14px; background: rgba(255,240,214,.05); border: 1px solid rgba(255,240,214,.1); }
-  .room-setting.ro { color: var(--muted); font-size: 13px; gap: 7px; }
-  .rs-label { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: #F3E9D6; }
-  .rs-label svg, .room-setting.ro svg { color: var(--accent); flex-shrink: 0; }
-  .rs-ctrls { display: inline-flex; align-items: center; gap: 8px; }
-  .rs-btn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid rgba(255,240,214,.18); background: transparent; color: #F3E9D6; font-size: 17px; font-weight: 800; line-height: 1; cursor: pointer; }
-  .rs-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-  .rs-btn:disabled { opacity: .35; cursor: default; }
-  .rs-range { width: min(180px, 42vw); accent-color: var(--accent); }
   .lobby-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + var(--sab)); z-index: 40; width: min(680px, calc(100vw - 24px)); display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: var(--radius-2xl); background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); }
   .lobby-bar-left { display: flex; gap: 8px; }
   .lobby-cta { flex: 1; max-width: 60%; }
