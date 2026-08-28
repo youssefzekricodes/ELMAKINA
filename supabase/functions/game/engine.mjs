@@ -26,8 +26,8 @@ export const DEFAULT_TIMINGS = {
   challenge: 12000,       // reaction window when a claim can be challenged (host-configurable per room)
   block: 12000,           // counter-only window (veto / tax / block after a proven claim)
   decision: 20000,        // choose card to lose, pay to survive, police keep/swap
-  resultPause: 3200,      // pause to show the outcome of a bluff call before continuing
-  turnPause: 2200,        // pause at the end of a turn so everyone can read what happened
+  resultPause: 2600,      // pause to show the outcome of a bluff call before continuing
+  turnPause: 800,         // short beat at the end of a turn before the next player is up
   turn: 60000,            // time for the active player to declare an action
   disconnectedTurn: 8000, // shortened turn timer when the active player is disconnected
   disconnectedDecision: 2500,
@@ -76,6 +76,7 @@ export class Game {
     this.deadline = null;
     this.due = null;
     this.pending = null;
+    this.owed = []; // cards players still have to give up this turn (settled together — see settleDebts)
     this.players = shuffle(seatPlayers).map((p, i) => ({ id: p.id, name: p.name, seat: i, isBot: !!p.isBot, avatar: p.avatar || null, color: p.color || null, connected: p.connected !== false, cards: [], coins: 2, alive: true }));
     this.deck = new Queue(shuffle(CHARACTERS.flatMap((c) => Array(COPIES).fill(c))));
     this.handSize = this.players.length <= 4 ? 3 : 2;
@@ -89,11 +90,11 @@ export class Game {
 
   // ───────────────────────── (de)serialization ─────────────────────────
   toJSON() {
-    return { phase: this.phase, winnerId: this.winnerId, outOrder: this.outOrder, log: this.log, events: this.events, evSeq: this.evSeq, seq: this.seq, flash: this.flash, deadline: this.deadline, due: this.due, pending: this.pending, players: this.players, deck: this.deck.toArray(), handSize: this.handSize, turnIndex: this.turnIndex, T: this.T };
+    return { phase: this.phase, winnerId: this.winnerId, outOrder: this.outOrder, log: this.log, events: this.events, evSeq: this.evSeq, seq: this.seq, flash: this.flash, deadline: this.deadline, due: this.due, pending: this.pending, owed: this.owed, players: this.players, deck: this.deck.toArray(), handSize: this.handSize, turnIndex: this.turnIndex, T: this.T };
   }
   static fromJSON(o, opts = {}) {
     const g = new Game(null, opts); g._init(opts);
-    Object.assign(g, { phase: o.phase, winnerId: o.winnerId, outOrder: o.outOrder || [], log: o.log || [], events: o.events || [], evSeq: o.evSeq || 0, seq: o.seq || 0, flash: o.flash || null, deadline: o.deadline ?? null, due: o.due || null, pending: o.pending || null, players: o.players, handSize: o.handSize, turnIndex: o.turnIndex, T: Object.assign({}, DEFAULT_TIMINGS, o.T || {}) });
+    Object.assign(g, { phase: o.phase, winnerId: o.winnerId, outOrder: o.outOrder || [], log: o.log || [], events: o.events || [], evSeq: o.evSeq || 0, seq: o.seq || 0, flash: o.flash || null, deadline: o.deadline ?? null, due: o.due || null, pending: o.pending || null, owed: o.owed || [], players: o.players, handSize: o.handSize, turnIndex: o.turnIndex, T: Object.assign({}, DEFAULT_TIMINGS, o.T || {}) });
     g.deck = new Queue(o.deck || []);
     return g;
   }
@@ -115,7 +116,11 @@ export class Game {
   clearDue() { this.deadline = null; this.due = null; }
   /** Next moment something will happen by itself (or null) — includes the grace so scheduled ticks
    *  (and the cron backstop) don't auto-resolve before a last-second move can arrive. */
-  nextDue() { return this.phase === 'playing' && this.deadline != null ? this.deadline + ACTION_GRACE : null; }
+  nextDue() { return this.phase === 'playing' && this.deadline != null ? this.deadline + this.graceNow() : null; }
+  /** The grace period only makes sense where a human move could still arrive late: reaction and
+   *  decision windows. Result pauses and turn timers have nobody to wait for, so they fire on time
+   *  instead of adding a second of dead air between turns. */
+  graceNow(base = ACTION_GRACE) { const w = this.pending && this.pending.window; return w && (w.type === 'reaction' || w.type === 'decision') ? base : 0; }
   /**
    * Advance time: fire every continuation whose deadline has passed. Returns true if anything happened.
    * Safe to call as often as you like (clients + cron both call it).
@@ -123,7 +128,7 @@ export class Game {
   tick(now = this.now(), grace = 0) {
     let fired = 0;
     for (let guard = 0; guard < 50; guard++) {
-      if (this.phase !== 'playing' || this.deadline == null || now < this.deadline + grace) break;
+      if (this.phase !== 'playing' || this.deadline == null || now < this.deadline + this.graceNow(grace)) break;
       const c = this.due; this.clearDue(); fired++;
       this.run(c);
     }
@@ -182,6 +187,7 @@ export class Game {
       }
       case 'turnTimeout': return this.turnTimeout(c.actorId);
       case 'endTurn': return this.endTurn();
+      case 'endTurnPause': return this.pause('turn_end', {}, { k: 'endTurnNow' });
       case 'endTurnNow': return this._endTurnNow();
       case 'actionFail': { this.addLog('challenge', 'action.fail', { name: this.name(this.pending.actorId) }); return this.endTurn(); }
       // loan
@@ -192,7 +198,10 @@ export class Game {
       case 'loanVetoFail': { const a = this.player(this.pending.actorId); this.addLog('coins', 'loan.vetofail', { name: a.name, gain: this.gainText(a, 2) }); return this.endTurn(); }
       // kills
       case 'kill': return this.doKill(c.targetId, c.reason, { canPay: !!c.canPay }, c.then);
+      // killChoice/killTimeout are only reachable from games saved before losses were batched — kept so an in-flight room does not wedge.
       case 'killChoice': return this.killChoice(c, arg || {});
+      case 'settleChoice': return this.settleChoice(c, arg || {});
+      case 'settleTimeout': return this.settleTimeout(c);
       case 'killTimeout': { const t = this.player(c.targetId); const killerId = c.killerId || (this.pending && this.pending.action ? this.pending.action.actorId : null); this.loseRandomCard(t, `${c.reason}_timeout`, killerId); if (this.checkGameOver()) return; return this.run(c.then); }
       case 'pause': return this.pause(c.kind, c.data, c.then);
       // police
@@ -229,7 +238,7 @@ export class Game {
     this.pending.deadline = this.deadline;
     this.sync();
   }
-  endTurn() { this.clearDue(); if (this.checkGameOver()) return; this.pause('turn_end', {}, { k: 'endTurnNow' }); }
+  endTurn() { this.clearDue(); if (this.checkGameOver()) return; this.settleDebts({ k: 'endTurnPause' }); }
   _endTurnNow() { this.clearDue(); if (this.checkGameOver()) return; this.turnIndex = (this.turnIndex + 1) % this.players.length; this.startTurn(); }
   turnTimeout(actorId) {
     const actor = this.player(actorId);
@@ -426,17 +435,91 @@ export class Game {
     } else this.addLog('action', 'police.keep', { name: actor.name });
     this.endTurn();
   }
+  // ───────────────────────── owed cards ─────────────────────────
+  /**
+   * A turn can hit the same player twice — call a bluff wrongly on a Terrorist and you pay for the
+   * failed challenge *and* for the hit. Rather than asking twice, every loss is written into
+   * `this.owed` and the whole bill is settled in ONE pick at the end of the turn. A player who owes
+   * their entire hand is never asked at all: they are eliminated on the spot.
+   */
+  owedBy(id) { return this.owed.filter((d) => d.playerId === id); }
+  owe(p, reason, killerId = null, canPay = false) {
+    if (!p || !p.alive) return;
+    this.owed.push({ playerId: p.id, reason, killerId: killerId || null, canPay: !!canPay });
+    const debts = this.owedBy(p.id);
+    const canBuyOut = debts.some((d) => d.canPay) && p.coins >= 9;
+    if (!canBuyOut && p.cards.length <= debts.length) { // nothing left to choose — settle it now
+      this.payDebts(p.id, p.cards.map((_, i) => i));
+      this.checkGameOver();
+    }
+  }
+  /** Hand over the chosen cards (highest index first so the earlier indices stay valid). */
+  payDebts(id, indices) {
+    const p = this.player(id); if (!p) return;
+    const debts = this.owedBy(id);
+    this.owed = this.owed.filter((d) => d.playerId !== id);
+    const idx = [...new Set(indices)].filter((i) => Number.isInteger(i) && i >= 0 && i < p.cards.length).sort((a, b) => b - a);
+    idx.forEach((i, k) => { const d = debts[k] || debts[debts.length - 1] || {}; this.loseCardAt(p, i, d.reason || 'lost', d.killerId || null); });
+  }
+  /** Random cards, used when the clock runs out or a player walks away mid-decision. */
+  randomIndices(p, n) {
+    const idx = [];
+    while (idx.length < Math.min(n, p.cards.length)) { const r = Math.floor(Math.random() * p.cards.length); if (!idx.includes(r)) idx.push(r); }
+    return idx;
+  }
+  /** Ask each player who owes cards to pick them (all at once), then continue with `then`. */
+  settleDebts(then) {
+    if (this.phase !== 'playing') return;
+    const next = this.owed.find((d) => { const p = this.player(d.playerId); return p && p.alive && p.cards.length; });
+    if (!next) { this.owed = []; return this.run(then); }
+    const id = next.playerId, p = this.player(id), debts = this.owedBy(id);
+    const n = Math.min(debts.length, p.cards.length);
+    const canPay = debts.some((d) => d.canPay) && p.coins >= 9;
+    if (!canPay && p.cards.length <= n) { // owes the whole hand: no choice to make
+      this.payDebts(id, p.cards.map((_, i) => i));
+      if (this.checkGameOver()) return;
+      return this.settleDebts(then);
+    }
+    if (!this.pending) this.pending = { stage: 'resolving', actorId: this.active.id, action: null, window: null };
+    this.openDecision(id, 'lose_card', { reason: debts[0].reason, canPay, payCost: 9, count: n, held: p.cards.length },
+      { k: 'settleChoice', playerId: id, then }, { k: 'settleTimeout', playerId: id, then });
+  }
+  settleChoice(c, choice) {
+    const p = this.player(c.playerId);
+    if (!p) return this.settleDebts(c.then);
+    if (choice && choice.pay) { // Paid Kill buy-out clears one debt; anything else still has to be paid in cards
+      const i = this.owed.findIndex((d) => d.playerId === c.playerId && d.canPay);
+      if (i >= 0 && p.coins >= 9) { this.pay(p, 9); this.addLog('coins', 'kill.survive', { name: p.name, reason: this.owed[i].reason }); this.owed.splice(i, 1); }
+      return this.settleDebts(c.then);
+    }
+    const n = this.owedBy(c.playerId).length;
+    const picked = Array.isArray(choice && choice.indices) ? choice.indices : Number.isInteger(choice && choice.index) ? [choice.index] : [];
+    const idx = [...new Set(picked.filter((i) => Number.isInteger(i) && i >= 0 && i < p.cards.length))].slice(0, n);
+    for (const r of this.randomIndices(p, n)) { if (idx.length >= Math.min(n, p.cards.length)) break; if (!idx.includes(r)) idx.push(r); }
+    this.payDebts(c.playerId, idx);
+    if (this.checkGameOver()) return;
+    this.settleDebts(c.then);
+  }
+  settleTimeout(c) {
+    const p = this.player(c.playerId);
+    if (p && p.alive) this.payDebts(c.playerId, this.randomIndices(p, this.owedBy(c.playerId).length));
+    if (this.checkGameOver()) return;
+    this.settleDebts(c.then);
+  }
+
   /** Kill one card of `targetId`; the target secretly chooses which. opts.canPay: Paid Kill (pay 9 to survive). */
   doKill(targetId, reason, opts, then) {
     const t = this.player(targetId); const killerId = (opts && opts.killerId) || (this.pending && this.pending.action ? this.pending.action.actorId : null);
-    if (!t.alive) { this.addLog('system', 'kill.out', { name: t.name }); return this.run(then); }
-    const canPay = !!(opts && opts.canPay) && t.coins >= 9;
-    if (!canPay && t.cards.length === 1) { this.loseCardAt(t, 0, reason, killerId); if (this.checkGameOver()) return; return this.run(then); }
-    this.openDecision(t.id, 'lose_card', { reason, canPay, payCost: 9 }, { k: 'killChoice', targetId, reason, canPay, killerId, then }, { k: 'killTimeout', targetId, reason, killerId, then });
+    if (!t || !t.alive) { this.addLog('system', 'kill.out', { name: t ? t.name : '?' }); return this.run(then); }
+    this.owe(t, reason, killerId, !!(opts && opts.canPay));
+    if (this.checkGameOver()) return;
+    return this.run(then);
   }
-  /** A lost challenge costs a chosen card: same lose_card decision as kills, then the readable pause + `then`. */
+  /** A lost challenge costs a card too — it joins the same bill, so being hit twice is still one pick. */
   challengeLoss(loserId, reason, winnerId, pauseData, then) {
-    this.doKill(loserId, reason, { killerId: winnerId }, { k: 'pause', kind: 'challenge', data: pauseData, then: then || null });
+    const p = this.player(loserId);
+    if (p && p.alive) { this.owe(p, reason, winnerId, false); if (this.checkGameOver()) return; }
+    this.pause('challenge', pauseData, then || null);
   }
   killChoice(c, choice) {
     const t = this.player(c.targetId); const killerId = c.killerId || (this.pending && this.pending.action ? this.pending.action.actorId : null);
@@ -584,8 +667,13 @@ export class Game {
     if (w.playerId !== playerId) throw new GameError('This decision is not yours');
     if (w.kind === 'lose_card') {
       const p = this.player(playerId);
+      const need = (w.data && w.data.count) || 1;
       if (choice && choice.pay && !w.data.canPay) throw new GameError('You cannot pay to survive');
-      if (choice && !choice.pay && (!Number.isInteger(choice.index) || choice.index < 0 || choice.index >= p.cards.length)) throw new GameError('Invalid card');
+      if (choice && !choice.pay) {
+        const picked = Array.isArray(choice.indices) ? choice.indices : Number.isInteger(choice.index) ? [choice.index] : [];
+        const valid = [...new Set(picked.filter((i) => Number.isInteger(i) && i >= 0 && i < p.cards.length))];
+        if (valid.length !== Math.min(need, p.cards.length)) throw new GameError(need > 1 ? `Choose ${need} cards` : 'Invalid card');
+      }
     }
     this.clearDue();
     const { onChoice } = w.cb; this.closeWindow();
@@ -605,6 +693,7 @@ export class Game {
     if (!p) return false;
     p.connected = false;
     if (!p.alive) { this.sync(); return false; }
+    this.owed = this.owed.filter((d) => d.playerId !== playerId); // their bill dies with the seat
     this.addLog('eliminated', 'elim.left', { name: p.name });
     while (p.alive && p.cards.length) this.loseCardAt(p, 0, 'left', null); // returns every card to the deck
     if (p.alive) { // safety net: no cards left to lose, close the seat by hand

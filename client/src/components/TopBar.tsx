@@ -2,7 +2,7 @@ import { Badge, Button, Chip, Tooltip } from '@heroui/react';
 import { IMG } from '../theme';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { leaveRoom, setLanguage } from '../lib/net';
+import { leaveRoom, setLanguage, toggleSound } from '../lib/net';
 import { Icon } from './ui';
 
 function IconButton({ label, icon, onPress, className = '' }: { label: string; icon: string; onPress: () => void; className?: string }) {
@@ -48,6 +48,7 @@ export function TopBar() {
           <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
         </Tooltip>
         <IconButton label={t('top.rules')} icon="question-circle" onPress={() => store.set({ modal: 'guide' })} />
+        <IconButton label={t('top.sound')} icon={s.soundOn ? 'volume-loud' : 'volume-cross'} onPress={toggleSound} className={s.soundOn ? '' : 'is-muted'} />
         {s.net === 'ok'
           ? <span className={`lamp ${s.connected ? 'on' : 'off'}`} title={t('net.ok')} />
           : <span className={`net-pill ${s.net}`} role="status" title={t(s.net === 'off' ? 'net.off' : 'net.slow')}>

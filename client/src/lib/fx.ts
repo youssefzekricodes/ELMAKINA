@@ -81,6 +81,7 @@ export function stamp(pid: string, text: string, cls = '') {
 export function playedCard(type: string) {
   const src = CH[type as keyof typeof CH]?.card || ACTION_CARDS[type];
   if (!src) return;
+  sfx.play('play');
   const d = document.createElement('div'); d.className = 'fx-played';
   d.innerHTML = `<img src="${src}" alt="" />`;
   fxRoot().appendChild(d);
@@ -123,7 +124,7 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
   fresh.forEach((e, i) => setTimeout(() => {
     switch (e.type) {
       case 'coins': flyCoins(e.from, e.to, e.n); break;
-      case 'coup': break; // someone paid 7 to strike (sound/animation handled by the kill itself)
+      case 'coup': sfx.play('boom'); cameraShake(document.getElementById('table'), true); break; // someone paid 7 to strike
       case 'card_lost':
         flyCard(e.playerId, e.playerId === me); cameraShake(document.getElementById('table'));
         if (e.playerId === me) shake(document.getElementById('console'));
@@ -137,8 +138,8 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
         setTimeout(() => stamp(e.playerId, t(e.right ? 'stamp.true' : 'stamp.wrong'), e.right ? 'ok' : ''), 600);
         break;
       }
-      case 'bluff': stamp(e.playerId, t('stamp.bluff')); flashSeat(e.playerId, 'hit'); cameraShake(document.getElementById('table'), true); break;
-      case 'block': stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); break;
+      case 'bluff': sfx.play('bluff'); stamp(e.playerId, t('stamp.bluff')); flashSeat(e.playerId, 'hit'); cameraShake(document.getElementById('table'), true); break;
+      case 'block': sfx.play('block'); stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); break;
       case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); flashSeat(e.playerId, 'out'); cameraShake(document.getElementById('table'), true); sfx.play('lose'); break;
       case 'win': if (e.playerId === me) { confetti(); sfx.play('win'); } else sfx.play('lose'); break;
     }

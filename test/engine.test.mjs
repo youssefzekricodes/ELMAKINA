@@ -23,14 +23,21 @@ function giveCard(g, pid, ch) {
   g.deck = new Queue(deckArr.filter((_, k) => k !== i)); g.deck.push(p.cards.pop()); p.cards.push(ch);
 }
 function withoutCard(g, pid, ch) { const p = g.player(pid); while (p.cards.includes(ch)) { const i = p.cards.indexOf(ch); const other = g.deck.toArray().find((c) => c !== ch); const arr = g.deck.toArray(); arr.splice(arr.indexOf(other), 1); g.deck = new Queue(arr); g.deck.push(p.cards[i]); p.cards[i] = other; } }
+/** N distinct random card indices from a hand — what a lose_card decision expects. */
+function pickN(pl, n) { const idx = []; while (idx.length < Math.min(n, pl.cards.length)) { const r = Math.floor(Math.random() * pl.cards.length); if (!idx.includes(r)) idx.push(r); } return idx; }
 /** Round-trip through JSON the way the edge function does between requests. */
 const reload = (g) => Game.fromJSON(JSON.parse(JSON.stringify(g.toJSON())), { now: clock });
-/** Challenge losses now open a lose_card decision (loser chooses). Answer it; returns the card that was lost. */
+/** Answer a pending lose_card decision. Every card a player owes this turn is picked in ONE decision,
+    so this hands over `count` cards starting at `index` and returns the array that was lost. */
 function settleLoss(g, index = 0) {
   const w = g.pending && g.pending.window;
   if (!(w && w.type === 'decision' && w.kind === 'lose_card')) return null;
-  const loser = g.player(w.playerId); const chosen = loser.cards[Math.min(index, loser.cards.length - 1)];
-  g.decide(w.playerId, { index: Math.min(index, loser.cards.length - 1) });
+  const loser = g.player(w.playerId);
+  const n = Math.min((w.data && w.data.count) || 1, loser.cards.length);
+  const idx = [];
+  for (let k = 0; idx.length < n; k++) { const i = (index + k) % loser.cards.length; if (!idx.includes(i)) idx.push(i); }
+  const chosen = idx.map((i) => loser.cards[i]);
+  g.decide(w.playerId, { indices: idx });
   return chosen;
 }
 
@@ -85,7 +92,7 @@ await test('loan veto: truthful tax man veto stops loan, challenger loses a card
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(g.pending.window.claim && !g.pending.window.block);
   const cCards = c.cards.length;
   g.challenge(c.id);
-  const cLost = settleLoss(g, 1);                    // challenger chooses which card to lose
+  const [cLost] = settleLoss(g, 1);                  // challenger chooses which card to lose
   assert.equal(c.cards.length, cCards - 1); assert.ok(!c.cards.includes(cLost) || c.cards.filter((x) => x === cLost).length < cCards, 'the chosen card was lost');
   assert.equal(a.coins, 2); assert.ok(v.cards.length === 3);
 });
@@ -101,22 +108,34 @@ await test('bluff caught: claimer loses a card and action fails; terrorist cost 
   assert.equal(a.cards.length, 2); assert.equal(b.cards.length, 3); assert.equal(g.active.id, b.id);
 });
 
-await test('terrorist special case: target challenges truthful terrorist, loses 2 cards; chooses which', () => {
+await test('terrorist special case: target challenges truthful terrorist, loses 2 cards in ONE pick', () => {
   let g = newGame(2); g.start();
   const a = g.active, b = g.players.find((p) => p.id !== a.id);
   a.coins = 5; giveCard(g, a.id, 'terrorist');
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   g.challenge(b.id);
-  const bBefore = g.player(b.id).cards.slice();
-  const bLost = settleLoss(g, 1);                    // b chooses the challenge loss too now
-  assert.equal(bLost, bBefore[1], 'chosen index is the card lost');
-  assert.equal(b.cards.length, 2, 'lost one from challenge'); assert.ok(a.cards.length === 3);
+  assert.equal(b.cards.length, 3, 'nothing is taken until the whole bill is known');
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(!g.pending.window.claim && g.pending.window.block, 'b may still block with Colonel, claim proven');
   g = reload(g);
   g.pass(b.id);
-  assert.equal(g.pending.window.type, 'decision'); assert.equal(g.pending.window.kind, 'lose_card');
-  g.decide(b.id, { index: 0 });
-  assert.equal(g.player(b.id).cards.length, 1); assert.equal(g.phase, 'playing');
+  const w = g.pending.window;
+  assert.equal(w.type, 'decision'); assert.equal(w.kind, 'lose_card');
+  assert.equal(w.data.count, 2, 'failed challenge + the hit are settled together');
+  const bBefore = g.player(b.id).cards.slice();
+  const lost = settleLoss(g, 0);
+  assert.deepEqual(lost, [bBefore[0], bBefore[1]], 'both chosen cards are the ones lost');
+  assert.deepEqual(g.player(b.id).cards, [bBefore[2]]); assert.equal(g.phase, 'playing');
+});
+
+await test('a player who owes their whole hand is eliminated without being asked to choose', () => {
+  const g = newGame(2); g.start();
+  const a = g.active, b = g.players.find((p) => p.id !== a.id);
+  a.coins = 5; giveCard(g, a.id, 'terrorist'); b.cards = b.cards.slice(0, 2);
+  g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
+  g.challenge(b.id);                                 // owes 1 of 2 — still alive, may still block
+  assert.equal(b.alive, true); assert.equal(b.cards.length, 2);
+  g.pass(b.id);                                      // the hit lands: 2 owed, 2 held → out, no pointless pick
+  assert.equal(b.alive, false); assert.equal(g.phase, 'ended'); assert.equal(g.winnerId, a.id);
 });
 
 await test('block with Colonel: successful block stops kill; lying block fails and kill proceeds', () => {
@@ -133,9 +152,9 @@ await test('block with Colonel: successful block stops kill; lying block fails a
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   g.block(b.id);
   g.challenge(a.id);
-  settleLoss(g);                                     // b chooses the challenge loss
-  assert.equal(b.cards.length, 2); assert.equal(g.pending.window.type, 'decision');
-  g.decide(b.id, { index: 1 });                      // ...then the kill's own choice
+  const w2 = g.pending.window;
+  assert.equal(w2.type, 'decision'); assert.equal(w2.data.count, 2, 'the failed block and the kill it let through are one pick');
+  settleLoss(g);
   assert.equal(b.cards.length, 1);
 });
 
@@ -267,13 +286,12 @@ await test('business woman concurrent multi-challenge: call bluff on several Tax
   assert.equal(g.pending.window.targets.length, 3, 'all three listed at once');
   g = reload(g);                                  // survives JSON round-trip
   const a2 = g.player(a.id);
-  g.challengeTarget(a.id, c.id);                  // caught bluffing → c chooses a card to lose, skim voided; window reopens
-  settleLoss(g);
+  g.challengeTarget(a.id, c.id);                  // caught bluffing → c owes a card, skim voided; window reopens
   assert.equal(g.pending.window.bwMulti, true); assert.equal(g.pending.window.targets.length, 2, 'c resolved, b & d remain');
-  g.challengeTarget(a.id, d.id);                  // caught → d chooses a card too
-  settleLoss(g);
+  g.challengeTarget(a.id, d.id);                  // caught → d owes one too
   assert.equal(g.pending.window.bwMulti, true); assert.equal(g.pending.window.targets.length, 1, 'only b remains');
   for (const p of g.players) g.pass(p.id);        // nobody challenges b → honest Tax Man keeps the coin → payout
+  settleLoss(g); settleLoss(g);                   // c then d hand their card over as the turn closes
   assert.equal(g.player(c.id).cards.length, cCards - 1, 'c lost a card');
   assert.equal(g.player(d.id).cards.length, dCards - 1, 'd lost a card');
   assert.equal(g.player(b.id).cards.length, bCards, 'honest b kept his cards');
@@ -321,14 +339,15 @@ await test('readable pauses: turn-end and bluff-call results show a result windo
   g.declareAction(a.id, { type: 'income' });
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'turn_end'); assert.equal(g.active.id, a.id);
   assert.equal(g.viewFor(b.id).pending.window.type, 'result');
-  assert.equal(g.nextDue(), NOW + 60 + ACTION_GRACE); // nextDue includes the late-move grace window
+  assert.equal(g.nextDue(), NOW + 60); // a result pause waits for nobody, so it carries no grace
   advance(g, 90);
   assert.equal(g.active.id, b.id, 'turn advanced after the pause');
   giveCard(g, b.id, 'politician');
   g.declareAction(b.id, { type: 'politician' }); g.challenge(a.id);
-  settleLoss(g);                                     // a chooses the challenge loss, then the result pause shows
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'challenge'); assert.equal(g.pending.window.data.result, 'true');
+  assert.equal(g.nextDue(), NOW + 60);
   advance(g, 90);
+  settleLoss(g);                                     // a hands over the card the failed call cost
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'turn_end');
 });
 
@@ -358,7 +377,7 @@ await test('full random game always terminates with a winner and conserves cards
           const e = p.window.blockEligible; if (e.length) g.block(e[Math.floor(Math.random() * e.length)]);
         } else if (p.window && p.window.type === 'decision' && Math.random() < 0.7) {
           const pl = g.player(p.window.playerId);
-          g.decide(pl.id, Math.random() < 0.5 && p.window.data.canPay ? { pay: true } : (p.window.kind === 'police' ? { swap: true } : { index: Math.floor(Math.random() * pl.cards.length) }));
+          g.decide(pl.id, Math.random() < 0.5 && p.window.data.canPay ? { pay: true } : (p.window.kind === 'police' ? { swap: true } : { indices: pickN(pl, p.window.data.count || 1) }));
         }
       }
       advance(g, 5);
@@ -399,7 +418,7 @@ await test('random games survive players walking out at any moment (no hangs, ca
           const e = p.window.challengeEligible; if (e.length) g.challenge(e[Math.floor(Math.random() * e.length)]);
         } else if (p.window && p.window.type === 'decision' && Math.random() < 0.7) {
           const pl = g.player(p.window.playerId);
-          if (pl.cards.length) g.decide(pl.id, p.window.kind === 'police' ? { swap: true } : { index: Math.floor(Math.random() * pl.cards.length) });
+          if (pl.cards.length) g.decide(pl.id, p.window.kind === 'police' ? { swap: true } : { indices: pickN(pl, p.window.data.count || 1) });
         }
       }
       advance(g, 5);

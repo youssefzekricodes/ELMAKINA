@@ -121,9 +121,13 @@ function decide(g, botId) {
   const hand = v.you.cards, me = v.players.find((p) => p.id === botId);
   if (w.kind === 'lose_card') {
     if (w.data && w.data.canPay && me.coins >= 9 && (hand.length === 1 || me.coins >= 12)) return g.decide(botId, { pay: true });
-    let idx = hand.findIndex((c, i) => hand.indexOf(c) !== i);
-    if (idx < 0) { let best = 0; for (let i = 1; i < hand.length; i++) if ((VALUE[hand[i]] || 0) < (VALUE[hand[best]] || 0)) best = i; idx = best; }
-    return g.decide(botId, { index: idx });
+    // One bill, possibly several cards: give up the cheapest ones (duplicates first — they buy nothing).
+    const need = Math.min((w.data && w.data.count) || 1, hand.length);
+    const order = hand.map((c, i) => ({ i, c })).sort((a, b) => {
+      const dup = (x) => (hand.filter((c) => c === x.c).length > 1 ? 0 : 1);
+      return dup(a) - dup(b) || (VALUE[a.c] || 0) - (VALUE[b.c] || 0);
+    });
+    return g.decide(botId, { indices: order.slice(0, need).map((x) => x.i) });
   }
   if (w.kind === 'police') {
     const card = w.data && w.data.card; const own = w.data && w.data.targetId === botId;
