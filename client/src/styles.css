@@ -832,6 +832,10 @@
   .claim-preview-backdrop { position: fixed; inset: 0; z-index: 85; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--backdrop); backdrop-filter: blur(4px); animation: coach-fade .2s var(--ease); }
   .claim-preview { --c: var(--accent); width: min(360px, 100%); background: var(--surface); color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius-2xl); box-shadow: 0 24px 70px rgba(0,0,0,.55); padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; animation: pop .24s var(--ease); }
   .claim-preview .gcard { border-radius: 10px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 55%, #000), 0 10px 26px color-mix(in srgb, var(--c) 40%, transparent); }
+  .cp-card { width: 104px; aspect-ratio: .62; object-fit: cover; border-radius: 10px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 55%, #000), 0 10px 26px color-mix(in srgb, var(--c) 40%, transparent); }
+  .claim-preview.blocked .cp-card { filter: grayscale(.7) brightness(.7); box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 55%, transparent), 0 10px 26px rgba(0,0,0,.5); }
+  .cp-why { display: inline-flex; align-items: center; gap: 7px; margin: 4px 0 0; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; line-height: 1.35; color: color-mix(in srgb, var(--danger) 55%, var(--foreground)); background: color-mix(in srgb, var(--danger) 12%, transparent); border: 1px solid color-mix(in srgb, var(--danger) 32%, transparent); }
+  .cp-why svg { flex-shrink: 0; color: var(--danger); }
   .cp-body { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .cp-name { font-family: var(--font-display); font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: .02em; margin: 0; color: var(--foreground); }
   .cp-desc { font-size: 13.5px; line-height: 1.5; color: var(--foreground); margin: 0; max-width: 34ch; }
@@ -865,6 +869,9 @@
   /* knockout flash when a player is eliminated */
   @keyframes seat-out-knock { 0% { transform: none; box-shadow: none; } 18% { transform: translateX(-3px) scale(1.04); box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 55%, transparent); } 40% { transform: translateX(3px); } 62% { transform: translateX(-2px); } 100% { transform: none; box-shadow: none; } }
   .seat-fx-out { animation: seat-out-knock .6s var(--ease); }
+  /* the card that was just played, flashed centre-stage (characters and basic moves alike) */
+  .fx-played { position: absolute; left: 50%; top: 44%; width: 132px; aspect-ratio: .62; border-radius: 12px; overflow: hidden; z-index: 6; will-change: transform, opacity; box-shadow: 0 0 0 2px rgba(255,240,214,.35), 0 20px 46px rgba(0,0,0,.7); }
+  .fx-played img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .fx-stamp { position: absolute; transform: translate(-50%, -50%) rotate(-12deg); font-weight: 800; font-size: 28px; letter-spacing: var(--tracking-wide); padding: 4px 12px; border: 4px solid currentColor; border-radius: var(--radius-lg); color: var(--danger); background: rgba(255,255,255,.12); text-shadow: 0 2px 0 rgba(0,0,0,.4); animation: stamp .2s var(--ease) both, stamp-out 3s .5s both; white-space: nowrap; }
   .fx-stamp.ok { color: var(--success); }
   .fx-stamp.blue { color: #F08A1D; }

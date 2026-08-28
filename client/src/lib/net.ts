@@ -6,7 +6,7 @@ import { supabase, supabaseConfigured } from './supabase';
 import { store, customAvatars, type Profile, type Room } from './store';
 import { i18n, t } from '../i18n';
 import { sfx } from './sfx';
-import { processEvents, resetEvents, banner } from './fx';
+import { processEvents, resetEvents, banner, playedCard } from './fx';
 import { voiceOnRoomGone } from './voice';
 import { initSocial, syncProfile } from './social';
 import { validTargets } from './rules';
@@ -14,6 +14,7 @@ import { ACTIONS, type ActionDef } from '../theme';
 
 let clockOffset = 0;
 let turnSeen: number | null = null;
+let actionSeen = '';
 let claimSeen: number | null = null; // dedupes the "X claims Y" banner per reaction window (avoids reconnect spam)
 let channel: RealtimeChannel | null = null;
 let channelCode: string | null = null;
@@ -88,6 +89,16 @@ function applyView(v: any) {
     turnSeen = v.pending.deadline; banner(t('banner.turn')); sfx.play('turn');
     try { navigator.vibrate && navigator.vibrate(40); } catch { /* ignore */ }
   }
+  // Flash the played card for EVERY action — including the basic ones (income / loan / paid kill),
+  // which have no character claim and were previously invisible.
+  const pa = v.pending && v.pending.action;
+  if (pa && prev.state) {
+    const sig = `${v.pending.logStart}:${pa.actorId}:${pa.type}`;
+    if (actionSeen !== sig) {
+      actionSeen = sig;
+      if (pa.actorId !== me) playedCard(pa.type);
+    }
+  } else if (!pa) actionSeen = '';
   // Announce a fresh claim / counter with the big table banner (skip my own claim, skip replays on (re)join).
   const rw = v.phase === 'playing' && v.pending && v.pending.window && v.pending.window.type === 'reaction' ? v.pending.window : null;
   if (rw && rw.claim && claimSeen !== rw.deadline) {

@@ -5,7 +5,7 @@ import { Button, Card, Chip, Tooltip } from '@heroui/react';
 import { ACTIONS, ACTION_CARDS, CH, IMG, type ActionDef } from '../theme';
 import { i18n, t } from '../i18n';
 import { isCoaching, store, useStore } from '../lib/store';
-import { notify, sendAction, startAction } from '../lib/net';
+import { sendAction, startAction } from '../lib/net';
 import { validTargets } from '../lib/rules';
 import { sfx } from '../lib/sfx';
 import { Coins, GameCard, Icon, PickBanner, Ring } from './ui';
@@ -19,7 +19,7 @@ const cardArt = (type: string) => (CH[type as keyof typeof CH] ? CH[type as keyo
     but stay clickable, so a tap can explain WHY it can't be played (a real `disabled` fires no events). */
 function BoardCard({ a, coins, targets, myTurn, owned, blockedNote, onPlay, onBlocked }: {
   a: ActionDef; coins: number; targets: string[] | null; myTurn: boolean; owned: number; blockedNote: string;
-  onPlay: (a: ActionDef) => void; onBlocked: (msg: string) => void;
+  onPlay: (a: ActionDef) => void; onBlocked: (a: ActionDef, msg: string) => void;
 }) {
   const th = CH[a.type as keyof typeof CH];
   const canAfford = coins >= a.cost;
@@ -31,7 +31,7 @@ function BoardCard({ a, coins, targets, myTurn, owned, blockedNote, onPlay, onBl
   return (
     <Tooltip delay={350}>
       <button type="button" className={`board-card ${owned ? 'owned' : ''} ${playable ? '' : 'off'}`} data-kind={a.kind} aria-disabled={!playable}
-        onClick={() => (playable ? onPlay(a) : onBlocked(note))} style={{ '--c': th ? th.color : 'var(--accent)' } as any}>
+        onClick={() => (playable ? onPlay(a) : onBlocked(a, note))} style={{ '--c': th ? th.color : 'var(--accent)' } as any}>
         <span className="bc-art">
           <img src={cardArt(a.type)} alt={actionName(a.type)} draggable={false} />
           {a.cost > 0 && <span className="bc-cost">{a.cost}<img src={IMG.coin} alt="" /></span>}
@@ -50,7 +50,7 @@ export function Console() {
   const st = s.state!; const me = s.me;
   const meP = st.players.find((p) => p.id === me); const you = st.you;
   const handKey = JSON.stringify(you?.cards || []);
-  const [preview, setPreview] = useState<ActionDef | null>(null); // guided mode: show a character's rule before claiming
+  const [preview, setPreview] = useState<{ a: ActionDef; why?: string } | null>(null); // what this card does — shown before playing, or why it can't be played
   const first = useRef(true);
   const boardRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (first.current) { first.current = false; return; } sfx.play('deal'); }, [handKey]);
@@ -82,10 +82,12 @@ export function Console() {
 
   // coaching = the guide's one-off practice tour OR the persistent "learning mode" setting
   const coaching = isCoaching(s);
-  const play = (a: ActionDef) => { if (coaching && a.kind === 'claim') setPreview(a); else pressAction(a.type); };
+  // every card explains itself before it is played (the guide's card rule, then Use / Cancel)
+  const play = (a: ActionDef) => setPreview({ a });
   // tapping a card you can't play explains itself instead of doing nothing
   const blockedNote = !meP.alive ? t('board.outNote') : st.phase === 'ended' ? t('board.overNote') : t('board.wait');
-  const onBlocked = (msg: string) => notify(msg || blockedNote);
+  // a card you can't play opens the same sheet, showing the card and WHY it is unavailable
+  const onBlocked = (a: ActionDef, msg: string) => setPreview({ a, why: msg || blockedNote });
   const card = (a: ActionDef) => <BoardCard key={a.type} a={a} coins={meP.coins} targets={a.target ? validTargets(st, me, a) : null} myTurn={!!myTurn} owned={CH[a.type as keyof typeof CH] ? (owned[a.type] || 0) : 0} blockedNote={blockedNote} onPlay={play} onBlocked={onBlocked} />;
   // your held cards sit side by side in the MIDDLE of the row, with the rest split around them —
   // the swiper centres on them so you can swipe either way
@@ -147,16 +149,21 @@ export function Console() {
 
       {preview && (
         <div className="claim-preview-backdrop" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>
-          <div className="claim-preview" onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.type as keyof typeof CH]?.color }}>
-            <GameCard c={preview.type} w={104} />
+          <div className={`claim-preview ${preview.why ? 'blocked' : ''}`} onClick={(e) => e.stopPropagation()} style={{ ['--c' as any]: CH[preview.a.type as keyof typeof CH]?.color }}>
+            <img className="cp-card" src={cardArt(preview.a.type)} alt={actionName(preview.a.type)} draggable={false} />
             <div className="cp-body">
-              <h3 className="cp-name">{actionName(preview.type)}</h3>
-              <p className="cp-desc">{actionDesc(preview.type)}</p>
-              {preview.cost ? <span className="cp-cost">{t('preview.cost', { n: preview.cost })}<img src={IMG.coin} alt="" /></span> : null}
+              <h3 className="cp-name">{actionName(preview.a.type)}</h3>
+              <p className="cp-desc">{actionDesc(preview.a.type)}</p>
+              {preview.a.cost ? <span className="cp-cost">{t('preview.cost', { n: preview.a.cost })}<img src={IMG.coin} alt="" /></span> : null}
+              {preview.why && <p className="cp-why"><Icon name="danger-triangle" className="size-4" />{preview.why}</p>}
             </div>
             <div className="cp-actions">
-              <Button variant="tertiary" onPress={() => setPreview(null)}>{t('preview.cancel')}</Button>
-              <Button variant="primary" onPress={() => { const a = preview; setPreview(null); pressAction(a.type); }}><Icon name="hand-stars" className="size-4" />{t('preview.use')}</Button>
+              {preview.why
+                ? <Button fullWidth variant="secondary" onPress={() => setPreview(null)}>{t('preview.ok')}</Button>
+                : <>
+                    <Button variant="tertiary" onPress={() => setPreview(null)}>{t('preview.cancel')}</Button>
+                    <Button variant="primary" onPress={() => { const a = preview.a; setPreview(null); pressAction(a.type); }}><Icon name="hand-stars" className="size-4" />{t('preview.use')}</Button>
+                  </>}
             </div>
           </div>
         </div>

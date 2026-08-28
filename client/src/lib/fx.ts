@@ -1,6 +1,6 @@
 /* Visual effects driven by server events. They work on the DOM through data attributes so React stays declarative:
    seats expose data-seat="<playerId>" and data-coins, the bank is #bank, the effects layer is #fx. */
-import { IMG, CH } from '../theme';
+import { ACTION_CARDS, IMG, CH } from '../theme';
 import { sfx } from './sfx';
 import { store } from './store';
 import { i18n, t } from '../i18n';
@@ -77,6 +77,21 @@ export function stamp(pid: string, text: string, cls = '') {
   const a = anchor(pid); const s = document.createElement('div'); s.className = 'fx-stamp ' + cls; s.textContent = text; s.style.left = a.x + 'px'; s.style.top = (a.y - 10) + 'px'; fxRoot().appendChild(s);
   sfx.play('stamp'); setTimeout(() => s.remove(), 3600);
 }
+/** Flash the card that was just played — character claims AND the basic action cards. */
+export function playedCard(type: string) {
+  const src = CH[type as keyof typeof CH]?.card || ACTION_CARDS[type];
+  if (!src) return;
+  const d = document.createElement('div'); d.className = 'fx-played';
+  d.innerHTML = `<img src="${src}" alt="" />`;
+  fxRoot().appendChild(d);
+  d.animate([
+    { transform: 'translate(-50%, -50%) scale(.7) rotate(-6deg)', opacity: 0 },
+    { transform: 'translate(-50%, -50%) scale(1) rotate(0deg)', opacity: 1, offset: 0.22 },
+    { transform: 'translate(-50%, -50%) scale(1) rotate(0deg)', opacity: 1, offset: 0.7 },
+    { transform: 'translate(-50%, -62%) scale(.92) rotate(2deg)', opacity: 0 },
+  ], { duration: reducedMotion ? 1 : 1500, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => d.remove();
+}
+
 export function reveal(character: string) {
   const d = document.createElement('div'); d.className = 'fx-reveal gcard flip';
   d.innerHTML = `<div class="inner"><div class="face back"></div><div class="face front"><img src="${CH[character as keyof typeof CH].card}" alt="" /></div></div>`; fxRoot().appendChild(d);
