@@ -6,6 +6,7 @@ import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
 import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
 import { validTargets } from '../lib/rules';
+import { adBreak } from '../lib/ads';
 import { sfx } from '../lib/sfx';
 import { GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
 import { logActionCard, logCharacter } from './LogPanel';
@@ -124,8 +125,10 @@ export function Prompt() {
           ))}
         </ul>
         <div className="win-actions">
-          {isHost ? <Button size="lg" variant="primary" onPress={newGame}><Icon name="restart" className="size-5" />{t('end.new')}</Button> : <div className="p-waiting">{t('end.wait')}</div>}
-          <Button size="lg" variant="outline" className="win-leave" onPress={leaveRoom}><Icon name="logout-2" className="size-5" />{t('lobby.leave')}</Button>
+          {/* Between games is the other moment with no server clock running, so the interstitial sits
+              in front of both ways out of the end screen. adBreak always resolves. */}
+          {isHost ? <Button size="lg" variant="primary" onPress={async () => { await adBreak('next'); newGame(); }}><Icon name="restart" className="size-5" />{t('end.new')}</Button> : <div className="p-waiting">{t('end.wait')}</div>}
+          <Button size="lg" variant="outline" className="win-leave" onPress={async () => { await adBreak('next'); leaveRoom(); }}><Icon name="logout-2" className="size-5" />{t('lobby.leave')}</Button>
           {isHost && (
             <Button size="lg" variant="outline" className="win-close" onPress={() => { if (confirm(t('end.closeConfirm'))) closeRoom(); }}>
               <Icon name="close-circle" className="size-5" />{t('end.close')}

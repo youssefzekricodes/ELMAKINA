@@ -29,6 +29,22 @@ Last player holding a card wins.
    ```
    `npm run dev` starts Vite with hot reload on http://localhost:5173 (it talks to your Supabase project directly).
 
+## Analytics & ads (both optional)
+
+Two env vars, both **off unless set** — with neither, the app requests nothing from Google and every
+ad break resolves instantly. That is the default for local dev.
+
+| Variable | Where to get it | What it turns on |
+|---|---|---|
+| `VITE_GA_ID` | GA4 → Admin → Data streams (`G-XXXXXXXXXX`) | Page views per screen (`/home`, `/lobby`, `/game`, …) and `game_start` / `game_end` / `room_create` / `room_join` / `sign_in` events. Users-by-country needs no extra code: GA4 derives it from the request IP (Reports → User attributes, and Realtime). |
+| `VITE_ADSENSE_CLIENT` | AdSense → Account → Settings (`ca-pub-…`) | A full-screen ad before a **solo** game and on the **end-of-game** screen, via Google's H5 Games Ads. Never during play. Put the same id in `public/ads.txt`. |
+
+Consent Mode v2 defaults to granted, then **denied for the EEA/UK/CH** until a CMP says otherwise —
+enable Google's certified banner in AdSense → **Privacy & messaging** and it updates that by itself.
+`public/privacy.html` is the policy both products require; keep it accurate if you add anything new.
+
+No name, room code or account email is ever sent to Google. See `client/src/lib/analytics.ts`.
+
 Optional backstop (timeouts/bots advance even when no browser is open): enable `pg_cron` + `pg_net` and run the
 commented `cron.schedule` block at the end of `supabase/migrations/20260822000000_elmakina.sql` (fill in your
 project URL + service-role key). Normally clients themselves call `tick` exactly when something is due.

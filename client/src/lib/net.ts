@@ -7,6 +7,8 @@ import { store, customAvatars, type Profile, type Room } from './store';
 import { i18n, t } from '../i18n';
 import { sfx } from './sfx';
 import { processEvents, resetEvents, banner, playedCard } from './fx';
+import { track } from './analytics';
+import { countGame } from './ads';
 import { voiceOnRoomGone } from './voice';
 import { initSocial, syncProfile } from './social';
 import { validTargets } from './rules';
@@ -83,6 +85,12 @@ function applyView(v: any) {
   const prevTurn = prev.state?.turnPlayerId, prevStage = prev.state?.pending?.stage;
   const keepTargeting = prev.targeting && v.pending && v.pending.stage === 'turn' && v.pending.actorId === me;
   store.set({ state: v, me, screen: 'game', targeting: keepTargeting ? prev.targeting : null, targetId: keepTargeting ? prev.targetId : null });
+  // Count the game exactly once, on the transition into 'ended'. Only counts and a win flag —
+  // never names, room codes or the signed-in email.
+  if (v.phase === 'ended' && prev.state && prev.state.phase !== 'ended') {
+    countGame();
+    track('game_end', { players: v.players.length, won: v.winnerId === me });
+  }
   processEvents(v, me);
   const myTurnNow = v.phase === 'playing' && v.pending && v.pending.stage === 'turn' && v.pending.actorId === me;
   if (myTurnNow && (prevTurn !== me || prevStage !== 'turn') && turnSeen !== v.pending.deadline) {
@@ -220,20 +228,20 @@ async function afterJoin(res: any) {
   if (res.view) applyView(res.view);
   return res;
 }
-export async function createRoom(name: string) { return afterJoin(await emit('create_room', { name, profile: profileOf() })); }
-export async function joinRoom(name: string, code: string) { const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) clearInviteParam(); return r; }
-export async function playSolo(name: string, guided = false) { return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
+export async function createRoom(name: string) { track('room_create'); return afterJoin(await emit('create_room', { name, profile: profileOf() })); }
+export async function joinRoom(name: string, code: string) { const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) { track('room_join'); clearInviteParam(); } return r; }
+export async function playSolo(name: string, guided = false) { track('game_start', { mode: 'solo', guided }); return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
 export async function leaveRoom() { exiting = true; await emit('leave_room'); exitToHome(); }
 /** Host closes the room for everyone; the others get the rooms-row DELETE over Realtime. */
 export async function closeRoom() { exiting = true; const r = await emit('close_room'); if (r && r.ok) exitToHome(); else exiting = false; return r; }
 async function lobbyOp(op: string, data?: any) { const r = await emit(op, data); if (r && r.room) applyRoom(r.room); return r; }
 export const toggleReady = () => lobbyOp('toggle_ready');
-export const startGame = () => emit('start_game');
+export const startGame = () => { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); return emit('start_game'); };
 export const addBot = () => lobbyOp('add_bot');
 export const removeBot = () => lobbyOp('remove_bot');
 /** Host removes somebody from the lobby (works on bots too). */
 export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });
-export async function newGame() { const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
+export async function newGame() { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
 /** Save my look (and optionally rename myself). In a room the server also gets the new name and
     hands back a fresh lobby view, so every other seat re-labels straight away. */
 export function commitProfile(p: Profile, name?: string) {

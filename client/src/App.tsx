@@ -4,6 +4,8 @@ import { useStore, store } from './lib/store';
 import { connect, setLanguage } from './lib/net';
 import { goFullscreen } from './lib/fullscreen';
 import { sfx } from './lib/sfx';
+import { initAnalytics, sendPageView } from './lib/analytics';
+import { initAds } from './lib/ads';
 import { i18n } from './i18n';
 import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
@@ -36,11 +38,16 @@ export default function App() {
     document.addEventListener('pointerdown', unlock, { once: true });
     for (const c of CHARACTERS) { new Image().src = CH[c].card; new Image().src = CH[c].cardSm; }
     connect();
+    initAnalytics();
+    initAds(); // fetch the ad script early so the first break is not what loads it
     (window as any).__mekina = { store }; // debugging hook (inspect / inject state from the console)
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') store.set({ logOpen: false, modal: null }); }; // Esc also dismisses any sheet
     document.addEventListener('keydown', esc);
     return () => document.removeEventListener('keydown', esc);
   }, []);
+  // One "page" per screen: the app is a single route with the screen held in the store, so GA's
+  // automatic page_view would fire exactly once for a whole session.
+  useEffect(() => { sendPageView('/' + s.screen); }, [s.screen]);
   const inGame = s.screen === 'game' && !!s.state;
   // Auto-fullscreen when a game begins (best-effort; the start-game clicks also request it within their gesture).
   useEffect(() => { if (inGame) goFullscreen(); }, [inGame]);

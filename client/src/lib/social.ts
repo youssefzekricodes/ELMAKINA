@@ -3,6 +3,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { store, type Account, type Friend } from './store';
+import { track } from './analytics';
 
 export interface LeaderRow { uid: string; name: string; avatar: string | null; avatarData: string | null; trophies: number; wins: number; games: number; me: boolean }
 
@@ -103,6 +104,7 @@ export async function dismissInvite() {
 // ── actions ──
 export async function signInWithGoogle() {
   if (!supabase) return;
+  track('sign_in', { method: 'google' }); // the event only — the account's email is never sent to GA
   await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
 }
 

@@ -179,6 +179,8 @@
   .wordmark h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(56px, 13vw, 108px); line-height: .9; letter-spacing: .02em; text-transform: uppercase; color: var(--foreground); margin: 0; }
   .tagline { margin: 12px 0 0; color: var(--muted); font-family: var(--font-display); font-weight: 500; letter-spacing: .28em; text-transform: uppercase; font-size: clamp(11px, 2.4vw, 13px); }
   .hero-foot { color: var(--muted); font-size: 13px; margin: 0; }
+  .home-privacy { color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; opacity: .75; }
+  .home-privacy:hover { color: var(--foreground); opacity: 1; }
   /* ─── home: title screen + player badge ─── */
   .home-screen { align-items: center; justify-content: center; padding: 28px 20px calc(28px + var(--sab)); }
   .home-stage { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }

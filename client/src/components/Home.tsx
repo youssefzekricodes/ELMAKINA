@@ -5,6 +5,7 @@ import { useStore, store } from '../lib/store';
 import { createRoom, joinRoom, playSolo, notify, isConfigured } from '../lib/net';
 import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
+import { adBreak, adDue } from '../lib/ads';
 import { IMG } from '../theme';
 import { GoogleG, Html, Icon, LearnToggle, PlayerAvatar } from './ui';
 
@@ -19,8 +20,13 @@ export function Home() {
     if (!need()) return;
     store.set({ tour: false }); // a normal game is not the guided tour
     if (what === 'join') { const c = code.trim().toUpperCase(); if (c.length !== 4) return notify(t('toast.code')); setBusy(what); await joinRoom(name, c); setBusy(null); return; }
-    if (what === 'solo') goFullscreen(); // solo jumps straight into the game — grab fullscreen within this click gesture
+    // Solo jumps straight into the game and nobody else is waiting on it, so the interstitial goes
+    // here. Fullscreen must be requested inside the click gesture, so when no ad is coming (the
+    // common case) nothing async may come first.
+    const showingAd = what === 'solo' && adDue();
+    if (what === 'solo' && !showingAd) goFullscreen();
     setBusy(what);
+    if (showingAd) { await adBreak('start'); goFullscreen(); } // best effort: the gesture may have expired
     if (what === 'create') await createRoom(name); else await playSolo(name);
     setBusy(null);
   };
@@ -118,6 +124,9 @@ export function Home() {
             <Icon name="question-circle" className="size-4" />{t('coach.rules')}
           </button>
           <p className="hero-foot">{t('home.foot')}</p>
+          {/* A reachable privacy policy is a hard requirement for both AdSense and Analytics.
+              It is a static page under public/ so crawlers (and the AdSense reviewer) can read it. */}
+          <a className="home-privacy" href="/privacy.html" target="_blank" rel="noopener">{t('home.privacy')}</a>
         </div>
       </div>
     </section>
