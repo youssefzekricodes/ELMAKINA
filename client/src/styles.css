@@ -654,10 +654,12 @@
   /* counter window: one loud primary ("Let it pass") + a quiet secondary bluff-call underneath */
   .rx.let-pass { background: var(--accent); color: var(--accent-foreground); }
   .rx.let-pass:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent); }
-  .cm-call-sub { align-self: center; display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; min-height: 36px; padding: 6px 14px; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer;
-    font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; transition: color .14s, border-color .14s, background .14s; }
-  .cm-call-sub svg { flex-shrink: 0; }
-  .cm-call-sub:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+  /* secondary to "let it pass", but still unmistakably the dangerous choice */
+  .cm-call-sub { align-self: stretch; display: inline-flex; align-items: center; justify-content: center; gap: 7px; margin-top: 2px; min-height: 42px; padding: 8px 14px; border-radius: 12px; border: 1.5px solid var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); color: color-mix(in srgb, var(--danger) 62%, #F3E9D6); cursor: pointer;
+    font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; transition: color .14s, border-color .14s, background .14s, transform .12s; }
+  .cm-call-sub svg { flex-shrink: 0; color: var(--danger); }
+  .cm-call-sub:hover, .cm-call-sub:focus-visible { color: #fff; background: var(--danger); transform: translateY(-1px); }
+  .cm-call-sub:hover svg { color: #fff; }
   .claim-min .p-waiting { margin-top: 4px; }
   .p-waiting { color: var(--muted); font-size: 13px; font-style: italic; }
   .result-head { display: flex; align-items: center; gap: 10px; }
