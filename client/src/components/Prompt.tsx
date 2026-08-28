@@ -123,12 +123,12 @@ export function Prompt() {
         </ul>
         <div className="win-actions">
           {isHost ? <Button size="lg" variant="primary" onPress={newGame}><Icon name="restart" className="size-5" />{t('end.new')}</Button> : <div className="p-waiting">{t('end.wait')}</div>}
-          {isHost && (
-            <button type="button" className="win-close" onClick={() => { if (confirm(t('end.closeConfirm'))) closeRoom(); }}>
-              <Icon name="close-circle" className="size-4" />{t('end.close')}
-            </button>
-          )}
           <Button size="lg" variant="outline" className="win-leave" onPress={leaveRoom}><Icon name="logout-2" className="size-5" />{t('lobby.leave')}</Button>
+          {isHost && (
+            <Button size="lg" variant="outline" className="win-close" onPress={() => { if (confirm(t('end.closeConfirm'))) closeRoom(); }}>
+              <Icon name="close-circle" className="size-5" />{t('end.close')}
+            </Button>
+          )}
         </div>
       </div>
     );
