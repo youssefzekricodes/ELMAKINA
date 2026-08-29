@@ -101,6 +101,39 @@ function BlockBtn({ character, label, desc }: { character: string; label: string
   );
 }
 
+type Place = { id: string; rank: number; delta: number; win: boolean; isBot: boolean };
+
+/** 1st / 2nd / 3rd as an actual podium. Arranged 2-1-3 so the winner stands centre and tallest —
+    the shape carries the order, so nobody has to read a rank number to know who won. */
+function Podium({ rows, me, pl }: { rows: Place[]; me: string | null; pl: (id?: string | null) => any }) {
+  if (!rows.length) return null;
+  const order = rows.length === 1 ? rows : rows.length === 2 ? [rows[1], rows[0]] : [rows[1], rows[0], rows[2]];
+  return (
+    <ol className={`podium n${rows.length}`}>
+      {order.map((row) => {
+        const p = pl(row.id);
+        if (!p) return null;
+        return (
+          <li key={row.id} className={`pod r${row.rank} ${row.id === me ? 'mine' : ''}`} style={{ ['--i' as any]: row.rank }}>
+            <span className="pod-top">
+              {row.rank === 1 && <span className="pod-crown"><Icon name="win" className="size-6" /></span>}
+              <PlayerAvatar p={p} size={row.rank === 1 ? 'lg' : 'md'} className="pod-av" />
+            </span>
+            <b className="pod-name">{p.name}</b>
+            <span className="pod-step">
+              <span className="pod-rank">{row.rank}</span>
+              <span className="pod-place">{t('place.' + row.rank)}</span>
+              <span className={`pod-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
+                <Icon name="win" className="size-3" />{row.delta > 0 ? `+${row.delta}` : row.delta}
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function KeyBtn({ variant, onPress, main, sub, icon, disabled = false, className = '' }: { variant: any; onPress: () => void; main: string; sub?: string; icon?: string; disabled?: boolean; className?: string }) {
   return (
     <Button variant={variant} size="lg" isDisabled={disabled} onPress={onPress} className={`key ${className}`}>
@@ -124,36 +157,41 @@ export function Prompt() {
   if (st.phase === 'ended') {
     const isHost = room && room.hostId === me;
     key = 'end';
+    // Straight from the array the server awarded trophies off, so the places shown are the places
+    // that were paid. Falls back to seat order if an older view arrives without it.
+    const places = st.standings || st.players.map((pp, i) => ({ id: pp.id, rank: i + 1, delta: 0, win: pp.id === st.winnerId, isBot: !!pp.isBot }));
     head = <Chip variant="primary" color="accent">{t('end.strip')}</Chip>;
     body = (
       <div className="winner">
+        {/* The podium IS the announcement: winner centre and tallest, runners-up flanking, in the
+            arrangement everyone already reads without a legend. Ranks 4+ list underneath. */}
         <span className="win-kicker">{t('end.winner')}</span>
-        <div className="win-av-wrap">
-          <span className="win-crown"><Icon name="win" className="size-7" /></span>
-          {st.winnerId && <PlayerAvatar p={pl(st.winnerId)} size="lg" className="win-av" />}
-        </div>
+        <Podium rows={places.slice(0, 3)} me={me} pl={pl} />
         <h2>{st.winnerId ? pname(st.winnerId) : t('end.nobody')}</h2>
         <p className="p-sub">{st.winnerId === me ? t('end.you') : t('end.them')}</p>
-        {/* Real places, straight from the array the server awarded trophies off — so what you read
-            here is what actually landed on your total. Falls back to seat order on an old view. */}
-        <ul className="standings placed">
-          {(st.standings || st.players.map((pp, i) => ({ id: pp.id, rank: i + 1, delta: 0, win: pp.id === st.winnerId, isBot: !!pp.isBot }))).map((row) => {
-            const pp = pl(row.id);
-            if (!pp) return null;
-            return (
-              <li key={row.id} className={`${row.win ? 'is-win' : 'is-out'} ${row.rank <= 3 ? 'medal m' + row.rank : ''}`}>
-                <span className="st-rank">{row.rank}</span>
-                <PlayerAvatar p={pp} size="xs" />
-                <span className="st-name">{pp.name}{row.id === me && <span className="st-you">{t('game.you')}</span>}</span>
-                {st.standings
-                  ? <span className={`st-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
-                      <Icon name="win" className="size-3" />{row.delta > 0 ? `+${row.delta}` : row.delta}
-                    </span>
-                  : <span className="st-tag">{row.win ? t('end.champ') : t('seat.eliminated')}</span>}
-              </li>
-            );
-          })}
-        </ul>
+        {places.length > 3 && (
+          <>
+            <span className="also-ran">{t('end.alsoRan')}</span>
+            <ul className="standings placed">
+              {places.slice(3).map((row) => {
+                const pp = pl(row.id);
+                if (!pp) return null;
+                return (
+                  <li key={row.id} className="is-out">
+                    <span className="st-rank">{row.rank}</span>
+                    <PlayerAvatar p={pp} size="xs" />
+                    <span className="st-name">{pp.name}{row.id === me && <span className="st-you">{t('game.you')}</span>}</span>
+                    {st.standings
+                      ? <span className={`st-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
+                          <Icon name="win" className="size-3" />{row.delta > 0 ? `+${row.delta}` : row.delta}
+                        </span>
+                      : <span className="st-tag">{t('seat.eliminated')}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
         {/* A table with a bot in it pays nothing — say so, rather than showing deltas that never land. */}
         {st.standings && st.standings.some((r) => r.isBot) && <p className="st-note">{t('end.noTrophies')}</p>}
         <div className="win-actions">
