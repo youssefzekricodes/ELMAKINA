@@ -17,7 +17,7 @@
  *     listStaleMemberRooms(before, limit) -> [code]   rooms holding a membership whose last_seen is older than `before`
  *     deleteMembers(code)                             drop every membership of one room
  */
-import { Game, GameError, MIN_PLAYERS, MAX_PLAYERS, ACTION_GRACE } from './engine.mjs';
+import { Game, GameError, MIN_PLAYERS, MAX_PLAYERS, ACTION_GRACE, standings } from './engine.mjs';
 import { BOT_NAMES, runBots, botsNextDue } from './bots.mjs';
 
 export const DEFAULT_AVATARS = ['boy-1', 'boy-2', 'boy-3', 'boy-4', 'boy-5', 'boy-6', 'girl-1', 'girl-2', 'girl-3', 'girl-4', 'girl-5', 'girl-6'];
@@ -69,24 +69,18 @@ function applyDefaults(players, player) {
 }
 const humans = (room) => room.players.filter((p) => !p.isBot);
 
-/** Final trophy deltas for the human players of a finished game.
- *  Rank 1 (winner) = +3, rank 2 = +1, last place = -1, everyone in between = 0.
- *  Ranking: winner first, then survivors/eliminated by reverse elimination order (last out ranks higher). */
-function standings(game) {
-  const players = game.players || [];
-  const total = players.length;
-  const out = game.outOrder || [];
-  // rank order (best → worst): winner, then anyone still standing, then eliminated newest→oldest
-  const ranked = [];
-  if (game.winnerId) ranked.push(game.winnerId);
-  for (const p of players) if (p.alive && p.id !== game.winnerId && !ranked.includes(p.id)) ranked.push(p.id);
-  for (let i = out.length - 1; i >= 0; i--) if (!ranked.includes(out[i])) ranked.push(out[i]);
-  for (const p of players) if (!ranked.includes(p.id)) ranked.push(p.id); // safety net
-  const delta = (rank) => (rank === 1 ? 3 : rank === total ? -1 : rank === 2 ? 1 : 0);
-  return ranked
-    .map((id, i) => ({ id, rank: i + 1 }))
-    .filter(({ id }) => { const p = players.find((x) => x.id === id); return p && !p.isBot; })
-    .map(({ id, rank }) => ({ id, delta: delta(rank), win: rank === 1 }));
+/**
+ * Trophy deltas to actually write for a finished game. Ranking and the delta table live in
+ * engine.mjs `standings()` — the client is shown the very same array.
+ *
+ * Nothing is awarded for a game containing a bot. Beating the machine was worth a full +3, so the
+ * leaderboard could be farmed solo in a couple of minutes, which makes it worth nothing to the
+ * people who earn it against real opponents.
+ */
+function trophyAwards(game) {
+  const places = standings(game);
+  if (places.some((p) => p.isBot)) return [];
+  return places.map(({ id, delta, win }) => ({ id, delta, win }));
 }
 const pickHost = (room) => { if (!room.players.find((p) => p.id === room.host_id) && room.players.length) room.host_id = (humans(room)[0] || room.players[0]).id; };
 /** Hand the host badge to a human who is still a member of the room (used when the host walks out mid-game). */
@@ -97,6 +91,7 @@ export function lobbyView(room) {
   return {
     code: room.code, hostId: room.host_id, phase: room.phase, minPlayers: MIN_PLAYERS, maxPlayers: MAX_PLAYERS,
     players: room.players.map((p) => ({ id: p.id, name: p.name, ready: !!p.ready, connected: !!p.connected, isHost: p.id === room.host_id, isBot: !!p.isBot, avatar: p.avatar, avatarData: p.avatar === 'custom' ? p.avatarData || null : null, color: p.color })),
+    isPublic: !!room.is_public,
     canStart: room.phase === 'lobby' && room.players.length >= MIN_PLAYERS && room.players.every((p) => p.ready || p.id === room.host_id) && room.players.filter((p) => p.connected).length >= MIN_PLAYERS,
     reactionSecs: reactionSecsOf(room), minReactionSecs: REACTION_SECS_MIN, maxReactionSecs: REACTION_SECS_MAX,
   };
@@ -133,6 +128,8 @@ async function dispatch(ctx, op, body) {
     case 'create_room': return createRoom(ctx, body, false);
     case 'solo': return createRoom(ctx, body, true);
     case 'join_room': return joinRoom(ctx, body);
+    case 'public_rooms': return { ok: true, rooms: await db.listPublicRooms(Number(body.limit) || 30) };
+    case 'quick_match': return quickMatch(ctx, body);
     case 'leave_room': return leaveRoom(ctx);
     case 'tick': return tickRoom(ctx, body.code);
     default: break;
@@ -189,7 +186,7 @@ async function createRoom(ctx, body, solo) {
   if (cur) { const old = await db.getRoom(cur.code); if (old && old.players.some((p) => p.id === uid)) throw fail('Leave your current room first'); await db.removeMember(cur.code, uid); }
   let code; for (let i = 0; i < 20; i++) { code = genCode(); if (!(await db.getRoom(code))) break; }
   const player = { id: uid, name: cleanName(body.name), ready: solo, connected: true, isBot: false, lastSeen: now, ...cleanProfile(body.profile) };
-  const room = { code, host_id: uid, phase: 'lobby', players: [player], settings: { reactionSecs: REACTION_SECS_DEFAULT }, next_due: null, version: 0, created_at: now, updated_at: now };
+  const room = { code, host_id: uid, phase: 'lobby', players: [player], settings: { reactionSecs: REACTION_SECS_DEFAULT }, is_public: !solo && !!body.isPublic, next_due: null, version: 0, created_at: now, updated_at: now };
   applyDefaults(room.players, player);
   await db.insertRoom(room);
   await db.addMember(code, uid, now);
@@ -201,6 +198,29 @@ async function createRoom(ctx, body, solo) {
   }
   await r.commit();
   return { ok: true, code, room: lobbyView(r.room), view: r.game ? r.viewFor(uid) : null };
+}
+
+/**
+ * Quick match: drop into the fullest public lobby that still has a seat, else open one and wait.
+ *
+ * Deliberately not a matchmaking queue — it reuses joinRoom/createRoom whole, and "searching" is
+ * just sitting in a lobby, which the client already knows how to render. Fullest-first (rather than
+ * oldest) packs players into one room instead of scattering them one-per-lobby, which is the
+ * difference between a game starting and everyone waiting alone.
+ */
+async function quickMatch(ctx, body) {
+  const { db, uid } = ctx;
+  let open = [];
+  try { open = await db.listPublicRooms(30); } catch (e) { open = []; } // no listing → just open a room
+  const cur = await db.getMembership(uid);
+  const roomy = open
+    .filter((r) => r.n > 0 && r.n < (r.max || MAX_PLAYERS) && !(cur && cur.code === r.code))
+    .sort((a, b) => b.n - a.n);
+  for (const cand of roomy) {
+    try { return { ...(await joinRoom(ctx, { ...body, code: cand.code })), matched: true }; }
+    catch (e) { /* filled up or vanished between the list and the join — try the next one */ }
+  }
+  return { ...(await createRoom(ctx, { ...body, isPublic: true }, false)), matched: false };
 }
 
 async function joinRoom(ctx, body) {
@@ -380,7 +400,7 @@ class RoomOps {
     // Award trophies exactly once, when the game first reaches 'ended'. Persist the flag in state so a
     // retry/tick never double-awards; run the actual DB writes only after state is safely committed.
     let awards = null;
-    if (this.game && this.game.phase === 'ended' && !this.awarded) { awards = standings(this.game); this.awarded = true; }
+    if (this.game && this.game.phase === 'ended' && !this.awarded) { awards = trophyAwards(this.game); this.awarded = true; }
     const stExpected = this.version; this.version = stExpected + 1;
     const state = this.game ? { game: this.game.toJSON(), bots: this.sched, awarded: !!this.awarded } : null;
     if (!(await this.db.saveState(room.code, state, stExpected))) throw CONFLICT();

@@ -1,7 +1,7 @@
 import { Button, Tooltip } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { addBot, copyInvite, kickPlayer, leaveRoom, removeBot, startGame, toggleReady } from '../lib/net';
+import { copyInvite, kickPlayer, leaveRoom, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
 import { Icon, PlayerAvatar } from './ui';
 import { AddFriendButton } from './Social';
@@ -30,6 +30,9 @@ export function Lobby() {
             <h1 className="lobby-title">{t('lobby.title')}</h1>
           </div>
           <div className="lobby-head-right">
+            <span className={`vis-badge ${room.isPublic ? 'pub' : 'priv'}`}>
+              <Icon name={room.isPublic ? 'users-room' : 'eye'} className="size-3.5" />{t(room.isPublic ? 'lobby.public' : 'lobby.private')}
+            </span>
             <span className="lobby-count" aria-label={`${n}/${cap}`}><b>{n}</b><i>/{cap}</i></span>
             <Button variant="outline" size="sm" className="lobby-leave" onPress={leaveRoom}>
               <Icon name="logout-2" className="size-4" /><span className="lobby-leave-tx">{t('lobby.leave')}</span>
@@ -96,19 +99,22 @@ export function Lobby() {
               </li>
             );
           })}
-          {Array.from({ length: empties }, (_, k) => {
-            const canAdd = isHost && n < room.maxPlayers;
-            return (
-              <li key={'e' + k} className={`pcard empty ${canAdd ? 'addable' : ''}`} onClick={canAdd ? addBot : undefined} role={canAdd ? 'button' : undefined}>
-                <span className="pcard-num">{n + k + 1}</span>
-                <span className="pcard-av empty"><Icon name={canAdd ? 'user-plus-rounded' : 'sleeping-square'} className="size-6" /></span>
-                <div className="pcard-name muted">{canAdd ? t('lobby.addSeat') : t('lobby.seatOpen')}</div>
-              </li>
-            );
-          })}
+          {Array.from({ length: empties }, (_, k) => (
+            <li key={'e' + k} className="pcard empty">
+              <span className="pcard-num">{n + k + 1}</span>
+              <span className="pcard-av empty"><Icon name="sleeping-square" className="size-6" /></span>
+              <div className="pcard-name muted">{t('lobby.seatOpen')}</div>
+            </li>
+          ))}
         </ul>
 
-        <p className="hint">{hint}</p>
+        {room.isPublic && n < room.minPlayers
+          ? <div className="searching" role="status">
+              <span className="sr-dots" aria-hidden="true"><i /><i /><i /></span>
+              <b>{t('search.title')}</b>
+              <span>{t('lobby.waitingPlayers')}</span>
+            </div>
+          : <p className="hint">{hint}</p>}
       </div>
 
       {/* action bar */}
@@ -126,18 +132,6 @@ export function Lobby() {
             <Button isIconOnly size="md" variant="secondary" aria-label={t('lobby.invite')} onPress={() => store.set({ modal: 'invite' })}><Icon name="users-group-rounded" className="size-5" /></Button>
             <Tooltip.Content>{t('lobby.invite')}</Tooltip.Content>
           </Tooltip>
-          {isHost && n < room.maxPlayers && (
-            <Tooltip delay={400}>
-              <Button isIconOnly size="md" variant="secondary" aria-label={t('lobby.addSeat')} onPress={addBot}><Icon name="user-plus-rounded" className="size-5" /></Button>
-              <Tooltip.Content>{t('lobby.addSeat')}</Tooltip.Content>
-            </Tooltip>
-          )}
-          {isHost && room.players.some((p) => p.isBot) && (
-            <Tooltip delay={400}>
-              <Button isIconOnly size="md" variant="tertiary" aria-label={t('lobby.removeBot')} onPress={removeBot}><Icon name="user-minus-rounded" className="size-5" /></Button>
-              <Tooltip.Content>{t('lobby.removeBot')}</Tooltip.Content>
-            </Tooltip>
-          )}
         </div>
         {!isHost && (
           <Button size="lg" variant={meP?.ready ? 'secondary' : 'primary'} className="lobby-cta" onPress={toggleReady}>

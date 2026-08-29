@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { createRoom, joinRoom, playSolo, notify, isConfigured } from '../lib/net';
+import { createRoom, joinRoom, playSolo, quickMatch, notify, isConfigured } from '../lib/net';
 import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
@@ -13,10 +13,11 @@ export function Home() {
   const s = useStore();
   const [code, setCode] = useState(s.autoJoinCode || '');
   const [busy, setBusy] = useState<string | null>(null);
+  const [isPublic, setPublic] = useState(false);
   const name = s.name.trim();
   const setName = (v: string) => { store.set({ name: v }); localStorage.setItem('mekina.name', v); };
   const need = () => { if (!name) { notify(t('toast.name')); return false; } return true; };
-  const go = async (what: 'create' | 'join' | 'solo') => {
+  const go = async (what: 'create' | 'join' | 'solo' | 'random') => {
     if (!need()) return;
     store.set({ tour: false }); // a normal game is not the guided tour
     if (what === 'join') { const c = code.trim().toUpperCase(); if (c.length !== 4) return notify(t('toast.code')); setBusy(what); await joinRoom(name, c); setBusy(null); return; }
@@ -27,10 +28,24 @@ export function Home() {
     if (what === 'solo' && !showingAd) goFullscreen();
     setBusy(what);
     if (showingAd) { await adBreak('start'); goFullscreen(); } // best effort: the gesture may have expired
-    if (what === 'create') await createRoom(name); else await playSolo(name);
+    if (what === 'random') { store.set({ searching: true }); await quickMatch(name); store.set({ searching: false }); }
+    else if (what === 'create') await createRoom(name, isPublic);
+    else await playSolo(name);
     setBusy(null);
   };
   const mePreview = { id: 'me', avatar: s.profile.avatar, avatarData: s.profile.avatarData, color: s.profile.color };
+  // Quick match can take a moment to answer; cover the screen so the app never looks frozen.
+  if (s.searching) {
+    return (
+      <section className="screen home-screen">
+        <div className="searching big" role="status">
+          <span className="sr-radar" aria-hidden="true"><i /><i /><i /></span>
+          <b>{t('search.title')}</b>
+          <span>{t('search.sub')}</span>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="screen home-screen">
       <div className="home-stage">
@@ -39,6 +54,9 @@ export function Home() {
           <span className="trophy-pill" title={t('lb.trophies')}><Icon name="win" className="size-4" />{s.trophies}</span>
           <div className="home-top-tools">
             <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')}><Icon name="win" className="size-4" /><span className="acct-tool-tx">{t('lb.title')}</span></button>
+            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')}>
+              <Icon name="users-room" className="size-4" /><span className="acct-tool-tx">{t('home.public')}</span>
+            </button>
             <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')}>
               <Icon name="users-group-rounded" className="size-4" /><span className="acct-tool-tx">{t('fr.title')}</span>
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
@@ -95,10 +113,24 @@ export function Home() {
         )}
 
         <div className="home-actions">
-          <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'create'} onPress={() => go('create')}>
+          {/* Meeting people should not depend on passing a code around, so quick match leads. */}
+          <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'random'} onPress={() => go('random')}>
+            <Icon name="users-room" className="size-5" />
+            <span className="ha-tx"><span>{t('home.random')}</span><i>{t('home.randomSub')}</i></span>
+          </Button>
+          <Button fullWidth size="lg" variant="secondary" isPending={busy === 'create'} onPress={() => go('create')}>
             <Icon name="users-group-rounded" className="size-5" />{t('home.create')}
           </Button>
-          <Button fullWidth size="lg" variant="secondary" isPending={busy === 'solo'} onPress={() => go('solo')}>
+          {/* Who can walk in — decided before the room exists, because it cannot be changed after. */}
+          <div className="vis-toggle" role="group" aria-label={t('create.visibility')}>
+            {([false, true] as const).map((v) => (
+              <button key={String(v)} type="button" className={`vis-opt ${isPublic === v ? 'on' : ''}`} aria-pressed={isPublic === v} onClick={() => setPublic(v)}>
+                <Icon name={v ? 'users-room' : 'eye'} className="size-4" />
+                <span><b>{t(v ? 'create.public' : 'create.private')}</b><i>{t(v ? 'create.publicSub' : 'create.privateSub')}</i></span>
+              </button>
+            ))}
+          </div>
+          <Button fullWidth size="lg" variant="tertiary" isPending={busy === 'solo'} onPress={() => go('solo')}>
             <Icon name="cpu-bolt" className="size-5" />{t('home.solo')}
           </Button>
         </div>

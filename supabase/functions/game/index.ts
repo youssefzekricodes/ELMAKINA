@@ -19,8 +19,8 @@ function makeDb(sb: SupabaseClient) {
   const one = async (q: any) => { const { data, error } = await q; if (error) throw error; return data; };
   const ts = (n: number | null) => (n == null ? null : new Date(n).toISOString());
   const ms = (s: string | null) => (s ? new Date(s).getTime() : null);
-  const rowToRoom = (r: any) => r && ({ code: r.code, host_id: r.host_id, phase: r.phase, players: r.players || [], settings: r.settings || {}, next_due: ms(r.next_due), version: r.version, created_at: ms(r.created_at), updated_at: ms(r.updated_at) });
-  const roomToRow = (room: any) => ({ code: room.code, host_id: room.host_id, phase: room.phase, players: room.players, settings: room.settings || {}, next_due: ts(room.next_due), version: room.version, updated_at: ts(room.updated_at) });
+  const rowToRoom = (r: any) => r && ({ code: r.code, host_id: r.host_id, phase: r.phase, players: r.players || [], settings: r.settings || {}, is_public: !!r.is_public, next_due: ms(r.next_due), version: r.version, created_at: ms(r.created_at), updated_at: ms(r.updated_at) });
+  const roomToRow = (room: any) => ({ code: room.code, host_id: room.host_id, phase: room.phase, players: room.players, settings: room.settings || {}, is_public: !!room.is_public, next_due: ts(room.next_due), version: room.version, updated_at: ts(room.updated_at) });
   return {
     async getRoom(code: string) { return rowToRoom(await one(sb.from('rooms').select('*').eq('code', code).maybeSingle())); },
     async insertRoom(room: any) { await one(sb.from('rooms').insert({ ...roomToRow(room), created_at: ts(room.created_at) })); },
@@ -29,6 +29,11 @@ function makeDb(sb: SupabaseClient) {
       return Array.isArray(data) && data.length > 0;
     },
     async deleteRoom(code: string) { await one(sb.from('rooms').delete().eq('code', code)); },
+    /** Open public lobbies with room left, oldest-advertised first — see the public_rooms() SQL fn. */
+    async listPublicRooms(limit = 30) {
+      const rows = await one(sb.rpc('public_rooms', { p_limit: limit }));
+      return (rows || []).map((r: any) => ({ code: r.code, host: r.host_name, n: r.n, max: r.max_players }));
+    },
     async getMembership(uid: string) { const r = await one(sb.from('room_members').select('code').eq('user_id', uid).maybeSingle()); return r ? { code: r.code } : null; },
     async addMember(code: string, uid: string, now: number) { await one(sb.from('room_members').upsert({ user_id: uid, code, last_seen: ts(now) }, { onConflict: 'user_id' })); },
     async removeMember(code: string, uid: string) { await one(sb.from('room_members').delete().eq('user_id', uid)); },

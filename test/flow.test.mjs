@@ -13,6 +13,11 @@ function memDb() {
     async insertRoom(room) { if (rooms.has(room.code)) throw new Error('dup'); rooms.set(room.code, clone(room)); },
     async updateRoom(code, room, expected) { const cur = rooms.get(code); if (!cur || cur.version !== expected) return false; rooms.set(code, clone(room)); return true; },
     async deleteRoom(code) { rooms.delete(code); for (const [u, m] of members) if (m.code === code) members.delete(u); },
+    async listPublicRooms(limit = 30) {
+      return [...rooms.values()].filter((r) => r.is_public && r.phase === 'lobby' && r.players.length < 6)
+        .sort((a, b) => (b.created_at || 0) - (a.created_at || 0)).slice(0, limit)
+        .map((r) => ({ code: r.code, host: (r.players[0] || {}).name || 'Player', n: r.players.length, max: 6 }));
+    },
     async getMembership(uid) { const m = members.get(uid); return m ? { code: m.code } : null; },
     async addMember(code, uid, now) { members.set(uid, { code, last_seen: now }); },
     async removeMember(code, uid) { members.delete(uid); },
@@ -398,6 +403,60 @@ await test('set_timings: the room setting survives a new game; guided games keep
   const solo = await call(db, S, { op: 'solo', name: 'Solo', bots: 2 });
   assert.equal(solo.room.reactionSecs, 12);
   assert.equal(viewOf(db, solo.code, S).timings.challenge, 12000);
+});
+
+await test('public rooms: private stays hidden, public is listed, and quick match packs players in', async () => {
+  const db = memDb();
+  // a private room must never be advertised
+  await call(db, 'priv', { op: 'create_room', name: 'Private' });
+  assert.deepEqual(await db.listPublicRooms(), [], 'a room is private unless the host opts in');
+
+  const a = await call(db, 'ha', { op: 'create_room', name: 'Amine', isPublic: true });
+  assert.equal(a.room.isPublic, true, 'the lobby payload tells the client how it is listed');
+  let list = await db.listPublicRooms();
+  assert.equal(list.length, 1); assert.equal(list[0].code, a.code); assert.equal(list[0].n, 1);
+  assert.equal(list[0].host, 'Amine');
+  assert.ok(!('players' in list[0]), 'browsing never exposes the players blob');
+
+  // quick match joins the existing public room rather than opening a second one
+  const q = await call(db, 'guest', { op: 'quick_match', name: 'Guest' });
+  assert.equal(q.matched, true); assert.equal(q.code, a.code);
+  assert.equal((await db.getRoom(a.code)).players.length, 2);
+
+  // a second public room exists but is emptier: quick match packs into the fullest one
+  const b = await call(db, 'hb', { op: 'create_room', name: 'Bilel', isPublic: true });
+  const q2 = await call(db, 'guest2', { op: 'quick_match', name: 'Guest2' });
+  assert.equal(q2.code, a.code, 'fullest-first, so games actually reach the start threshold');
+  assert.equal((await db.getRoom(b.code)).players.length, 1);
+
+  // nothing public to join → open one and wait
+  for (const code of [a.code, b.code]) await db.deleteRoom(code);
+  const q3 = await call(db, 'lonely', { op: 'quick_match', name: 'Lonely' });
+  assert.equal(q3.matched, false, 'no room to join → host one');
+  assert.equal((await db.getRoom(q3.code)).is_public, true, 'and it is public, so the next searcher finds it');
+
+  // a full room drops off the list
+  const full = await db.getRoom(q3.code);
+  full.players = Array.from({ length: 6 }, (_, i) => ({ id: 'p' + i, name: 'P' + i }));
+  await db.updateRoom(full.code, full, full.version);
+  assert.deepEqual(await db.listPublicRooms(), [], 'a full lobby stops advertising');
+});
+
+await test('trophies: real tables pay by size, and a table with a bot pays nothing', async () => {
+  const db = memDb();
+  const paid = [];
+  db.bumpScore = async (uid, delta, win) => { paid.push({ uid, delta, win }); };
+
+  // solo vs bots → the game ends, but nothing is written
+  const solo = await call(db, 'solo', { op: 'solo', name: 'Solo', bots: 3 });
+  const room = await db.getRoom(solo.code);
+  const st = await db.getState(solo.code);
+  st.state.game.phase = 'ended';
+  st.state.game.winnerId = 'solo';
+  await db.saveState(solo.code, st.state, st.version);
+  room.phase = 'playing'; await db.updateRoom(room.code, room, room.version);
+  await call(db, 'solo', { op: 'tick', code: solo.code });
+  assert.deepEqual(paid, [], 'beating the machine is not worth a trophy');
 });
 
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);

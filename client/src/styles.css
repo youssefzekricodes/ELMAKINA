@@ -179,6 +179,43 @@
   .wordmark h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(56px, 13vw, 108px); line-height: .9; letter-spacing: .02em; text-transform: uppercase; color: var(--foreground); margin: 0; }
   .tagline { margin: 12px 0 0; color: var(--muted); font-family: var(--font-display); font-weight: 500; letter-spacing: .28em; text-transform: uppercase; font-size: clamp(11px, 2.4vw, 13px); }
   .hero-foot { color: var(--muted); font-size: 13px; margin: 0; }
+  /* ── quick match / public rooms ───────────────────────────────────────────── */
+  .home-actions .ha-tx { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+  .home-actions .ha-tx i { font-style: normal; font-size: 11px; font-weight: 500; opacity: .78; }
+  /* who can walk in: a two-up choice, decided before the room exists */
+  .vis-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+  .vis-opt { display: flex; align-items: center; gap: 8px; padding: 8px 10px; min-height: 46px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border-tertiary); background: var(--surface-secondary); color: var(--muted); text-align: start; transition: border-color .12s, background .12s, color .12s; }
+  .vis-opt span { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+  .vis-opt b { font-size: 12.5px; font-weight: 700; }
+  .vis-opt i { font-style: normal; font-size: 10.5px; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vis-opt.on { border-color: var(--accent); background: var(--accent-soft); color: var(--foreground); }
+  .vis-opt svg { flex-shrink: 0; }
+  .vis-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+  .vis-badge.pub { color: var(--accent-soft-foreground); background: var(--accent-soft); }
+  .vis-badge.priv { color: var(--muted); background: var(--surface-secondary); }
+  .pub-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .pub-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--surface-secondary); }
+  .pub-code { font-weight: 800; letter-spacing: .18em; font-size: 13px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .pub-main { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+  .pub-main b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pub-seats { font-size: 11px; color: var(--muted); }
+  .pub-actions { display: flex; justify-content: center; margin-top: 14px; }
+  /* searching for company — the lobby variant is inline, the home variant owns the screen */
+  .searching { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: var(--muted); font-size: 12.5px; }
+  .searching b { color: var(--foreground); font-size: 15px; }
+  .searching.big { justify-content: center; flex: 1; gap: 14px; padding: 40px 20px; }
+  .sr-dots { display: inline-flex; gap: 6px; }
+  .sr-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: sr-bounce 1.1s ease-in-out infinite; }
+  .sr-dots i:nth-child(2) { animation-delay: .16s; }
+  .sr-dots i:nth-child(3) { animation-delay: .32s; }
+  @keyframes sr-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-7px); opacity: 1; } }
+  .sr-radar { position: relative; width: 96px; height: 96px; display: grid; place-items: center; }
+  .sr-radar i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: sr-ping 2.1s ease-out infinite; }
+  .sr-radar i:nth-child(2) { animation-delay: .7s; }
+  .sr-radar i:nth-child(3) { animation-delay: 1.4s; }
+  @keyframes sr-ping { 0% { transform: scale(.35); opacity: .85; } 100% { transform: scale(1); opacity: 0; } }
+
   .home-privacy { color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; opacity: .75; }
   .home-privacy:hover { color: var(--foreground); opacity: 1; }
   /* ─── home: title screen + player badge ─── */
@@ -298,6 +335,14 @@
   /* spotlight focus: when someone is on turn, dim everyone else */
   .seats:has(.seat.turn) .seat:not(.turn) { filter: brightness(.66) saturate(.85); }
   .seats:has(.seat.turn) .seat:not(.turn) { transition: filter .35s var(--ease); }
+  /* whoever plays after the current turn: dimmed like the rest, but readable and ringed, so the
+     order around the table is legible without waiting to find out */
+  .seats:has(.seat.turn) .seat.up-next { filter: brightness(.9) saturate(.95); }
+  .seat.up-next .pavatar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 65%, transparent); }
+  .seat-status.next { background: color-mix(in srgb, var(--gold) 18%, var(--surface-secondary)); color: var(--gold); border-color: color-mix(in srgb, var(--gold) 45%, transparent); }
+  /* YOUR turn is the one you must never miss: brighter ring, gold lamp, a heavier pill */
+  .seat.me.turn .pavatar { box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px var(--background), 0 0 30px color-mix(in srgb, var(--gold) 70%, transparent); }
+  .seat.me.turn .seat-status.playing { background: var(--gold); color: #241505; font-weight: 800; letter-spacing: .06em; }
   .seat.dead { filter: grayscale(1); opacity: .5; }
   .seat.dead .av-wrap::after { content: 'OUT'; position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: .12em; color: var(--danger); border: 2px solid var(--danger); border-radius: 50%; transform: rotate(-14deg); background: color-mix(in srgb, var(--surface) 70%, transparent); }
   .seat.offline .pavatar { filter: grayscale(.55); opacity: .85; }
@@ -774,6 +819,21 @@
   .standings .st-tag { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   .standings li.is-win .st-tag { color: var(--gold); }
   .standings li.is-out .st-tag { color: var(--muted); }
+  /* places: a rank chip on the left, the trophy change on the right */
+  .standings.placed li { gap: 8px; }
+  .st-rank { flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; color: var(--muted); background: color-mix(in srgb, var(--foreground) 8%, transparent); }
+  .standings li.medal .st-rank { color: #241505; }
+  .standings li.m1 .st-rank { background: linear-gradient(160deg, #F7D774, #C9971F); box-shadow: 0 0 0 1px rgba(255,236,180,.5); }
+  .standings li.m2 .st-rank { background: linear-gradient(160deg, #E6E6E6, #9AA0A6); }
+  .standings li.m3 .st-rank { background: linear-gradient(160deg, #E3A76B, #A8672F); }
+  .st-delta { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; min-width: 42px; justify-content: flex-end;
+    font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .st-delta.up { color: var(--gold); }
+  .st-delta.flat { color: var(--muted); }
+  .st-delta.down { color: var(--danger); }
+  .st-delta.flat svg { opacity: .5; }
+  .st-note { margin: 6px 0 0; font-size: 11.5px; font-style: italic; color: var(--muted); }
 
   /* first-game briefing overlay */
   .coach-backdrop { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--backdrop); backdrop-filter: blur(3px); animation: coach-fade .2s var(--ease); }

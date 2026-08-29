@@ -1,6 +1,6 @@
 // Engine scenario tests (serverless engine: fake clock + tick()). Run: node test/engine.test.mjs
 import assert from 'node:assert';
-import { Game, Queue, CHARACTERS, MAX_COINS, ACTION_GRACE, DEFAULT_TIMINGS } from '../supabase/functions/game/engine.mjs';
+import { Game, Queue, CHARACTERS, MAX_COINS, ACTION_GRACE, DEFAULT_TIMINGS, standings, trophyDelta } from '../supabase/functions/game/engine.mjs';
 
 const T = { challenge: 40, block: 40, decision: 40, turn: 200, disconnectedTurn: 30, disconnectedDecision: 20, resultPause: 0, turnPause: 0 };
 let NOW = 1_000_000;
@@ -515,6 +515,50 @@ await test('forfeit: leaving mid-game eliminates the player and the game moves o
   assert.equal(g.phase, 'ended'); assert.equal(g.winnerId, a.id);
   assert.ok(g.outOrder.includes(last.id)); assert.equal(cards(g), 21);
   assert.equal(g.forfeit(a.id), false, 'nothing to forfeit once the game is over');
+});
+
+await test('trophy scale pays by table size, not just by finishing last', () => {
+  const row = (n) => Array.from({ length: n }, (_, i) => trophyDelta(i + 1, n));
+  assert.deepEqual(row(2), [1, 0], 'a duel: winner +1, loser 0');
+  assert.deepEqual(row(3), [2, 0, -1]);
+  assert.deepEqual(row(4), [3, 1, 0, -1]);
+  assert.deepEqual(row(6), [3, 1, 0, -1, -1, -1], 'everyone from 4th down loses one');
+});
+
+await test('standings rank the winner first, then survivors, then newest-out', () => {
+  const g = newGame(4); g.start();
+  const [a, b, c, d] = g.players;
+  // c went out first, then b — so the finish is: winner a, survivor d, then b, then c.
+  g.outOrder = [c.id, b.id];
+  b.alive = false; c.alive = false;
+  g.winnerId = a.id;
+  const places = standings(g);
+  assert.deepEqual(places.map((p) => p.id), [a.id, d.id, b.id, c.id], 'surviving longer ranks higher');
+  assert.deepEqual(places.map((p) => p.rank), [1, 2, 3, 4]);
+  assert.deepEqual(places.map((p) => p.delta), [3, 1, 0, -1]);
+  assert.deepEqual(places.map((p) => p.win), [true, false, false, false]);
+});
+
+await test('standings ride along in the view once the game has ended', () => {
+  const g = newGame(2); g.start();
+  const a = g.active, b = g.players.find((p) => p.id !== a.id);
+  assert.equal(g.viewFor(a.id).standings, null, 'nothing to rank while the game is live');
+  a.coins = 14; b.cards = b.cards.slice(0, 1);
+  g.declareAction(a.id, { type: 'paidkill', targetId: b.id });
+  assert.equal(g.phase, 'ended');
+  const v = g.viewFor(b.id).standings;
+  assert.deepEqual(v.map((p) => [p.rank, p.delta]), [[1, 1], [2, 0]], 'a 2-player game pays +1 / 0');
+  assert.equal(v[0].id, a.id);
+});
+
+await test('a game with a bot in it is worth no trophies at all', () => {
+  const g = new Game([{ id: 'h', name: 'Human' }, { id: 'r', name: 'Robot', isBot: true }], { timings: T, now: clock });
+  g.start();
+  g.winnerId = 'h';
+  const places = standings(g);
+  assert.deepEqual(places.map((p) => p.isBot).sort(), [false, true], 'bots are flagged, not dropped');
+  // room.mjs refuses to award anything when any place is a bot — see trophyAwards().
+  assert.ok(places.some((p) => p.isBot), 'so solo wins cannot farm the leaderboard');
 });
 
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);

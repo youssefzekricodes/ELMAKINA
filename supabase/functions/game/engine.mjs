@@ -55,6 +55,44 @@ const TIMEOUT = { k: 'windowTimeout' };
 // with time still on the clock always counts, even if it lands a fraction of a second late.
 export const ACTION_GRACE = 1200;
 
+/**
+ * Final places for a finished game, best → worst, with each player's trophy delta.
+ *
+ * This is the ONE definition: room.mjs writes these deltas to `scores`, and viewFor() ships the same
+ * array to the client so the end screen shows the ranking the trophies actually came from. Two
+ * implementations would drift the moment the table below changes.
+ *
+ * The delta depends on how many played, so winning a duel is not worth the same as winning a six:
+ *
+ *      players │ 1st │ 2nd │ 3rd │ 4th+
+ *      ────────┼─────┼─────┼─────┼─────
+ *         2    │ +1  │  0  │  —  │  —
+ *         3    │ +2  │  0  │ -1  │  —
+ *        4+    │ +3  │ +1  │  0  │ -1
+ *
+ * Ranking: the winner, then anyone else still standing, then the eliminated newest-out first —
+ * surviving longer ranks higher. `bump_score` floors a player's total at zero.
+ */
+export function trophyDelta(rank, players) {
+  if (players <= 2) return rank === 1 ? 1 : 0;
+  if (players === 3) return rank === 1 ? 2 : rank === 2 ? 0 : -1;
+  return rank === 1 ? 3 : rank === 2 ? 1 : rank === 3 ? 0 : -1;
+}
+
+export function standings(game) {
+  const players = game.players || [];
+  const out = game.outOrder || [];
+  const ranked = [];
+  if (game.winnerId) ranked.push(game.winnerId);
+  for (const p of players) if (p.alive && p.id !== game.winnerId && !ranked.includes(p.id)) ranked.push(p.id);
+  for (let i = out.length - 1; i >= 0; i--) if (!ranked.includes(out[i])) ranked.push(out[i]);
+  for (const p of players) if (!ranked.includes(p.id)) ranked.push(p.id); // safety net
+  return ranked.map((id, i) => {
+    const p = players.find((x) => x.id === id) || {};
+    return { id, rank: i + 1, delta: trophyDelta(i + 1, players.length), win: i === 0, isBot: !!p.isBot };
+  });
+}
+
 export class Game {
   /**
    * @param {Array<{id:string,name:string,connected?:boolean,isBot?:boolean,avatar?:string,color?:string}>} seatPlayers
@@ -769,7 +807,9 @@ export class Game {
       if (w.type === 'result') window.data = w.data; // public outcome summary
     }
     return {
-      phase: this.phase, winnerId: this.winnerId, serverTime: now, timings: this.T, maxCoins: MAX_COINS, handSize: this.handSize, deckSize: this.deck.length,
+      phase: this.phase, winnerId: this.winnerId, serverTime: now, timings: this.T,
+      // places + trophy deltas, so the end screen shows exactly what the server awarded
+      standings: this.phase === 'ended' ? standings(this) : null, maxCoins: MAX_COINS, handSize: this.handSize, deckSize: this.deck.length,
       turnPlayerId: this.phase === 'playing' ? this.active.id : null,
       players: this.players.map((p) => ({ id: p.id, name: p.name, seat: p.seat, coins: p.coins, isBot: p.isBot, avatar: p.avatar, color: p.color, cardCount: p.cards.length, alive: p.alive, connected: p.connected })),
       you: me ? { id: me.id, cards: me.cards.slice(), alive: me.alive, coins: me.coins } : null,

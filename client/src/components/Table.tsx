@@ -23,7 +23,7 @@ function claimedChar(p: GPlayer, st: any): CharacterId | null {
 }
 
 /** A persistent status pill pinned over a player's avatar (claim / deciding / playing / passed / …), or null. */
-function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>): { icon: string; label: string; cls: string } | null {
+function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>, nextId?: string | null): { icon: string; label: string; cls: string } | null {
   const st = s.state!; const w = st.pending?.window;
   if (!p.alive) return { icon: 'eliminated', label: t('seat.eliminated'), cls: 'out' };
   if (w && w.type === 'reaction') {
@@ -33,15 +33,16 @@ function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>): { icon: string;
     if (w.eligible.includes(p.id)) return { icon: 'hourglass', label: t('seat.deciding'), cls: 'deciding' };
   } else if (w && w.type === 'decision' && w.playerId === p.id) return { icon: 'hourglass', label: t('seat.deciding'), cls: 'deciding' };
   const isTurn = st.turnPlayerId === p.id && st.phase === 'playing';
-  if (isTurn && st.pending && st.pending.stage === 'turn') return { icon: 'bolt', label: t('seat.theirTurn'), cls: 'playing' };
+  if (isTurn && st.pending && st.pending.stage === 'turn') return { icon: 'bolt', label: p.id === s.me ? t('seat.yourTurn') : t('seat.theirTurn'), cls: 'playing' };
   if (st.pending && st.pending.actorId === p.id && st.pending.stage === 'resolving') return { icon: 'bolt', label: t('seat.acting'), cls: 'playing' };
   if (!p.connected) return { icon: 'cpu-bolt', label: t('seat.left'), cls: 'auto' };
+  if (nextId && p.id === nextId) return { icon: 'hourglass', label: t('seat.upNext'), cls: 'next' };
   return null;
 }
 
 /** The overlay pill markup, shared by opponents and "me". */
-function StatusPill({ p, s }: { p: GPlayer; s: ReturnType<typeof useStore> }) {
-  const info = seatStatus(p, s);
+function StatusPill({ p, s, nextId }: { p: GPlayer; s: ReturnType<typeof useStore>; nextId?: string | null }) {
+  const info = seatStatus(p, s, nextId);
   if (!info) return null;
   return <span className={`seat-status ${info.cls}`}><Icon name={info.icon} className="size-3" /><span className="ss-tx">{info.label}</span></span>;
 }
@@ -50,7 +51,17 @@ export function Table() {
   const s = useStore();
   const v = useVoice(); void v; // subscribe so speaking rings update live
   const st = s.state!; const me = s.me;
-  const opponents = st.players.filter((p) => p.id !== me);
+  // `st.players` is turn order, so rotating it to start just after YOU makes the row read
+  // "next, then next, then next" instead of starting at whoever happens to be first in the array.
+  // Same rotation feeds SEAT_ANGLES, so the desktop arc becomes clockwise turn order too.
+  const mine = st.players.findIndex((p) => p.id === me);
+  const ordered = mine < 0 ? st.players : st.players.slice(mine + 1).concat(st.players.slice(0, mine));
+  const opponents = ordered.filter((p) => p.id !== me);
+  // Who acts after the current player. This walks the FULL turn order, not the rotated opponent
+  // list — that one has you removed, so "next" would skip straight past your own seat.
+  const alive = st.players.filter((p) => p.alive);
+  const curIdx = alive.findIndex((p) => p.id === st.turnPlayerId);
+  const nextId = st.phase === 'playing' && curIdx >= 0 && alive.length > 1 ? alive[(curIdx + 1) % alive.length].id : null;
   const angles = SEAT_ANGLES[opponents.length] || SEAT_ANGLES[5];
   const targets = s.targeting ? validTargets(st, me, s.targeting) : null;
   const meP = st.players.find((p) => p.id === me);
@@ -78,7 +89,7 @@ export function Table() {
           const rw = st.pending && st.pending.window && st.pending.window.type === 'reaction' ? st.pending.window : null;
           const isClaimer = !!(rw && rw.claim && rw.claim.claimerId === p.id);
           const claimCh = claimedChar(p, st);
-          const cls = ['seat', isTurn ? 'turn' : '', !p.alive ? 'dead' : '', !p.connected && p.alive ? 'offline' : '', targetable ? 'targetable' : '', s.targetId === p.id ? 'selected' : '', pickSlots ? 'picking' : '', isClaimer ? 'claimer' : ''].join(' ');
+          const cls = ['seat', isTurn ? 'turn' : '', !isTurn && p.id === nextId ? 'up-next' : '', !p.alive ? 'dead' : '', !p.connected && p.alive ? 'offline' : '', targetable ? 'targetable' : '', s.targetId === p.id ? 'selected' : '', pickSlots ? 'picking' : '', isClaimer ? 'claimer' : ''].join(' ');
           return (
             <div key={p.id} className={cls} data-seat={p.id} onClick={() => onSeat(p.id)} role={targetable ? 'button' : undefined}
               style={{ left: `clamp(80px, ${50 + 40 * Math.cos(a)}%, calc(100% - 80px))`, top: `clamp(100px, ${52 + 33 * Math.sin(a)}%, calc(100% - 100px))` }}>
@@ -90,7 +101,7 @@ export function Table() {
                 {inCall(p.id) && (p.id in v.peers && v.peers[p.id].muted
                   ? <span className="mic-tag muted"><Icon name="microphone-off" className="size-3" /></span>
                   : speakingOf(p.id) ? <SoundWaves className="wave-tag" /> : <span className="mic-tag"><Icon name="microphone" className="size-3" /></span>)}
-                <StatusPill p={p} s={s} />
+                <StatusPill p={p} s={s} nextId={nextId} />
               </div>
               <div className="nm">{p.name}{p.isBot && <span className="bot-chip">{t('seat.bot')}</span>}</div>
               <Coins n={p.coins} />
@@ -105,14 +116,14 @@ export function Table() {
         })}
       </div>
       {meP && (
-        <div className={`seat me ${isMyTurn ? 'turn' : ''} ${!meP.alive ? 'dead' : ''}`} data-seat={me || ''}>
+        <div className={`seat me ${isMyTurn ? 'turn' : ''} ${!isMyTurn && me === nextId ? 'up-next' : ''} ${!meP.alive ? 'dead' : ''}`} data-seat={me || ''}>
           <div className={`av-wrap ${inCall(me || '') ? 'in-call' : ''} ${speakingOf(me || '') ? 'speaking' : ''}`}>
             {claimedChar(meP, st) && <span className="claim-badge" style={{ ['--c' as any]: CH[claimedChar(meP, st)!].color }}><img src={CH[claimedChar(meP, st)!].cardSm} alt="" /></span>}
             <PlayerAvatar p={meP} size="md" />
             {inCall(me || '') && (v.muted
               ? <span className="mic-tag muted"><Icon name="microphone-off" className="size-3" /></span>
               : speakingOf(me || '') ? <SoundWaves className="wave-tag" /> : <span className="mic-tag"><Icon name="microphone" className="size-3" /></span>)}
-            <StatusPill p={meP} s={s} />
+            <StatusPill p={meP} s={s} nextId={nextId} />
           </div>
           <div className="nm">{meP.name} <span className="you-chip">{t('game.you')}</span></div>
         </div>

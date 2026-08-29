@@ -134,15 +134,28 @@ export function Prompt() {
         </div>
         <h2>{st.winnerId ? pname(st.winnerId) : t('end.nobody')}</h2>
         <p className="p-sub">{st.winnerId === me ? t('end.you') : t('end.them')}</p>
-        <ul className="standings">
-          {st.players.map((pp) => (
-            <li key={pp.id} className={pp.id === st.winnerId ? 'is-win' : 'is-out'}>
-              <PlayerAvatar p={pp} size="xs" />
-              <span className="st-name">{pp.name}{pp.id === me && <span className="st-you">{t('game.you')}</span>}</span>
-              <span className="st-tag">{pp.id === st.winnerId ? t('end.champ') : t('seat.eliminated')}</span>
-            </li>
-          ))}
+        {/* Real places, straight from the array the server awarded trophies off — so what you read
+            here is what actually landed on your total. Falls back to seat order on an old view. */}
+        <ul className="standings placed">
+          {(st.standings || st.players.map((pp, i) => ({ id: pp.id, rank: i + 1, delta: 0, win: pp.id === st.winnerId, isBot: !!pp.isBot }))).map((row) => {
+            const pp = pl(row.id);
+            if (!pp) return null;
+            return (
+              <li key={row.id} className={`${row.win ? 'is-win' : 'is-out'} ${row.rank <= 3 ? 'medal m' + row.rank : ''}`}>
+                <span className="st-rank">{row.rank}</span>
+                <PlayerAvatar p={pp} size="xs" />
+                <span className="st-name">{pp.name}{row.id === me && <span className="st-you">{t('game.you')}</span>}</span>
+                {st.standings
+                  ? <span className={`st-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
+                      <Icon name="win" className="size-3" />{row.delta > 0 ? `+${row.delta}` : row.delta}
+                    </span>
+                  : <span className="st-tag">{row.win ? t('end.champ') : t('seat.eliminated')}</span>}
+              </li>
+            );
+          })}
         </ul>
+        {/* A table with a bot in it pays nothing — say so, rather than showing deltas that never land. */}
+        {st.standings && st.standings.some((r) => r.isBot) && <p className="st-note">{t('end.noTrophies')}</p>}
         <div className="win-actions">
           {/* Between games is the other moment with no server clock running, so the interstitial sits
               in front of both ways out of the end screen. adBreak always resolves. */}

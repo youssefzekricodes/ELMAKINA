@@ -4,7 +4,7 @@ import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, type LeaderRow } from '../lib/social';
-import { joinRoom, leaveRoom, notify } from '../lib/net';
+import { joinRoom, leaveRoom, listPublicRooms, notify } from '../lib/net';
 import { Icon, PlayerAvatar } from './ui';
 
 const asPlayer = (uid: string, avatar: string | null, avatarData: string | null) => ({ id: uid, avatar: avatar || 'boy-1', avatarData, color: null });
@@ -170,5 +170,49 @@ export function AddFriendButton({ uid, name }: { uid: string; name: string }) {
       onClick={async (e) => { e.stopPropagation(); const r = await sendFriendRequest(uid); if (r.ok || r.error === 'already') setSent(true); }}>
       <Icon name="user-plus-rounded" className="size-3.5" />
     </button>
+  );
+}
+
+/** Open public lobbies. The list comes from the public_rooms() SQL function, which returns only
+    code / host / seat count — never the players blob a room row actually carries. */
+export function PublicRoomsPage() {
+  const s = useStore();
+  const [rooms, setRooms] = useState<{ code: string; host: string; n: number; max: number }[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const load = () => { setRooms(null); listPublicRooms().then(setRooms).catch(() => setRooms([])); };
+  useEffect(load, []);
+  const join = async (code: string) => {
+    const name = (s.name || '').trim();
+    if (!name) { notify(t('toast.name')); store.set({ screen: 'home' }); return; }
+    setBusy(code);
+    const r = await joinRoom(name, code);
+    setBusy(null);
+    if (!r || r.ok === false) load(); // it filled up or closed while the list was on screen
+  };
+  return (
+    <section className="screen page-screen">
+      <div className="page-shell">
+        <PageHead icon="users-room" title={t('pub.title')} />
+        <div className="page-body">
+          {rooms === null ? <p className="sheet-empty">{t('pub.loading')}</p>
+            : rooms.length === 0 ? <p className="sheet-empty">{t('pub.empty')}</p>
+              : <ul className="pub-list">
+                {rooms.map((r) => (
+                  <li className="pub-row" key={r.code}>
+                    <span className="pub-code" dir="ltr">{r.code}</span>
+                    <span className="pub-main">
+                      <b>{t('pub.hostedBy', { name: r.host })}</b>
+                      <span className="pub-seats">{t('pub.seats', { n: r.n, max: r.max })}</span>
+                    </span>
+                    <Button size="sm" variant="primary" isPending={busy === r.code} onPress={() => join(r.code)}>{t('pub.join')}</Button>
+                  </li>
+                ))}
+              </ul>}
+          <div className="pub-actions">
+            <Button size="md" variant="tertiary" onPress={load}><Icon name="restart" className="size-4" />{t('pub.refresh')}</Button>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

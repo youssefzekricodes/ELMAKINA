@@ -4,7 +4,7 @@ import type { ActionDef } from '../theme';
 
 export interface Profile { avatar: string; avatarData: string | null; color: string | null }
 export interface RoomPlayer { id: string; name: string; ready: boolean; connected: boolean; isHost: boolean; isBot?: boolean; avatar?: string; avatarData?: string | null; color?: string | null }
-export interface Room { code: string; you: string; hostId: string; players: RoomPlayer[]; phase: string; minPlayers: number; maxPlayers: number; canStart: boolean; reactionSecs?: number; minReactionSecs?: number; maxReactionSecs?: number }
+export interface Room { code: string; you: string; hostId: string; players: RoomPlayer[]; phase: string; minPlayers: number; maxPlayers: number; canStart: boolean; isPublic?: boolean; reactionSecs?: number; minReactionSecs?: number; maxReactionSecs?: number }
 export interface GPlayer { id: string; name: string; coins: number; cardCount: number; alive: boolean; connected: boolean; isBot?: boolean; avatar?: string; color?: string }
 export interface LogEntry { id: number; t: number; kind: string; key?: string; params?: any; text?: string }
 export interface GameState {
@@ -17,13 +17,15 @@ export interface GameState {
   maxCoins: number;
   timings: Record<string, number>;
   pending?: { stage: string; actorId: string; action?: any; deadline?: number; logStart?: number; window?: any } | null;
+  /** Final places + trophy deltas, sent by the engine only once the game has ended. */
+  standings?: { id: string; rank: number; delta: number; win: boolean; isBot: boolean }[] | null;
   log: LogEntry[];
   events?: any[];
   serverTime: number;
 }
 
 export interface Snapshot {
-  screen: 'home' | 'lobby' | 'game' | 'leaderboard' | 'friends';
+  screen: 'home' | 'lobby' | 'game' | 'leaderboard' | 'friends' | 'public';
   connected: boolean;
   net: 'ok' | 'slow' | 'off';   // connection quality shown in the top bar
   room: Room | null;
@@ -49,6 +51,7 @@ export interface Snapshot {
   friends: Friend[];         // accepted friends
   friendReqs: Friend[];      // incoming pending requests
   invite: RoomInvite | null; // a friend invited me to their room (live push)
+  searching: boolean;        // quick match is running / we are sitting in a public room waiting for company
   tick: number; // bumps when language changes so every text re-renders
 }
 
@@ -76,7 +79,7 @@ let snap: Snapshot = {
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
   targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
-  account: null, trophies: 0, friends: [], friendReqs: [], invite: null, tick: 0,
+  account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false, tick: 0,
 };
 const listeners = new Set<() => void>();
 

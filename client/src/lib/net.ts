@@ -62,7 +62,9 @@ export async function emit(op: string, data?: any): Promise<any> {
 function roomFromLobby(l: any): Room | null {
   if (!l) return null;
   for (const p of l.players) if (p.avatar === 'custom' && p.avatarData) customAvatars[p.id] = p.avatarData;
-  return { code: l.code, you: uid || '', hostId: l.hostId, players: l.players, phase: l.phase, minPlayers: l.minPlayers, maxPlayers: l.maxPlayers, canStart: l.canStart, reactionSecs: l.reactionSecs, minReactionSecs: l.minReactionSecs, maxReactionSecs: l.maxReactionSecs };
+  // NB: this maps fields one by one, so anything new on the server payload must be added here too
+  // or it silently never reaches the store.
+  return { code: l.code, you: uid || '', hostId: l.hostId, players: l.players, phase: l.phase, minPlayers: l.minPlayers, maxPlayers: l.maxPlayers, canStart: l.canStart, isPublic: !!l.isPublic, reactionSecs: l.reactionSecs, minReactionSecs: l.minReactionSecs, maxReactionSecs: l.maxReactionSecs };
 }
 
 function applyRoom(l: any) {
@@ -228,7 +230,18 @@ async function afterJoin(res: any) {
   if (res.view) applyView(res.view);
   return res;
 }
-export async function createRoom(name: string) { track('room_create'); return afterJoin(await emit('create_room', { name, profile: profileOf() })); }
+export async function createRoom(name: string, isPublic = false) { track('room_create', { visibility: isPublic ? 'public' : 'private' }); return afterJoin(await emit('create_room', { name, isPublic, profile: profileOf() })); }
+/** Drop into the fullest public lobby with a free seat, or open one and wait for company. */
+export async function quickMatch(name: string) {
+  const r = await emit('quick_match', { name, profile: profileOf() });
+  track('quick_match', { matched: !!r.matched });
+  return afterJoin(r);
+}
+/** Open public lobbies, for the browse list. Never includes the players blob — see public_rooms(). */
+export async function listPublicRooms(): Promise<{ code: string; host: string; n: number; max: number }[]> {
+  const r = await emit('public_rooms', {});
+  return (r && r.rooms) || [];
+}
 export async function joinRoom(name: string, code: string) { const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) { track('room_join'); clearInviteParam(); } return r; }
 export async function playSolo(name: string, guided = false) { track('game_start', { mode: 'solo', guided }); return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
 export async function leaveRoom() { exiting = true; await emit('leave_room'); exitToHome(); }
@@ -237,8 +250,6 @@ export async function closeRoom() { exiting = true; const r = await emit('close_
 async function lobbyOp(op: string, data?: any) { const r = await emit(op, data); if (r && r.room) applyRoom(r.room); return r; }
 export const toggleReady = () => lobbyOp('toggle_ready');
 export const startGame = () => { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); return emit('start_game'); };
-export const addBot = () => lobbyOp('add_bot');
-export const removeBot = () => lobbyOp('remove_bot');
 /** Host removes somebody from the lobby (works on bots too). */
 export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });
 export async function newGame() { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
