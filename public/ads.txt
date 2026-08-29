@@ -1,3 +1,4 @@
 # AdSense authorised sellers. Netlify serves public/ at the domain root, so this is /ads.txt.
-# This must stay in sync with DEFAULT_CLIENT in client/src/lib/ads.ts.
+# Must stay in sync with DEFAULT_ADSENSE_CLIENT in client/src/lib/google.ts and the
+# google-adsense-account meta tag in client/index.html.
 google.com, pub-4626982618627963, DIRECT, f08c47fec0942fa0
