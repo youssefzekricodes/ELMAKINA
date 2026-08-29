@@ -31,12 +31,13 @@ Last player holding a card wins.
 
 ## Analytics & ads (both optional)
 
-Two env vars, both **off unless set** — with neither, the app requests nothing from Google and every
-ad break resolves instantly. That is the default for local dev.
+Analytics is live in production builds. Ads stay dark until an AdSense publisher ID exists. Neither
+is ever active in `npm run dev` unless you set the var yourself, so local play never reaches Google
+or pollutes the stats.
 
 | Variable | Where to get it | What it turns on |
 |---|---|---|
-| `VITE_GA_ID` | GA4 → Admin → Data streams (`G-XXXXXXXXXX`) | Page views per screen (`/home`, `/lobby`, `/game`, …) and `game_start` / `game_end` / `room_create` / `room_join` / `sign_in` events. Users-by-country needs no extra code: GA4 derives it from the request IP (Reports → User attributes, and Realtime). |
+| `VITE_GA_ID` | GA4 → Admin → Data streams (`G-XXXXXXXXXX`) | Page views per screen (`/home`, `/lobby`, `/game`, …) and `game_start` / `game_end` / `room_create` / `room_join` / `sign_in` events. Users-by-country needs no extra code: GA4 derives it from the request IP (Reports → User attributes, and Realtime). **Already wired**: the live property is the production default in `client/src/lib/analytics.ts`, so this var is only for pointing a build somewhere else. |
 | `VITE_ADSENSE_CLIENT` | AdSense → Account → Settings (`ca-pub-…`) | A full-screen ad before a **solo** game and on the **end-of-game** screen, via Google's H5 Games Ads. Never during play. Put the same id in `public/ads.txt`. |
 
 Consent Mode v2 defaults to granted, then **denied for the EEA/UK/CH** until a CMP says otherwise —

@@ -11,17 +11,28 @@
  * Reports → Realtime.
  */
 
-const GA_ID = ((import.meta.env.VITE_GA_ID as string | undefined) || '').trim();
+// The measurement ID is public by design — it ships in the bundle, and it is what Google hands you
+// to paste into a page. So the production default lives here rather than in a Netlify env var that
+// is easy to forget and silent when missing. VITE_GA_ID overrides it (e.g. a staging property).
+// Dev and preview builds send NOTHING unless the var is set, so local play never pollutes the stats.
+const DEFAULT_GA_ID = 'G-GG2JZYRN9T';
+const GA_ID = (((import.meta.env.VITE_GA_ID as string | undefined) || (import.meta.env.PROD ? DEFAULT_GA_ID : '')) || '').trim();
 // Guard against a placeholder being left in .env — a real id looks like G-XXXXXXXXXX.
 export const analyticsConfigured = /^G-[A-Z0-9]{6,}$/i.test(GA_ID);
 
 type Params = Record<string, string | number | boolean | undefined>;
 
-// Created lazily: with no measurement id this file must not touch `window` at all.
-function gtag(...args: any[]) {
+/**
+ * gtag.js only processes commands pushed to dataLayer as the `arguments` object — exactly what
+ * Google's own snippet does. Pushing a real array (the obvious `(...args) => dl.push(args)`) is
+ * silently ignored: the tag loads, `google_tag_data` appears, and NOTHING is ever measured — no
+ * cookie, no hit. Hence the paramless function expression; `arguments` is the whole point.
+ * dataLayer is created lazily so that with no measurement id this file never touches `window`.
+ */
+const gtag: (...args: any[]) => void = function () {
   const w = window as any;
-  (w.dataLayer = w.dataLayer || []).push(args);
-}
+  (w.dataLayer = w.dataLayer || []).push(arguments);
+};
 
 let started = false;
 
@@ -57,7 +68,8 @@ export function initAnalytics() {
   gtag('js', new Date());
   // send_page_view: false — this is one HTML page with screens in a store, so the automatic
   // page_view would fire exactly once. sendPageView() below reports the screens instead.
-  gtag('config', GA_ID, { send_page_view: false, anonymize_ip: true });
+  // (No anonymize_ip: that is a Universal Analytics flag. GA4 always truncates IPs.)
+  gtag('config', GA_ID, { send_page_view: false });
 
   const s = document.createElement('script');
   s.async = true;
