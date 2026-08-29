@@ -29,6 +29,19 @@ Last player holding a card wins.
    ```
    `npm run dev` starts Vite with hot reload on http://localhost:5173 (it talks to your Supabase project directly).
 
+## Splash screen
+
+`client/index.html` carries an inline `#splash` — markup and CSS, no JS — so it paints from the
+first byte, before the bundle, the stylesheet or a single font arrives. `main.tsx` takes it down
+once React has painted (two `requestAnimationFrame`s, **plus** a timer: rAF never runs in a
+background tab, and without the timer the invisible overlay would sit there eating taps).
+
+Android and desktop Chrome build their PWA splash from `manifest.webmanifest`. iOS ignores that and
+opens on a white flash unless every device resolution is declared, so `npm run splash`
+(`scripts/build-splash.js`) generates `public/img/splash/*.png` and prints the
+`apple-touch-startup-image` block to paste into `index.html`. Rerun it if the logo or the device
+list changes.
+
 ## Analytics & ads (both optional)
 
 Analytics is live in production builds. Ads stay dark until an AdSense publisher ID exists. Neither

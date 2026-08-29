@@ -14,7 +14,8 @@
     "supabase:link": "supabase link",
     "supabase:deploy": "supabase db push && supabase functions deploy game",
     "supabase:serve": "supabase functions serve game --env-file .env",
-    "assets": "node scripts/build-assets.js"
+    "assets": "node scripts/build-assets.js",
+    "splash": "node scripts/build-splash.js"
   },
   "engines": {
     "node": ">=20"
