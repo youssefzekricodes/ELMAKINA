@@ -9,7 +9,7 @@
 /** Both ids are public by design: they ship in the bundle and Google hands them to you to paste
     into public HTML. Keeping them here rather than in a host env var removes a deployment step
     that fails silently when forgotten. */
-export const DEFAULT_GA_ID = 'G-GG2JZYRN9T';
+export const DEFAULT_GA_ID = 'G-BFCD6JJEB3'; // GA4 stream for https://elmekina.com (stream id 15523183832)
 export const DEFAULT_ADSENSE_CLIENT = 'ca-pub-4626982618627963';
 
 export const isGaId = (v: string) => /^G-[A-Z0-9]{6,}$/i.test(v);
@@ -18,10 +18,10 @@ export const isAdsClient = (v: string) => /^ca-pub-\d{10,}$/.test(v);
 /**
  * Resolve an id from an optional override.
  *
- * A MALFORMED override is ignored rather than obeyed. This is not defensive padding: a stray
- * `VITE_GA_ID=BFCD6JJEB3` (a verification code pasted into the wrong variable) beat the correct
- * default and silently switched every page_view and event off, while the HTML shell kept
- * measuring — so the property looked half-alive and nothing said why.
+ * A MALFORMED override is ignored rather than obeyed. This is not defensive padding: a real
+ * `VITE_GA_ID=BFCD6JJEB3` — the measurement id with its `G-` prefix dropped — beat the default,
+ * failed validation and silently switched every page_view and event off, while the HTML shell kept
+ * measuring. The property looked half-alive and nothing said why.
  */
 export function resolveId(override: string | undefined, fallback: string, valid: (v: string) => boolean): string {
   const v = (override || '').trim();
