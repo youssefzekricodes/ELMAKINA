@@ -681,7 +681,11 @@
   /* counter button: the card that does the countering sits where the icon would */
   /* 26px card ≈ 43px tall: fits inside the shared 48px button height, so the verdict stack stays even */
   .cm-btns .rx.with-card { grid-template-columns: 30px 1fr; padding-block: 2px; }
-  .rx-card { justify-self: center; border-radius: 5px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 3px 8px rgba(0,0,0,.45); }
+  .rx-card { justify-self: center; border-radius: 5px; box-shadow: 0 0 0 1px rgba(255,255,255,.45), 0 3px 8px rgba(0,0,0,.4); }
+  /* The counter button wears its own character's colour, so the button and the card on it read as
+     one object. --ink is picked from the fill's luminance in theme.ts (inkOn), never assumed. */
+  .rx.r-block.with-card { background: var(--c); color: var(--ink, #fff); border-color: color-mix(in srgb, var(--c) 62%, #000); }
+  .rx.r-block.with-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 45%, transparent); }
   /* counter window: one loud primary ("Let it pass") + a quiet secondary bluff-call underneath */
   .rx.let-pass { background: var(--accent); color: var(--accent-foreground); }
   .rx.let-pass:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent); }

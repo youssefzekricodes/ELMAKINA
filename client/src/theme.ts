@@ -39,6 +39,21 @@ export const ACTION_CARDS: Record<string, string> = {
 export const DEFAULT_AVATARS = ['boy-1', 'boy-2', 'boy-3', 'boy-4', 'boy-5', 'boy-6', 'girl-1', 'girl-2', 'girl-3', 'girl-4', 'girl-5', 'girl-6'];
 export const PALETTE = CHARACTERS.map((c) => ({ color: CH[c].color.toLowerCase(), name: c }));
 
+/**
+ * Readable ink for a solid fill of `hex` — WCAG relative luminance, not a guess.
+ * Every character that can currently appear on a counter button clears 4.5:1 against white
+ * (thief 4.87 is the tightest), but the Business Woman's yellow would be 2.21, so picking the
+ * foreground by measurement means a future rule change can't silently ship white-on-yellow.
+ */
+export function inkOn(hex: string): string {
+  const ch = (i: number) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  const l = 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5);
+  return (l + 0.05) / 0.05 >= 1.05 / (l + 0.05) ? '#12100C' : '#FFFFFF';
+}
+
 export type ActionType = 'income' | 'loan' | 'paidkill' | CharacterId;
 export interface ActionDef { type: ActionType; cost: number; kind: 'default' | 'claim'; target?: 'others' | 'rich' | 'any' | 'coins' }
 export const ACTIONS: ActionDef[] = [

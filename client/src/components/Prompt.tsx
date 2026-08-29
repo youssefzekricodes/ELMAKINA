@@ -1,7 +1,7 @@
 /* The bottom prompt card: targeting, reaction window, result recap, decisions, game over. */
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, Chip } from '@heroui/react';
-import { CH, CHARACTERS } from '../theme';
+import { CH, CHARACTERS, inkOn } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
 import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
@@ -85,10 +85,11 @@ function TargetPicker() {
 /** The counter button leads with the card that does the countering. The art reads faster than
     "Block as Colonel", and it is exactly the card you need to be holding — or to be bluffing. */
 function BlockBtn({ character, label, desc }: { character: string; label: string; desc: string }) {
+  const color = CH[character as keyof typeof CH]?.color || 'var(--warning)';
   return (
     <button
       type="button" className="rx r-block with-card" onClick={block} title={desc}
-      style={{ ['--c' as any]: CH[character as keyof typeof CH]?.color }}
+      style={{ ['--c' as any]: color, ['--ink' as any]: inkOn(color) }}
     >
       <GameCard c={character} w={26} small className="rx-card" />
       <span>{label}</span>
