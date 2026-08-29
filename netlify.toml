@@ -8,6 +8,19 @@
 [build.environment]
   NODE_VERSION = "20"
 
+  # Secrets scanning stays ON. These three are public *by design* — Vite inlines every VITE_* var
+  # into the client bundle, and all of them are meant to be read by the browser:
+  #   VITE_SUPABASE_ANON_KEY  the anon key; it identifies the project and is guarded by RLS, not by
+  #                           being secret. The service_role key is the one that must never ship —
+  #                           it is not a VITE_* var and is not set on Netlify, so the scanner still
+  #                           catches it if anyone ever adds it.
+  #   VITE_GA_ID              a GA4 measurement ID; Google hands it to you to paste into public HTML.
+  #   VITE_ADSENSE_CLIENT     an AdSense publisher ID; it is also in /ads.txt and a meta tag.
+  # TURN credentials are listed too: a browser WebRTC client cannot use a relay without receiving
+  # them, so they are unavoidably visible. Rotate them at the provider if they are ever abused.
+  # Do NOT swap this for SECRETS_SCAN_ENABLED = "false" — that would drop the net entirely.
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_ANON_KEY,VITE_GA_ID,VITE_ADSENSE_CLIENT,VITE_TURN_USERNAME,VITE_TURN_CREDENTIAL"
+
 # Single-page app: every route falls back to index.html.
 [[redirects]]
   from = "/*"
