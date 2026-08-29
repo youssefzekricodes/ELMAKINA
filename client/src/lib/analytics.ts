@@ -11,14 +11,13 @@
  * Reports → Realtime.
  */
 
-// The measurement ID is public by design — it ships in the bundle, and it is what Google hands you
-// to paste into a page. So the production default lives here rather than in a Netlify env var that
-// is easy to forget and silent when missing. VITE_GA_ID overrides it (e.g. a staging property).
-// Dev and preview builds send NOTHING unless the var is set, so local play never pollutes the stats.
-const DEFAULT_GA_ID = 'G-GG2JZYRN9T';
-const GA_ID = (((import.meta.env.VITE_GA_ID as string | undefined) || (import.meta.env.PROD ? DEFAULT_GA_ID : '')) || '').trim();
-// Guard against a placeholder being left in .env — a real id looks like G-XXXXXXXXXX.
-export const analyticsConfigured = /^G-[A-Z0-9]{6,}$/i.test(GA_ID);
+import { CONSENT_REGIONS, DEFAULT_GA_ID, isGaId, resolveId } from './google';
+
+// Production always measures; dev/preview send NOTHING unless VITE_GA_ID is set, so local play
+// never pollutes the stats. A malformed override is ignored, not obeyed — see resolveId.
+const override = (import.meta.env.VITE_GA_ID as string | undefined) || '';
+const GA_ID = import.meta.env.PROD ? resolveId(override, DEFAULT_GA_ID, isGaId) : (isGaId(override.trim()) ? override.trim() : '');
+export const analyticsConfigured = isGaId(GA_ID);
 
 type Params = Record<string, string | number | boolean | undefined>;
 
@@ -36,14 +35,9 @@ const gtag: (...args: any[]) => void = function () {
 
 let started = false;
 
-// Where consent is required before anything may be stored. Everywhere else the global default
-// applies. Google's certified CMP (AdSense → Privacy & messaging) updates these by itself once it
-// is on the page; `setConsent` below is the hook if a hand-rolled banner is ever preferred.
-const CONSENT_REGIONS = [
-  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV',
-  'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', // EU
-  'IS', 'LI', 'NO', 'GB', 'CH',                                      // EEA + UK + Switzerland
-];
+// Consent defaults are granted globally and denied in CONSENT_REGIONS until a CMP says otherwise.
+// Google's certified CMP (AdSense → Privacy & messaging) updates them by itself once it is on the
+// page; `setConsent` below is the hook if a hand-rolled banner is ever preferred.
 
 /**
  * Queue the consent defaults and load the tag. Commands pushed before the script arrives are
@@ -56,6 +50,10 @@ const CONSENT_REGIONS = [
 export function initAnalytics() {
   if (started || !analyticsConfigured) return;
   started = true;
+  // Production HTML already carries the whole bootstrap (vite.config.ts → GA_BOOTSTRAP), because
+  // gtag.js only configures itself from what is in dataLayer when it loads, and Google's crawlers
+  // only read raw HTML. Nothing left to do but send. Dev, or any shell without it, sets up here.
+  if ((window as any).__mekinaGA === GA_ID) return;
   gtag('consent', 'default', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted', analytics_storage: 'granted' });
   gtag('consent', 'default', {
     ad_storage: 'denied',
@@ -71,10 +69,15 @@ export function initAnalytics() {
   // (No anonymize_ip: that is a Universal Analytics flag. GA4 always truncates IPs.)
   gtag('config', GA_ID, { send_page_view: false });
 
-  const s = document.createElement('script');
-  s.async = true;
-  s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
-  document.head.appendChild(s);
+  // Production builds already carry the loader in the HTML shell (see the mekina-google-tags plugin
+  // in vite.config.ts — Google's crawlers only read raw HTML). Inject it only when it is absent, so
+  // a dev run with VITE_GA_ID set still works and we never load gtag.js twice.
+  if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
+    document.head.appendChild(s);
+  }
 }
 
 /** Called by the consent banner once the visitor has chosen. */

@@ -13,13 +13,13 @@
  * so an ad in the online lobby→game handshake would silently eat the first player's turn.
  */
 
-// Public by design, exactly like the GA measurement id: it ships in the bundle and is what AdSense
-// hands you to paste into a page. Keeping it here rather than in a Netlify env var removes a step
-// that fails silently when forgotten. VITE_ADSENSE_CLIENT overrides it; dev builds stay ad-free
-// unless it is set, so local play never touches Google or logs phantom impressions.
-const DEFAULT_CLIENT = 'ca-pub-4626982618627963';
-const CLIENT = (((import.meta.env.VITE_ADSENSE_CLIENT as string | undefined) || (import.meta.env.PROD ? DEFAULT_CLIENT : '')) || '').trim();
-export const adsConfigured = /^ca-pub-\d{10,}$/.test(CLIENT);
+import { DEFAULT_ADSENSE_CLIENT, isAdsClient, resolveId } from './google';
+
+// Production always has a publisher id; dev builds stay ad-free unless VITE_ADSENSE_CLIENT is set,
+// so local play never touches Google. A malformed override is ignored, not obeyed.
+const override = (import.meta.env.VITE_ADSENSE_CLIENT as string | undefined) || '';
+const CLIENT = import.meta.env.PROD ? resolveId(override, DEFAULT_ADSENSE_CLIENT, isAdsClient) : (isAdsClient(override.trim()) ? override.trim() : '');
+export const adsConfigured = isAdsClient(CLIENT);
 
 // Our own policy on top of Google's frequency capping.
 const FIRST_GAMES_FREE = 2;      // never interrupt someone's first couple of games
@@ -49,17 +49,29 @@ function load(): Promise<void> {
     // replace is `window.adsbygoogle`: the plain array becomes an object with `loaded: true`, which
     // is the only reliable "the real script is running" signal. See the check in adBreak().
     if (!w.adBreak) w.adBreak = w.adConfig = (o: any) => w.adsbygoogle.push(o);
-    const s = document.createElement('script');
-    s.async = true;
-    s.crossOrigin = 'anonymous';
-    s.dataset.adClient = CLIENT;
-    s.dataset.adFrequencyHint = '60s';
-    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(CLIENT)}`;
-    s.onload = () => resolve();
-    // An ad blocker usually errors the request outright. Recording it means blocked players never
-    // wait out the timeout below — the break resolves instantly, every time.
-    s.onerror = () => { blocked = true; resolve(); };
-    document.head.appendChild(s);
+    // Production builds ship the loader in the HTML shell (vite.config.ts / mekina-google-tags),
+    // because Google's crawlers only read raw HTML. Reuse it rather than loading a second copy.
+    const existing = document.querySelector('script[src*="adsbygoogle.js"]') as HTMLScriptElement | null;
+    if (existing) {
+      if (w.adsbygoogle && w.adsbygoogle.loaded) resolve();          // already finished
+      else {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => { blocked = true; resolve(); }, { once: true });
+        setTimeout(resolve, 4000);  // it may have loaded before we could listen
+      }
+    } else {
+      const s = document.createElement('script');
+      s.async = true;
+      s.crossOrigin = 'anonymous';
+      s.dataset.adClient = CLIENT;
+      s.dataset.adFrequencyHint = '60s';
+      s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(CLIENT)}`;
+      s.onload = () => resolve();
+      // An ad blocker usually errors the request outright. Recording it means blocked players never
+      // wait out the timeout below — the break resolves instantly, every time.
+      s.onerror = () => { blocked = true; resolve(); };
+      document.head.appendChild(s);
+    }
     // onReady is the only honest "this account can serve H5 game ads" signal. Until AdSense has
     // approved the site and enabled H5 Games Ads, the script loads and is completely inert: adBreak
     // fires no callbacks at all, not even adBreakDone. Verified against the live publisher id.
