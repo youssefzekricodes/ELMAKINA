@@ -678,6 +678,10 @@
   .cm-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
   .cm-btns .rx { display: grid; grid-template-columns: 22px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 18px; width: 100%; }
   .cm-btns .rx svg { justify-self: center; }
+  /* counter button: the card that does the countering sits where the icon would */
+  /* 26px card ≈ 43px tall: fits inside the shared 48px button height, so the verdict stack stays even */
+  .cm-btns .rx.with-card { grid-template-columns: 30px 1fr; padding-block: 2px; }
+  .rx-card { justify-self: center; border-radius: 5px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 3px 8px rgba(0,0,0,.45); }
   /* counter window: one loud primary ("Let it pass") + a quiet secondary bluff-call underneath */
   .rx.let-pass { background: var(--accent); color: var(--accent-foreground); }
   .rx.let-pass:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent); }

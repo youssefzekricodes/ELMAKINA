@@ -82,6 +82,20 @@ function TargetPicker() {
   );
 }
 
+/** The counter button leads with the card that does the countering. The art reads faster than
+    "Block as Colonel", and it is exactly the card you need to be holding — or to be bluffing. */
+function BlockBtn({ character, label, desc }: { character: string; label: string; desc: string }) {
+  return (
+    <button
+      type="button" className="rx r-block with-card" onClick={block} title={desc}
+      style={{ ['--c' as any]: CH[character as keyof typeof CH]?.color }}
+    >
+      <GameCard c={character} w={26} small className="rx-card" />
+      <span>{label}</span>
+    </button>
+  );
+}
+
 function KeyBtn({ variant, onPress, main, sub, icon, disabled = false, className = '' }: { variant: any; onPress: () => void; main: string; sub?: string; icon?: string; disabled?: boolean; className?: string }) {
   return (
     <Button variant={variant} size="lg" isDisabled={disabled} onPress={onPress} className={`key ${className}`}>
@@ -232,13 +246,13 @@ export function Prompt() {
           isCounter ? (
             // Counter layout: calling the bluff comes FIRST as a solid red button; letting it pass follows.
             <div className="cm-btns">
-              {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
+              {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} />}
               {canChallenge && <button type="button" className="rx call" onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
               {canPass && <button type="button" className="rx let-pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span></button>}
             </div>
           ) : (
           <div className="cm-btns">
-            {canBlock && <button type="button" className="rx r-block" onClick={block} title={blockDesc}><Icon name="shield-warning" className="size-5" /><span>{blockLabel}</span></button>}
+            {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} />}
             {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
             {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span></button>}
           </div>
