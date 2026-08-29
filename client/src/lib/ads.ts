@@ -13,13 +13,18 @@
  * so an ad in the online lobby→game handshake would silently eat the first player's turn.
  */
 
-const CLIENT = ((import.meta.env.VITE_ADSENSE_CLIENT as string | undefined) || '').trim();
+// Public by design, exactly like the GA measurement id: it ships in the bundle and is what AdSense
+// hands you to paste into a page. Keeping it here rather than in a Netlify env var removes a step
+// that fails silently when forgotten. VITE_ADSENSE_CLIENT overrides it; dev builds stay ad-free
+// unless it is set, so local play never touches Google or logs phantom impressions.
+const DEFAULT_CLIENT = 'ca-pub-4626982618627963';
+const CLIENT = (((import.meta.env.VITE_ADSENSE_CLIENT as string | undefined) || (import.meta.env.PROD ? DEFAULT_CLIENT : '')) || '').trim();
 export const adsConfigured = /^ca-pub-\d{10,}$/.test(CLIENT);
 
 // Our own policy on top of Google's frequency capping.
 const FIRST_GAMES_FREE = 2;      // never interrupt someone's first couple of games
 const MIN_GAP_MS = 3 * 60_000;   // and at most one ad every few minutes
-const NO_AD_TIMEOUT = 6000;      // if nothing has happened by now, the script is blocked or dead
+const NO_AD_TIMEOUT = 3000;      // backstop only: with the readiness gate below this rarely fires
 const MAX_AD_MS = 60_000;        // hard ceiling once an ad IS showing, in case adBreakDone never fires
 
 const KEY_GAMES = 'mekina.games';
@@ -31,8 +36,8 @@ const put = (k: string, v: number) => { try { localStorage.setItem(k, String(v))
 export function countGame() { put(KEY_GAMES, num(KEY_GAMES) + 1); }
 
 let loading: Promise<void> | null = null;
-let blocked = false;   // the script never arrived, or arrived without installing the real API
-let shim: any = null;  // our placeholder; if it is still in place, the real adBreak never loaded
+let blocked = false;   // the script never arrived, or arrived without taking over adsbygoogle
+let ready = false;     // the Placement API answered onReady — it is actually cleared to serve
 function load(): Promise<void> {
   if (loading) return loading;
   loading = new Promise<void>((resolve) => {
@@ -40,7 +45,10 @@ function load(): Promise<void> {
     // itself has arrived. This shim is the pattern Google documents.
     const w = window as any;
     w.adsbygoogle = w.adsbygoogle || [];
-    if (!w.adBreak) { shim = (o: any) => w.adsbygoogle.push(o); w.adBreak = w.adConfig = shim; }
+    // NB: adsbygoogle.js never replaces adBreak/adConfig — these stay ours for good. What it does
+    // replace is `window.adsbygoogle`: the plain array becomes an object with `loaded: true`, which
+    // is the only reliable "the real script is running" signal. See the check in adBreak().
+    if (!w.adBreak) w.adBreak = w.adConfig = (o: any) => w.adsbygoogle.push(o);
     const s = document.createElement('script');
     s.async = true;
     s.crossOrigin = 'anonymous';
@@ -52,7 +60,10 @@ function load(): Promise<void> {
     // wait out the timeout below — the break resolves instantly, every time.
     s.onerror = () => { blocked = true; resolve(); };
     document.head.appendChild(s);
-    try { w.adConfig({ preloadAdBreaks: 'on', sound: 'off' }); } catch { /* ignore */ }
+    // onReady is the only honest "this account can serve H5 game ads" signal. Until AdSense has
+    // approved the site and enabled H5 Games Ads, the script loads and is completely inert: adBreak
+    // fires no callbacks at all, not even adBreakDone. Verified against the live publisher id.
+    try { w.adConfig({ preloadAdBreaks: 'on', sound: 'off', onReady: () => { ready = true; } }); } catch { /* ignore */ }
   });
   return loading;
 }
@@ -62,7 +73,7 @@ export function initAds() { if (adsConfigured) load(); }
 
 /** Whether the next `adBreak()` would actually try to show something. Callers use this to keep
  *  work that needs the click's user activation (fullscreen!) synchronous when no ad is coming. */
-export function adDue(): boolean { return due(); }
+export function adDue(): boolean { return ready && !blocked && due(); }
 
 function due(): boolean {
   if (!adsConfigured) return false;
@@ -87,9 +98,14 @@ export function adBreak(type: 'start' | 'next'): Promise<void> {
     const holdTimer = () => { clearTimeout(timer); timer = setTimeout(done, MAX_AD_MS); };
 
     load().then(() => {
-      // Some blockers serve an empty 200 instead of failing: the script "loads" but never replaces
-      // our shim. Either way there is nothing to show, so don't make the player wait.
-      if (blocked || (window as any).adBreak === shim) { blocked = true; return done(); }
+      // Some blockers serve an empty 200 instead of failing, so onload is not proof of anything.
+      // adsbygoogle.loaded is: only the real script sets it. Either way there is nothing to show,
+      // so don't make the player wait out the timeout.
+      const ab = (window as any).adsbygoogle;
+      if (blocked || !(ab && ab.loaded)) { blocked = true; return done(); }
+      // Loaded but inert (not approved yet, or no H5 entitlement): never make a player wait for an
+      // ad that is never coming. This is the state until the AdSense review clears.
+      if (!ready) return done();
       try {
         (window as any).adBreak({
           type,

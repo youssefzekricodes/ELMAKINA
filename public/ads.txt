@@ -1,4 +1,3 @@
 # AdSense authorised sellers. Netlify serves public/ at the domain root, so this is /ads.txt.
-# Replace pub-0000000000000000 with your real AdSense publisher ID (AdSense → Account → Settings).
-# Until it is real, AdSense will report an ads.txt error and will not serve ads.
-google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+# This must stay in sync with DEFAULT_CLIENT in client/src/lib/ads.ts.
+google.com, pub-4626982618627963, DIRECT, f08c47fec0942fa0

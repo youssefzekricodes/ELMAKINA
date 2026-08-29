@@ -38,7 +38,7 @@ or pollutes the stats.
 | Variable | Where to get it | What it turns on |
 |---|---|---|
 | `VITE_GA_ID` | GA4 → Admin → Data streams (`G-XXXXXXXXXX`) | Page views per screen (`/home`, `/lobby`, `/game`, …) and `game_start` / `game_end` / `room_create` / `room_join` / `sign_in` events. Users-by-country needs no extra code: GA4 derives it from the request IP (Reports → User attributes, and Realtime). **Already wired**: the live property is the production default in `client/src/lib/analytics.ts`, so this var is only for pointing a build somewhere else. |
-| `VITE_ADSENSE_CLIENT` | AdSense → Account → Settings (`ca-pub-…`) | A full-screen ad before a **solo** game and on the **end-of-game** screen, via Google's H5 Games Ads. Never during play. Put the same id in `public/ads.txt`. |
+| `VITE_ADSENSE_CLIENT` | AdSense → Account → Settings (`ca-pub-…`) | A full-screen ad before a **solo** game and on the **end-of-game** screen, via Google's H5 Games Ads. Never during play. **Already wired**: the live publisher id is the production default in `client/src/lib/ads.ts`. It appears in three places that must stay in sync — that file, `public/ads.txt`, and the `google-adsense-account` meta tag in `client/index.html`. |
 
 Consent Mode v2 defaults to granted, then **denied for the EEA/UK/CH** until a CMP says otherwise —
 enable Google's certified banner in AdSense → **Privacy & messaging** and it updates that by itself.
