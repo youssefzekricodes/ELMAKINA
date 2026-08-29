@@ -362,11 +362,17 @@
   .tp-chip .pavatar { flex-shrink: 0; }
   .tp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14ch; }
   .tp-check { color: var(--accent); flex-shrink: 0; }
-  .tp-slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-width: 0; }
-  .tp-slot { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 6px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--border)); background: var(--surface-secondary); color: var(--foreground); font-weight: 700; font-size: 13px; cursor: pointer; transition: border-color .12s, background .12s; }
-  .tp-slot:hover { border-color: var(--gold); background: var(--accent-soft); }
-  .tp-slot-n { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #241505; font-size: 12px; font-weight: 800; flex-shrink: 0; }
-  .tp-slot-tx { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Police picks a card, so the picker IS cards — face-down for other players, face-up for your
+     own hand. The gold ring + pulse is the same "tap me" language the board cards use. */
+  .tp-slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; padding-top: 6px; min-width: 0; }
+  .tp-slot { position: relative; flex: 0 0 auto; padding: 0; border: 0; background: none; line-height: 0; border-radius: 8px; cursor: pointer;
+    box-shadow: 0 0 0 2px var(--gold), 0 6px 16px rgba(0,0,0,.45); animation: pick-pulse 1s infinite;
+    transition: transform .15s var(--ease), box-shadow .15s; }
+  .tp-slot:hover, .tp-slot:focus-visible { animation: none; transform: translateY(-6px) scale(1.04); box-shadow: 0 0 0 3px var(--accent), 0 12px 26px rgba(0,0,0,.5); }
+  .tp-slot:active { transform: translateY(-2px) scale(1.01); }
+  .tp-slot .gcard { border-radius: 8px; display: block; }
+  .tp-back { display: block; width: 58px; aspect-ratio: .61; border-radius: 8px; background: #fff url('/img/card-back.webp') center/cover; }
+  .tp-slot-n { position: absolute; top: -7px; inset-inline-start: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #241505; font-size: 12px; font-weight: 800; line-height: 22px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
 
   /* coins & cards */
   .coins { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -676,11 +682,14 @@
   .cm-effect b { color: var(--foreground); font-weight: 700; }
   /* one column of identical buttons — icon and label always line up */
   .cm-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
-  .cm-btns .rx { display: grid; grid-template-columns: 22px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 18px; width: 100%; }
-  .cm-btns .rx svg { justify-self: center; }
+  .cm-btns .rx { display: grid; grid-template-columns: 30px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 16px; width: 100%; }
+  /* One 30px leading column for all three verdicts — the counter's card and the other two icons sit
+     in the same slot, so every label starts on the same x instead of stepping in and out. */
+  .cm-btns .rx svg { justify-self: center; box-sizing: content-box; width: 17px; height: 17px; padding: 5px; border-radius: 999px; background: color-mix(in srgb, currentColor 15%, transparent); }
+  .cm-btns .rx.call svg, .cm-btns .rx.let-pass svg { background: rgba(255, 255, 255, .18); }
   /* counter button: the card that does the countering sits where the icon would */
   /* 26px card ≈ 43px tall: fits inside the shared 48px button height, so the verdict stack stays even */
-  .cm-btns .rx.with-card { grid-template-columns: 30px 1fr; padding-block: 2px; }
+  .cm-btns .rx.with-card { padding-block: 2px; }
   .rx-card { justify-self: center; border-radius: 5px; box-shadow: 0 0 0 1px rgba(255,255,255,.45), 0 3px 8px rgba(0,0,0,.4); }
   /* The counter button wears its own character's colour, so the button and the card on it read as
      one object. --ink is picked from the fill's luminance in theme.ts (inkOn), never assumed. */

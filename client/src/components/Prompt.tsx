@@ -64,16 +64,20 @@ function TargetPicker() {
         })}
       </div>
       {a.type === 'police' && chosen && chosenP && (
+        // Police picks a CARD, so the choice looks like cards: your own hand face-up (you can see it
+        // anyway), everyone else's as backs. Numbered pills made you map "2" onto a card yourself.
         <div className="tp-slots">
           {chosen === me
             ? (st.you?.cards || []).map((c, i) => (
-              <button key={i} type="button" className="tp-slot" onClick={() => tapTarget(chosen, i)}>
-                <span className="tp-slot-n">{i + 1}</span><span className="tp-slot-tx">{i18n.charName(c)}</span>
+              <button key={i} type="button" className="tp-slot" onClick={() => tapTarget(chosen, i)} title={i18n.charName(c)} aria-label={i18n.charName(c)}>
+                <GameCard c={c} w={58} small />
+                <span className="tp-slot-n">{i + 1}</span>
               </button>
             ))
             : Array.from({ length: chosenP.cardCount }, (_, i) => (
-              <button key={i} type="button" className="tp-slot" onClick={() => tapTarget(chosen, i)}>
-                <span className="tp-slot-n">{i + 1}</span><span className="tp-slot-tx">{t('pick.slotN', { n: i + 1 })}</span>
+              <button key={i} type="button" className="tp-slot" onClick={() => tapTarget(chosen, i)} aria-label={t('pick.slotN', { n: i + 1 })}>
+                <span className="tp-back" />
+                <span className="tp-slot-n">{i + 1}</span>
               </button>
             ))}
         </div>
