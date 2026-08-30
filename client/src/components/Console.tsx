@@ -67,6 +67,15 @@ export function Console() {
     }, 60); // after layout
     return () => clearTimeout(id);
   }, [handKey]);
+  /** Scroll the row by roughly one and a half cards, in whichever direction the arrow points. */
+  const nudgeRow = (dir: number) => {
+    const el = boardRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>('.board-card');
+    const step = (card ? card.offsetWidth + 8 : 90) * 1.5;
+    // scrollBy handles RTL for us — in an RTL row a positive delta still means "further along".
+    el.scrollBy({ left: dir * step * (getComputedStyle(el).direction === 'rtl' ? -1 : 1), behavior: 'smooth' });
+  };
   /**
    * Tell the player the row scrolls. Two signals: `data-more` drives an edge fade on whichever side
    * still has cards, and a one-time nudge animates the row on someone's very first game. People were
@@ -175,7 +184,14 @@ export function Console() {
         </div>
       ) : (
         <div className="card-board" ref={wrapRef}>
+          {/* Tap-to-scroll arrows. The row has always been swipeable, but a swipe is invisible —
+              these say so, and give a target for anyone not holding the phone two-handed. They
+              hide at each end via data-more, the same flag the fade used. */}
+          <button type="button" className="row-arrow start" aria-label={t('board.scrollPrev')} tabIndex={-1}
+            onClick={() => nudgeRow(-1)}><Icon name="alt-arrow-left" className="size-5" /></button>
           <div className="board-grid" ref={boardRef}>{orderedActions.map(card)}</div>
+          <button type="button" className="row-arrow end" aria-label={t('board.scrollNext')} tabIndex={-1}
+            onClick={() => nudgeRow(1)}><Icon name="alt-arrow-right" className="size-5" /></button>
         </div>
       )}
 

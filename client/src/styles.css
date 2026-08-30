@@ -1358,7 +1358,7 @@
     /* the card-back row keeps the felt-dock look but drops the desktop dock's 22px of padding —
        that padding alone was ~1/5 of the seat card's height */
     .seat .hand { min-height: 0; gap: 2px; padding: 2px 4px; border-radius: 8px; }
-    .seat .hand .cardback { width: 12px; }
+    .seat .hand .cardback { width: 26px; }
     /* police slot-pick blows the card-backs up to a real tap target: shrink the felt for the
        duration so the taller seat still fits the table region instead of spilling on the console */
 
@@ -1402,7 +1402,7 @@
     .mc-label { font-size: 8.5px; letter-spacing: .06em; opacity: .75; }
     .mc-label svg { display: none; }
     .mc-chars { font-size: 8.5px; padding: 0 5px; }
-    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 5px; padding: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 5px; padding: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
     .mc-hand .hand-card { gap: 0; flex-shrink: 0; }
     .mc-hand .hc-name { display: none; }
@@ -1410,7 +1410,7 @@
     .mc-head { flex-direction: column; align-items: flex-start; gap: 3px; flex-shrink: 0; }
     .mc-label { font-size: 9px; letter-spacing: .08em; }
     .mc-chars { font-size: 9.5px; padding: 1px 7px; }
-    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 7px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 7px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
     .my-cards .hand .gcard { width: 30px !important; }
     .mc-hand .hand-card { gap: 3px; flex-shrink: 0; }
@@ -1428,6 +1428,18 @@
     .board-grid::-webkit-scrollbar-track { background: rgba(255,240,214,.07); border-radius: 999px; }
     .board-grid::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--gold) 60%, transparent); border-radius: 999px; }
     .card-board { position: relative; }
+    /* swipe arrows: only shown on the side that still has cards (data-more), so they never sit
+       there inert. tabIndex -1 keeps them out of the keyboard path — the row is scrollable anyway. */
+    .row-arrow { position: absolute; top: calc(50% - 6px); z-index: 4; display: none; align-items: center; justify-content: center;
+      width: 34px; height: 34px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+      background: rgba(24,17,11,.88); color: var(--gold); box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent), 0 6px 16px rgba(0,0,0,.55);
+      transform: translateY(-50%); }
+    .row-arrow:active { transform: translateY(-50%) scale(.92); }
+    .row-arrow.start { inset-inline-start: 2px; }
+    .row-arrow.end { inset-inline-end: 2px; }
+    .card-board[data-more~="start"] .row-arrow.start { display: flex; }
+    .card-board[data-more~="end"] .row-arrow.end { display: flex; }
+    [dir="rtl"] .row-arrow svg { transform: scaleX(-1); }
     .board-grid.nudge { animation: row-nudge 1.25s var(--ease) .5s 2; }
     @keyframes row-nudge { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-26px); } }
     .board-card { width: 92px; flex-shrink: 0; transform: var(--fan, none); }
@@ -1502,7 +1514,7 @@
     .seat .nm { font-size: 9px; }
     .seat .coins { font-size: 9px; }
     .seat .coins img { width: 11px; height: 11px; }
-    .seat .hand .cardback { width: 11px; }
+    .seat .hand .cardback { width: 24px; }
     .mc-label { font-size: 8.5px; }
 
     .hand .gcard { width: min(40vw, 100px) !important; }
@@ -1564,7 +1576,7 @@
     .seat .bot-chip { display: none; }
     .seat .status { min-height: 0; }
     .seat .hand { min-height: 0; gap: 2px; padding: 2px 4px; border-radius: 8px; }
-    .seat .hand .cardback { width: 11px; }
+    .seat .hand .cardback { width: 20px; }
     .seat .lamp { width: 8px; height: 8px; border-width: 1.5px; right: 0; bottom: 2px; }
     .seat .claim-badge { width: 22px; top: -22px; }
     .seat .seat-status { max-width: calc(100% + 12px); font-size: 8.5px; padding: 2px 5px; bottom: -8px; }
@@ -1589,7 +1601,7 @@
     .mc-hand .hc-name { display: none; }
     .mc-label { font-size: 8.5px; }
     .mc-chars { font-size: 9px; padding: 1px 6px; }
-    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 6px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 6px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .my-cards .hand .gcard { width: 28px !important; }
     .mc-hand .hand-card { gap: 2px; flex-shrink: 0; }
     .mc-hand .hc-name { max-width: 52px; font-size: 8px; }
