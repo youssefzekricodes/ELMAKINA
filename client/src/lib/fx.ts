@@ -264,6 +264,12 @@ export function resetEvents() { lastEventId = null; resetCine(); }
 export function processEvents(s: { events?: any[] }, me: string | null) {
   const evs = s.events || [];
   if (lastEventId === null) { lastEventId = evs.length ? evs[evs.length - 1].id : 0; return; } // don't replay history on (re)join
+  // A new game is a new Game object, and its event counter restarts at 1. "Play again" goes from
+  // ended straight back to playing without ever passing through the lobby, which is the only place
+  // the client is told to reset — so the watermark from the last game survives into this one and
+  // every early event looks already-seen. That is silence: no cut-scene, no coins, no cards, for
+  // as many beats as the previous game had events. Counter going backwards means a fresh game.
+  if (evs.length && evs[evs.length - 1].id < lastEventId) lastEventId = 0;
   const fresh = evs.filter((e) => e.id > (lastEventId as number));
   if (!fresh.length) return;
   lastEventId = fresh[fresh.length - 1].id;

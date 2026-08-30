@@ -404,6 +404,40 @@ await test('set_timings: the room setting survives a new game; guided games keep
   assert.equal(viewOf(db, solo.code, S).timings.challenge, 12000);
 });
 
+await test('new_game restarts the event counter without passing through the lobby', async () => {
+  // This is a hazard the CLIENT has to know about: it keeps a high-water mark of the last event id
+  // it has drawn, and only resets it when the room reports the lobby phase. "Play again" never
+  // reports one — and the new game's ids start again at 1, so every early beat of the second game
+  // looks already-seen. Silence, for as many events as the first game had. lib/fx compensates by
+  // treating a counter that goes backwards as a fresh game; this pins the behaviour it relies on.
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001', B = 'bbbbbbbb-0000-0000-0000-000000000002';
+  const r = await call(db, A, { op: 'create_room', name: 'Aay' });
+  await call(db, B, { op: 'join_room', name: 'Bee', code: r.code });
+  await call(db, B, { op: 'toggle_ready' });
+  await call(db, A, { op: 'start_game' });
+  await call(db, B, { op: 'leave_room' });                       // forfeit → the game ends
+  const first = viewOf(db, r.code, A);
+  const highest = first.events.length ? Math.max(...first.events.map((e) => e.id)) : 0;
+  assert.ok(highest > 0, 'the first game did emit events');
+
+  await call(db, B, { op: 'join_room', name: 'Bee', code: r.code });
+  await call(db, B, { op: 'toggle_ready' });
+  assert.equal(db.rooms.get(r.code).phase, 'ended', 'still on the winner screen');
+  await call(db, A, { op: 'new_game' });
+  assert.equal(db.rooms.get(r.code).phase, 'playing', 'and straight back into a game — never "lobby"');
+
+  // Make something happen, and check the ids really did restart below the old watermark.
+  const g2 = db.states.get(r.code).state.game;
+  assert.equal(g2.evSeq, 0, 'the new game starts its event counter from scratch');
+  const actor = g2.players[g2.turnIndex];
+  await call(db, actor.id, { op: 'game_action', action: { type: 'income' } });
+  const after = viewOf(db, r.code, A);
+  const ids = after.events.map((e) => e.id);
+  assert.ok(ids.length, 'the second game emitted something');
+  assert.ok(Math.min(...ids) <= highest, 'and its ids are back below the first game\'s high-water mark');
+});
+
 await test('set_public: the host lists the room from the lobby, and can take it back off', async () => {
   const db = memDb();
   const r = await call(db, 'host', { op: 'create_room', name: 'Amine' });
