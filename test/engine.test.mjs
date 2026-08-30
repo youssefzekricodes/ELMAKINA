@@ -561,4 +561,43 @@ await test('a game with a bot in it is worth no trophies at all', () => {
   assert.ok(places.some((p) => p.isBot), 'so solo wins cannot farm the leaderboard');
 });
 
+await test('swap fires wherever cards are exchanged, with how many moved', () => {
+  const swaps = (g, from) => g.events.slice(from).filter((e) => e.type === 'swap');
+
+  // politician trades the whole hand
+  let g = newGame(2); g.start();
+  let a = g.active, b = g.players.find((p) => p.id !== a.id);
+  giveCard(g, a.id, 'politician');
+  let from = g.events.length;
+  g.declareAction(a.id, { type: 'politician' }); g.pass(b.id);
+  assert.deepEqual(swaps(g, from).map((e) => [e.playerId, e.n]), [[a.id, 3]], 'three out, three in');
+
+  // a proven claim replaces exactly the revealed card
+  g = newGame(2); g.start();
+  a = g.active; b = g.players.find((p) => p.id !== a.id);
+  a.coins = 5; giveCard(g, a.id, 'terrorist');
+  from = g.events.length;
+  g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
+  g.challenge(b.id);
+  assert.deepEqual(swaps(g, from).map((e) => [e.playerId, e.n]), [[a.id, 1]], 'the proven card goes back, one is drawn');
+
+  // police taking the swap moves one card of the TARGET's
+  g = newGame(2); g.start();
+  a = g.active; b = g.players.find((p) => p.id !== a.id);
+  giveCard(g, a.id, 'police');
+  g.declareAction(a.id, { type: 'police', targetId: b.id, slot: 1 }); g.pass(b.id);
+  from = g.events.length;
+  g.decide(a.id, { swap: true });
+  assert.deepEqual(swaps(g, from).map((e) => [e.playerId, e.n]), [[b.id, 1]]);
+
+  // declining the swap moves nothing
+  g = newGame(2); g.start();
+  a = g.active; b = g.players.find((p) => p.id !== a.id);
+  giveCard(g, a.id, 'police');
+  g.declareAction(a.id, { type: 'police', targetId: b.id, slot: 0 }); g.pass(b.id);
+  from = g.events.length;
+  g.decide(a.id, { swap: false });
+  assert.deepEqual(swaps(g, from), [], 'keeping the card is not a swap');
+});
+
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);

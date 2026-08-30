@@ -54,9 +54,9 @@ export function GameCard({ c, w = 96, small = false, pick = false, anim = false,
   );
 }
 
-export function CardBack({ className = '', onPress, label }: { className?: string; onPress?: () => void; label?: string }) {
-  if (onPress) return <button type="button" onClick={onPress} className={`cardback ${className}`}><span className="slot-n">{label}</span></button>;
-  return <div className={`cardback ${className}`}>{label ? <span className="slot-n">{label}</span> : null}</div>;
+export function CardBack({ className = '', onPress, label, style }: { className?: string; onPress?: () => void; label?: string; style?: React.CSSProperties }) {
+  if (onPress) return <button type="button" onClick={onPress} className={`cardback ${className}`} style={style}><span className="slot-n">{label}</span></button>;
+  return <div className={`cardback ${className}`} style={style}>{label ? <span className="slot-n">{label}</span> : null}</div>;
 }
 
 /** Countdown for timed windows: the clock badge + seconds and a depleting bar (turns red near the end). */

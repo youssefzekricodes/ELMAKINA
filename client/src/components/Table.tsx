@@ -71,8 +71,9 @@ export function Table() {
 
   return (
     <div className="table-area" id="table">
-      <div className="felt">
-        <img className="table-logo" src={IMG.machineSmall} alt="" draggable={false} />
+      {/* An open arena, not a table: deck and bank float at the centre of a soft pool of light and
+          the players ring it. No slab, no border, no watermark — the cards are the furniture. */}
+      <div className="arena">
         <div className="deck" id="deck"><div className="cardback lg" /><div className="cardback lg" /><div className="cardback lg" /><span className="deck-n">{st.deckSize}</span></div>
         <div className="bank" id="bank">
           <div className="pile">{[0, 1, 2, 3, 4, 5].map((i) => <img key={i} src={IMG.coin} alt="" />)}</div>
@@ -105,10 +106,14 @@ export function Table() {
               </div>
               <div className="nm">{p.name}{p.isBot && <span className="bot-chip">{t('seat.bot')}</span>}</div>
               <Coins n={p.coins} />
-              <div className="hand">
-                {Array.from({ length: p.cardCount }, (_, k) => (
-                  pickSlots ? <CardBack key={k} className="pick" label={String(k + 1)} onPress={() => onSeat(p.id, k)} /> : <CardBack key={k} />
-                ))}
+              {/* a fan, so a hand reads as cards at a glance — --k centres the spread on any count */}
+              <div className={`hand fan n${p.cardCount}`}>
+                {Array.from({ length: p.cardCount }, (_, k) => {
+                  const spread = { ['--k' as any]: k - (p.cardCount - 1) / 2 };
+                  return pickSlots
+                    ? <CardBack key={k} className="pick" label={String(k + 1)} onPress={() => onSeat(p.id, k)} style={spread} />
+                    : <CardBack key={k} style={spread} />;
+                })}
               </div>
               {pickSlots && <div className="pick-arrow"><Icon name="cursor" className="size-3.5" />{t('pick.card')}</div>}
             </div>

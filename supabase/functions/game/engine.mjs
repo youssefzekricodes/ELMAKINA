@@ -450,6 +450,7 @@ export class Game {
       }
       case 'politician': {
         const n = actor.cards.length; for (const c of actor.cards) this.deck.push(c); actor.cards = []; for (let i = 0; i < n; i++) actor.cards.push(this.deck.shift());
+        this.event('swap', { playerId: actor.id, n });
         this.addLog('action', 'politician.swap', { name: actor.name, n }); return this.endTurn();
       }
     }
@@ -472,7 +473,7 @@ export class Game {
     const { action } = this.pending; const actor = this.player(action.actorId), target = this.player(action.targetId);
     const slot = Math.min(action.slot, Math.max(0, target.cards.length - 1));
     if (choice && choice.swap) {
-      if (target.alive && target.cards.length > slot) { const old = target.cards[slot]; target.cards[slot] = this.deck.shift(); this.deck.push(old); }
+      if (target.alive && target.cards.length > slot) { const old = target.cards[slot]; target.cards[slot] = this.deck.shift(); this.deck.push(old); this.event('swap', { playerId: target.id, n: 1 }); }
       this.addLog('action', 'police.swap', { name: actor.name });
     } else this.addLog('action', 'police.keep', { name: actor.name });
     this.endTurn();
@@ -613,6 +614,7 @@ export class Game {
       this.flash = { playerId: claimer.id, character: ch, ts: this.now() };
       this.event('reveal', { playerId: claimer.id, character: ch, challengerId: challenger.id });
       const idx = claimer.cards.indexOf(ch); claimer.cards.splice(idx, 1); this.deck.push(ch); claimer.cards.push(this.deck.shift());
+      this.event('swap', { playerId: claimer.id, n: 1 }); // proven: that card goes back under the deck, a new one is dealt
       this.addLog('reveal', 'bluff.replace', { name: claimer.name, character: ch });
       this.challengeLoss(challenger.id, 'lost_challenge', claimer.id, { result: 'true', claimerId: claimer.id, challengerId: challenger.id, character: ch }, block ? { k: 'reopenBlock', block, cbs } : cbs.onProceed);
     } else {
@@ -642,6 +644,7 @@ export class Game {
       this.flash = { playerId: taxer.id, character, ts: this.now() };
       this.event('reveal', { playerId: taxer.id, character, challengerId: playerId });
       const i = taxer.cards.indexOf(character); taxer.cards.splice(i, 1); this.deck.push(character); taxer.cards.push(this.deck.shift());
+      this.event('swap', { playerId: taxer.id, n: 1 });
       this.addLog('reveal', 'bluff.replace', { name: taxer.name, character });
       this.challengeLoss(playerId, 'lost_challenge', taxer.id, { result: 'true', claimerId: taxer.id, challengerId: playerId, character }, { k: 'bwOpenMultiChallenge' });
     } else { // caught — void this skim, the Tax Man loses a card

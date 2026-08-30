@@ -38,7 +38,7 @@ export function flyCoins(fromId: string, toId: string, n: number) {
       { transform: `translate(${a.x - 13 + dx}px, ${a.y - 13 + dy}px) scale(1) rotate(${spin * 0.15}deg)`, opacity: 1, offset: 0.15 },
       { transform: `translate(${(a.x + b.x) / 2 - 13}px, ${Math.min(a.y, b.y) - 64}px) scale(1.12) rotate(${spin * 0.55}deg)`, offset: 0.55 },
       { transform: `translate(${b.x - 13}px, ${b.y - 13}px) scale(.7) rotate(${spin}deg)`, opacity: 1 },
-    ], { duration: reducedMotion ? 1 : 700 + i * 80, delay: i * 55, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => { c.remove(); bump(coinsElOf(toId)); };
+    ], { duration: reducedMotion ? 1 : 700 + i * 80, delay: i * 55, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'both' }).onfinish = () => { c.remove(); bump(coinsElOf(toId)); };
   }
 }
 export function flyCard(fromId: string, mine = false) {
@@ -73,6 +73,56 @@ export function flyCard(fromId: string, mine = false) {
   shake(seatEl(fromId));
   flashSeat(fromId, 'hit');
 }
+/**
+ * One centre-stage presenter for every beat that matters — a hit, a lost card, an elimination, a
+ * swap. They used to be told in four different places and at four different sizes (a seat stamp
+ * here, a small flying card there), so half of them were missed entirely. Same spot, same size,
+ * same timing: whatever just happened, you look at the middle of the board and you see it.
+ */
+export function headline(text: string, kind: 'hit' | 'out' | 'swap' | 'coup', art?: string) {
+  const d = document.createElement('div');
+  d.className = `fx-head k-${kind}`;
+  d.innerHTML = `${art ? `<img src="${art}" alt="" />` : ''}<b>${text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string))}</b>`;
+  fxRoot().appendChild(d);
+  d.animate([
+    { transform: 'translate(-50%, -46%) scale(.86)', opacity: 0 },
+    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.16 },
+    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.74 },
+    { transform: 'translate(-50%, -56%) scale(.97)', opacity: 0 },
+  ], { duration: reducedMotion ? 1 : 1700, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => d.remove();
+}
+
+/**
+ * The reel: `n` cards slide from a seat back UNDER the deck, then `n` fresh ones deal out to that
+ * seat on a stagger. Card identity never leaks — both legs are card backs, which is also the truth:
+ * nobody at the table sees what was traded.
+ */
+export function swapCards(pid: string, n: number) {
+  // NB every animate() below is fill:'both'. With a delay, fill:'forwards' leaves the element at its
+  // untransformed position — a stack of card backs flashing in the corner before they jump.
+  const a = anchor(pid), deck = rectOf(bankEl()) || anchor('bank');
+  const fx = fxRoot();
+  const count = Math.max(1, Math.min(n, 3));
+  sfx.play('deal');
+  for (let i = 0; i < count; i++) {
+    // leg 1: hand → under the deck
+    const back = document.createElement('div'); back.className = 'fx-deal'; fx.appendChild(back);
+    back.animate([
+      { transform: `translate(${a.x - 27}px, ${a.y - 22}px) scale(.9) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${deck.x - 27}px, ${deck.y - 22}px) scale(.72) rotate(${-16 - i * 6}deg)`, opacity: .25 },
+    ], { duration: reducedMotion ? 1 : 420, delay: i * 90, easing: 'cubic-bezier(.4,.1,.7,1)', fill: 'both' }).onfinish = () => back.remove();
+
+    // leg 2: deck → hand, after the returns have landed
+    const dealt = document.createElement('div'); dealt.className = 'fx-deal'; fx.appendChild(dealt);
+    dealt.animate([
+      { transform: `translate(${deck.x - 27}px, ${deck.y - 22}px) scale(.7) rotate(0deg)`, opacity: 0 },
+      { transform: `translate(${deck.x - 27}px, ${deck.y - 22}px) scale(.82) rotate(0deg)`, opacity: 1, offset: 0.12 },
+      { transform: `translate(${a.x - 27}px, ${a.y - 22}px) scale(1) rotate(${8 - i * 8}deg)`, opacity: 1 },
+    ], { duration: reducedMotion ? 1 : 520, delay: 380 + i * 110, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' })
+      .onfinish = () => { dealt.remove(); bump(seatEl(pid)); };
+  }
+}
+
 export function stamp(pid: string, text: string, cls = '') {
   const a = anchor(pid); const s = document.createElement('div'); s.className = 'fx-stamp ' + cls; s.textContent = text; s.style.left = a.x + 'px'; s.style.top = (a.y - 10) + 'px'; fxRoot().appendChild(s);
   sfx.play('stamp'); setTimeout(() => s.remove(), 3600);
@@ -105,7 +155,7 @@ export function confetti() {
   if (reducedMotion) return; const colors = ['#B7873F', '#E9C983', '#F7B750', '#E5661A', '#C0403A', '#EFE3C8']; const fx = fxRoot();
   for (let i = 0; i < 90; i++) {
     const c = document.createElement('div'); c.className = 'fx-confetti'; c.style.left = Math.random() * 100 + 'vw'; c.style.background = colors[i % colors.length]; fx.appendChild(c);
-    c.animate([{ transform: 'translateY(0) rotate(0)', opacity: 1 }, { transform: `translateY(${window.innerHeight + 40}px) rotate(${720 + Math.random() * 720}deg) translateX(${(Math.random() - 0.5) * 200}px)`, opacity: 0.9 }], { duration: 2500 + Math.random() * 2000, delay: Math.random() * 800, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' }).onfinish = () => c.remove();
+    c.animate([{ transform: 'translateY(0) rotate(0)', opacity: 1 }, { transform: `translateY(${window.innerHeight + 40}px) rotate(${720 + Math.random() * 720}deg) translateX(${(Math.random() - 0.5) * 200}px)`, opacity: 0.9 }], { duration: 2500 + Math.random() * 2000, delay: Math.random() * 800, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'both' }).onfinish = () => c.remove();
   }
 }
 let bannerTimer: any = null;
@@ -128,10 +178,19 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
     switch (e.type) {
       case 'coins': flyCoins(e.from, e.to, e.n); break;
       case 'play': if (e.playerId !== me || Date.now() - localPlayAt > 4000) playedCard(e.move); break; // a basic move: the card is the announcement
-      case 'coup': sfx.play('boom'); cameraShake(document.getElementById('table'), true); break; // someone paid 7 to strike
+      case 'coup':
+        sfx.play('boom'); cameraShake(document.getElementById('table'), true);
+        headline(t('head.coup', { name: nameOf(e.playerId), target: nameOf(e.targetId) }), 'coup', ACTION_CARDS.paidkill);
+        break;
       case 'card_lost':
         flyCard(e.playerId, e.playerId === me); cameraShake(document.getElementById('table'));
+        headline(e.playerId === me ? t('head.hitMe') : t('head.hit', { name: nameOf(e.playerId) }), 'hit');
         if (e.playerId === me) shake(document.getElementById('console'));
+        break;
+      // cards traded: back under the deck, fresh ones dealt out — see swapCards
+      case 'swap':
+        swapCards(e.playerId, e.n || 1);
+        headline(e.playerId === me ? t('head.swapMe', { n: e.n || 1 }) : t('head.swap', { name: nameOf(e.playerId), n: e.n || 1 }), 'swap');
         break;
       case 'reveal': reveal(e.character); cameraShake(document.getElementById('table'), true); stamp(e.playerId, t('stamp.true'), 'ok'); setTimeout(() => stamp(e.challengerId, t('stamp.wrong')), 600); break;
       // Colonel called a card on somebody: show the guessed card to the whole table, say who/at whom,
@@ -144,7 +203,11 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
       }
       case 'bluff': sfx.play('bluff'); stamp(e.playerId, t('stamp.bluff')); flashSeat(e.playerId, 'hit'); cameraShake(document.getElementById('table'), true); break;
       case 'block': sfx.play('block'); stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); break;
-      case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); flashSeat(e.playerId, 'out'); cameraShake(document.getElementById('table'), true); sfx.play('lose'); break;
+      case 'eliminated':
+        stamp(e.playerId, t('stamp.out'), ''); flashSeat(e.playerId, 'out');
+        headline(e.playerId === me ? t('head.outMe') : t('head.out', { name: nameOf(e.playerId) }), 'out');
+        cameraShake(document.getElementById('table'), true); sfx.play('lose');
+        break;
       case 'win': if (e.playerId === me) { confetti(); sfx.play('win'); } else sfx.play('lose'); break;
     }
   }, i * 350));

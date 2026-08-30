@@ -53,6 +53,7 @@ export function Console() {
   const [preview, setPreview] = useState<{ a: ActionDef; why?: string } | null>(null); // what this card does — shown before playing, or why it can't be played
   const first = useRef(true);
   const boardRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (first.current) { first.current = false; return; } sfx.play('deal'); }, [handKey]);
   // centre the swiper on YOUR cards (they sit mid-row) whenever the hand changes
   useEffect(() => {
@@ -65,6 +66,37 @@ export function Console() {
       el.scrollTo({ left: (left + right) / 2 - el.clientWidth / 2 });
     }, 60); // after layout
     return () => clearTimeout(id);
+  }, [handKey]);
+  /**
+   * Tell the player the row scrolls. Two signals: `data-more` drives an edge fade on whichever side
+   * still has cards, and a one-time nudge animates the row on someone's very first game. People were
+   * simply not discovering the cards past the edge — a hidden scrollbar is no affordance at all.
+   */
+  useEffect(() => {
+    const el = boardRef.current, wrap = wrapRef.current;
+    if (!el || !wrap) return;
+    const sync = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 4) { wrap.removeAttribute('data-more'); return; }
+      // Math.abs because the default language is Tunisian and the row is RTL there: Chrome reports
+      // scrollLeft as 0 at the start and NEGATIVE going forward, so a plain `> 4` never fires and
+      // the start-side fade would simply never appear in Arabic.
+      const pos = Math.abs(el.scrollLeft);
+      const start = pos > 4, end = pos < max - 4;
+      wrap.setAttribute('data-more', `${start ? 'start ' : ''}${end ? 'end' : ''}`.trim());
+    };
+    sync();
+    el.addEventListener('scroll', sync, { passive: true });
+    const ro = new ResizeObserver(sync); ro.observe(el);
+    let nudge: any;
+    try {
+      if (el.scrollWidth > el.clientWidth && !localStorage.getItem('mekina.rowHint')) {
+        localStorage.setItem('mekina.rowHint', '1');
+        el.classList.add('nudge');
+        nudge = setTimeout(() => el.classList.remove('nudge'), 3200);
+      }
+    } catch { /* private mode: skip the hint rather than break the row */ }
+    return () => { el.removeEventListener('scroll', sync); ro.disconnect(); clearTimeout(nudge); };
   }, [handKey]);
   if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
 
@@ -142,7 +174,7 @@ export function Console() {
           ))}
         </div>
       ) : (
-        <div className="card-board">
+        <div className="card-board" ref={wrapRef}>
           <div className="board-grid" ref={boardRef}>{orderedActions.map(card)}</div>
         </div>
       )}
