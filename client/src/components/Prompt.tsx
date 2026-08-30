@@ -103,34 +103,21 @@ function BlockBtn({ character, label, desc }: { character: string; label: string
 
 type Place = { id: string; rank: number; delta: number; win: boolean; isBot: boolean };
 
-/** 1st / 2nd / 3rd as an actual podium. Arranged 2-1-3 so the winner stands centre and tallest —
-    the shape carries the order, so nobody has to read a rank number to know who won. */
-function Podium({ rows, me, pl }: { rows: Place[]; me: string | null; pl: (id?: string | null) => any }) {
-  if (!rows.length) return null;
-  const order = rows.length === 1 ? rows : rows.length === 2 ? [rows[1], rows[0]] : [rows[1], rows[0], rows[2]];
+/** One line of the result sheet: rank, face, name, trophies. */
+function ResultRow({ row, me, pl, scored }: { row: Place; me: string | null; pl: (id?: string | null) => any; scored: boolean }) {
+  const p = pl(row.id);
+  if (!p) return null;
   return (
-    <ol className={`podium n${rows.length}`}>
-      {order.map((row) => {
-        const p = pl(row.id);
-        if (!p) return null;
-        return (
-          <li key={row.id} className={`pod r${row.rank} ${row.id === me ? 'mine' : ''}`} style={{ ['--i' as any]: row.rank }}>
-            <span className="pod-top">
-              {row.rank === 1 && <span className="pod-crown"><Icon name="win" className="size-6" /></span>}
-              <PlayerAvatar p={p} size={row.rank === 1 ? 'lg' : 'md'} className="pod-av" />
-            </span>
-            <b className="pod-name">{p.name}</b>
-            <span className="pod-step">
-              <span className="pod-rank">{row.rank}</span>
-              <span className="pod-place">{t('place.' + row.rank)}</span>
-              <span className={`pod-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
-                <Icon name="win" className="size-3" />{row.delta > 0 ? `+${row.delta}` : row.delta}
-              </span>
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+    <li className={`res-row r${row.rank} ${row.id === me ? 'mine' : ''}`} style={{ ['--i' as any]: row.rank }}>
+      <span className="res-rank">{row.rank}</span>
+      <PlayerAvatar p={p} size="sm" className="res-av" />
+      <span className="res-name">{p.name}{row.id === me && <i className="res-you">{t('game.you')}</i>}</span>
+      {scored
+        ? <span className={`res-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
+            {row.delta > 0 ? `+${row.delta}` : row.delta}<Icon name="win" className="size-3" />
+          </span>
+        : <span className="res-delta flat">—</span>}
+    </li>
   );
 }
 
@@ -161,36 +148,33 @@ export function Prompt() {
     // that were paid. Falls back to seat order if an older view arrives without it.
     const places = st.standings || st.players.map((pp, i) => ({ id: pp.id, rank: i + 1, delta: 0, win: pp.id === st.winnerId, isBot: !!pp.isBot }));
     head = <Chip variant="primary" color="accent">{t('end.strip')}</Chip>;
+    const champ = places[0] && pl(places[0].id);
+    const scored = !!st.standings;
     body = (
       <div className="winner">
-        {/* The podium IS the announcement: winner centre and tallest, runners-up flanking, in the
-            arrangement everyone already reads without a legend. Ranks 4+ list underneath. */}
-        <span className="win-kicker">{t('end.winner')}</span>
-        <Podium rows={places.slice(0, 3)} me={me} pl={pl} />
-        <h2>{st.winnerId ? pname(st.winnerId) : t('end.nobody')}</h2>
-        <p className="p-sub">{st.winnerId === me ? t('end.you') : t('end.them')}</p>
-        {places.length > 3 && (
-          <>
-            <span className="also-ran">{t('end.alsoRan')}</span>
-            <ul className="standings placed">
-              {places.slice(3).map((row) => {
-                const pp = pl(row.id);
-                if (!pp) return null;
-                return (
-                  <li key={row.id} className="is-out">
-                    <span className="st-rank">{row.rank}</span>
-                    <PlayerAvatar p={pp} size="xs" />
-                    <span className="st-name">{pp.name}{row.id === me && <span className="st-you">{t('game.you')}</span>}</span>
-                    {st.standings
-                      ? <span className={`st-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
-                          <Icon name="win" className="size-3" />{row.delta > 0 ? `+${row.delta}` : row.delta}
-                        </span>
-                      : <span className="st-tag">{t('seat.eliminated')}</span>}
-                  </li>
-                );
-              })}
-            </ul>
-          </>
+        {/* A result sheet, not a trophy ceremony. The winner is the headline — one face, one name,
+            one number — and everyone else is a ranked line under a rule. Gold, silver and bronze
+            survive as a tint on the rank digits; three gradient plinths were decoration standing in
+            for a hierarchy the numbers already state. */}
+        <div className="res-head">
+          <span className="res-eyebrow">{t('end.winner')}</span>
+          {champ && (
+            <div className="res-champ">
+              <div className="res-champ-av"><PlayerAvatar p={champ} size="xl" /><span className="res-crown"><Icon name="win" className="size-6" /></span></div>
+              <div className="res-champ-tx">
+                <h2>{st.winnerId ? pname(st.winnerId) : t('end.nobody')}</h2>
+                <p className="p-sub">{st.winnerId === me ? t('end.you') : t('end.them')}</p>
+              </div>
+              {scored && <span className={`res-champ-delta ${places[0].delta > 0 ? 'up' : places[0].delta < 0 ? 'down' : 'flat'}`}>
+                {places[0].delta > 0 ? `+${places[0].delta}` : places[0].delta}<Icon name="win" className="size-4" />
+              </span>}
+            </div>
+          )}
+        </div>
+        {places.length > 1 && (
+          <ul className="res-sheet">
+            {places.slice(1).map((row) => <ResultRow key={row.id} row={row} me={me} pl={pl} scored={scored} />)}
+          </ul>
         )}
         {/* A table with a bot in it pays nothing — say so, rather than showing deltas that never land. */}
         {st.standings && st.standings.some((r) => r.isBot) && <p className="st-note">{t('end.noTrophies')}</p>}

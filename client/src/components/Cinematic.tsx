@@ -7,14 +7,17 @@ import { i18n, t } from '../i18n';
 import { ACTION_CARDS, CH, type CharacterId } from '../theme';
 import { Icon, PlayerAvatar } from './ui';
 
+const cardArt = (c?: string | null) => (c && CH[c as CharacterId] ? CH[c as CharacterId].card : null);
+
 /** The card that did the damage: the weapon for an attack, the disputed card for a challenge. */
 function artOf(kind: string, reason?: string, character?: string): string | null {
-  if (kind === 'caught' || kind === 'missed') return character && CH[character as CharacterId] ? CH[character as CharacterId].card : null;
+  if (kind === 'caught' || kind === 'missed') return cardArt(character);
   const r = (reason || '').replace(/_timeout$/, '');
   if (r === 'paidkill') return ACTION_CARDS.paidkill;
   if (r === 'terrorist') return CH.terrorist.card;
   if (r === 'colonel_correct' || r === 'wrong_guess') return CH.colonel.card;
-  return character && CH[character as CharacterId] ? CH[character as CharacterId].card : null;
+  if (r === 'caught_bluffing' || r === 'lost_challenge') return null; // the disputed card belongs to the verdict scene
+  return cardArt(character);
 }
 
 /** Why the card went: a plain sentence, not the log's shorthand. Falls back to the log wording
@@ -55,6 +58,7 @@ export function Cinematic() {
   const loser = pl(c.loserId);
   const chName = c.character ? i18n.charName(c.character) : '';
   const art = artOf(c.kind, c.reason, c.character);
+  const took = cardArt(c.took);
   const mine = c.loserId === me;
 
   const lname = loser?.name || '?', tname = target?.name || '?', aname = actor?.name || '?';
@@ -95,7 +99,12 @@ export function Cinematic() {
         <div className={`cine-duel ${solo ? 'solo' : ''}`}>
           {!solo && <Face p={actor} me={me} cost={actor!.id === c.loserId ? cost : undefined} />}
           <div className="cine-vs">
-            {art ? <img className="cine-art" src={art} alt="" /> : <Icon name="bolt" className="size-8" />}
+            {/* The evidence: what was used, and — when the table already knows it — what it took.
+                A correct Colonel call is the only loss where both halves are public. */}
+            <div className="cine-evidence">
+              {art ? <img className="cine-art" src={art} alt="" /> : !took && <Icon name="bolt" className="size-8" />}
+              {took && <img className="cine-art took" src={took} alt="" />}
+            </div>
             {!solo && <Icon name={i18n.dir() === 'rtl' ? 'alt-arrow-left' : 'alt-arrow-right'} className="cine-arrow size-6" />}
           </div>
           <Face p={target} me={me} cost={target && target.id === c.loserId ? cost : undefined} />

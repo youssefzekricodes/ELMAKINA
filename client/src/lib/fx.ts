@@ -284,8 +284,8 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
         loserId: right ? accused : (isGuess ? null : accuser), character: e.character, guess: isGuess, lost: 0, out: false });
     } else if (e.type === 'card_lost') {
       const L = open();
-      if (L && L.loserId === e.playerId && !L.out) L.lost++;
-      else add({ id: ++cineSeq, kind: 'hit', actorId: e.killerId || null, targetId: e.playerId, loserId: e.playerId, reason: e.reason, lost: 1, out: false });
+      if (L && L.loserId === e.playerId && !L.out) { L.lost++; if (e.card) L.took = e.card; }
+      else add({ id: ++cineSeq, kind: 'hit', actorId: e.killerId || null, targetId: e.playerId, loserId: e.playerId, reason: e.reason, took: e.card || undefined, lost: 1, out: false });
     } else {
       const L = open();
       if (L && L.loserId === e.playerId) { L.out = true; if (!L.reason) L.reason = e.reason; }

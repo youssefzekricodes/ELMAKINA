@@ -587,6 +587,29 @@ await test('swap fires wherever cards are exchanged, with how many moved', () =>
   assert.deepEqual(swaps(g, from), [], 'keeping the card is not a swap');
 });
 
+await test('a lost card names itself only when the table already knows it', () => {
+  // Colonel names the card and is right: it was said out loud, so the event may carry it.
+  let g = newGame(2); g.start();
+  let a = g.active, b = g.players.find((p) => p.id !== a.id);
+  a.coins = 4; giveCard(g, a.id, 'colonel'); b.cards = ['police', 'thief'];
+  let from = g.events.length;
+  g.declareAction(a.id, { type: 'colonel', targetId: b.id, guess: 'police' });
+  g.pass(b.id);
+  let lost = g.events.slice(from).find((e) => e.type === 'card_lost');
+  assert.equal(lost.reason, 'colonel_correct');
+  assert.equal(lost.card, 'police', 'the guess was public and correct, so the card can be shown');
+
+  // Anything else keeps it secret — the card goes back under the deck unseen.
+  g = newGame(2); g.start();
+  a = g.active; b = g.players.find((p) => p.id !== a.id);
+  a.coins = 7; b.coins = 0;
+  from = g.events.length;
+  g.declareAction(a.id, { type: 'paidkill', targetId: b.id });
+  lost = g.events.slice(from).find((e) => e.type === 'card_lost');
+  assert.equal(lost.reason, 'paidkill');
+  assert.equal(lost.card, null, 'a killed card is never revealed');
+});
+
 await test('a caught bluff costs the card immediately, not at the end of the turn', () => {
   const g = newGame(3); g.start();
   const a = g.active, [b, c] = g.players.filter((p) => p.id !== a.id);

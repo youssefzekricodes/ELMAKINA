@@ -178,13 +178,18 @@ export class Game {
   gainText(p, n, fromId = 'bank') { const got = this.gain(p, n, fromId); return { got, n, max: MAX_COINS }; }
   pay(p, n) { p.coins -= n; this.event('coins', { from: p.id, to: 'bank', n }); }
 
-  loseCardAt(p, idx, reason, killerId = null) {
+  /**
+   * `shown` is the one case where the card that went is public knowledge: a Colonel who names a
+   * card correctly has already said it out loud. Every other loss keeps the card secret — it goes
+   * back under the deck unseen — so the default stays null and the event says nothing.
+   */
+  loseCardAt(p, idx, reason, killerId = null, shown = null) {
     if (!p.alive || p.cards.length === 0) return;
     idx = Math.max(0, Math.min(idx, p.cards.length - 1));
     const [card] = p.cards.splice(idx, 1);
     this.deck.push(card);
     this.addLog('loss', 'card.lost', { name: p.name, reason, left: p.cards.length });
-    this.event('card_lost', { playerId: p.id, killerId: killerId || null, reason }); // which card was lost stays secret — it returns to the deck unseen
+    this.event('card_lost', { playerId: p.id, killerId: killerId || null, reason, card: shown || null });
     if (p.cards.length === 0) {
       p.alive = false;
       if (!this.outOrder.includes(p.id)) this.outOrder.push(p.id); // record finish order for trophies
@@ -197,7 +202,7 @@ export class Game {
     }
   }
   loseRandomCard(p, reason, killerId = null) { if (!p.alive || p.cards.length === 0) return; this.loseCardAt(p, Math.floor(Math.random() * p.cards.length), reason, killerId); }
-  loseSpecificCard(p, character, reason, killerId = null) { const idx = p.cards.indexOf(character); if (idx >= 0) this.loseCardAt(p, idx, reason, killerId); }
+  loseSpecificCard(p, character, reason, killerId = null) { const idx = p.cards.indexOf(character); if (idx >= 0) this.loseCardAt(p, idx, reason, killerId, character); }
 
   checkGameOver() {
     if (this.phase !== 'playing') return true;
