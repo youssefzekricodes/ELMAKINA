@@ -2,7 +2,7 @@
    for room + per-player view updates, and client-scheduled `tick`s so timeouts/bots advance exactly when due. */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { toast } from '@heroui/react';
-import { supabase, supabaseConfigured } from './supabase';
+import { supabase, supabaseConfigured, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase';
 import { store, customAvatars, type Profile, type Room } from './store';
 import { i18n, t } from '../i18n';
 import { sfx } from './sfx';
@@ -22,6 +22,7 @@ let channel: RealtimeChannel | null = null;
 let channelCode: string | null = null;
 let tickTimer: any = null, pollTimer: any = null, pingTimer: any = null;
 let uid: string | null = null;
+let token: string | null = null; // cached access token: the unload path has no time to await getSession()
 export const now = () => Date.now() + clockOffset;
 export const myId = () => uid;
 
@@ -213,12 +214,37 @@ export async function connect() {
     session = data.session;
   }
   uid = session?.user.id || null;
+  token = session?.access_token || null;
   store.set({ me: uid });
-  supabase.auth.onAuthStateChange((_e, s) => { uid = s?.user.id || uid; });
+  supabase.auth.onAuthStateChange((_e, s) => { uid = s?.user.id || uid; token = s?.access_token || token; });
   if (uid) initSocial(uid);
   await hello();
   if (!store.get().room) store.set({ connected: true });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && store.get().room) { emitQuiet('ping'); hello(); } });
+  window.addEventListener('pagehide', (e) => { if (!e.persisted) closeBotTableOnExit(); });
+}
+
+/**
+ * Close a table you were playing alone against the machine when you close the window.
+ *
+ * A vs-bot room has nobody else waiting on it, so leaving it up serves no one — it sits there
+ * until the reaper notices. `pagehide` is the only unload event mobile Safari reliably fires, and
+ * `persisted` tells apart a real close from the page going into the back/forward cache, where it
+ * may yet come back. There is no time to await anything here, so this is a raw keepalive fetch
+ * with the cached access token rather than the usual client (sendBeacon cannot set headers).
+ * Best effort: if it does not land, the reaper still collects the room.
+ */
+function closeBotTableOnExit() {
+  const s = store.get(); const room = s.room;
+  if (!room || !token || room.hostId !== s.me) return;
+  if (!room.players.some((p) => p.isBot) || room.players.filter((p) => !p.isBot).length > 1) return;
+  try {
+    fetch(`${SUPABASE_URL}/functions/v1/game`, {
+      method: 'POST', keepalive: true,
+      headers: { 'content-type': 'application/json', apikey: SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
+      body: JSON.stringify({ op: 'close_room' }),
+    }).catch(() => { /* the reaper is the backstop */ });
+  } catch { /* the reaper is the backstop */ }
 }
 
 // ── lobby / room ──

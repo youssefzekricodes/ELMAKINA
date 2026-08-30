@@ -2,7 +2,7 @@
    Who moved on whom, with what, and what it cost — then the mask lifts and play resumes. */
 import { useEffect } from 'react';
 import { needsMe, useStore } from '../lib/store';
-import { endCine } from '../lib/fx';
+import { endCine, yieldCine } from '../lib/fx';
 import { i18n, t } from '../i18n';
 import { ACTION_CARDS, CH, type CharacterId } from '../theme';
 import { Icon, PlayerAvatar } from './ui';
@@ -46,7 +46,7 @@ export function Cinematic() {
 
   // The mask never costs anyone a turn: the moment the game wants an answer from me, it lifts.
   const myMove = !!c && needsMe(s);
-  useEffect(() => { if (myMove) endCine(); }, [myMove]);
+  useEffect(() => { if (myMove) yieldCine(); }, [myMove]);
 
   if (!c || !st) return null;
   const pl = (id?: string | null) => (id ? st.players.find((p) => p.id === id) : null) || null;
@@ -57,17 +57,24 @@ export function Cinematic() {
   const art = artOf(c.kind, c.reason, c.character);
   const mine = c.loserId === me;
 
-  const lname = loser?.name || '?', tname = target?.name || '?';
-  const eyebrow = c.kind === 'caught' ? t('cine.caught') : c.kind === 'missed' ? t('cine.missed')
+  const lname = loser?.name || '?', tname = target?.name || '?', aname = actor?.name || '?';
+  const eyebrow = c.guess ? t('cine.guess')
+    : c.kind === 'caught' ? t('cine.caught') : c.kind === 'missed' ? t('cine.missed')
     : c.reason ? i18n.reason(c.reason.replace(/_timeout$/, '')) : t('cine.attack');
-  // The cost leads when there is one; a challenge whose bill has not landed yet still gets a verdict.
+  // A Colonel naming a card is the mirror image of a challenge: the guesser is the one on trial,
+  // and getting it wrong costs coins rather than a card. Saying "X was telling the truth" there
+  // would be backwards — the target is precisely the person who did NOT hold the named card.
+  const guessLine = c.guess && !c.lost && !c.out;
+  // The cost leads when there is one; a beat whose bill has not landed yet still gets a verdict.
   const verdict = c.out ? t(mine ? 'cine.outMe' : 'cine.out', { name: lname })
     : c.lost > 1 ? t(mine ? 'cine.hitMeN' : 'cine.hitN', { name: lname, n: c.lost })
     : c.lost === 1 ? t(mine ? 'cine.hitMe' : 'cine.hit', { name: lname })
+    : guessLine ? t(c.kind === 'caught' ? 'cine.guessRight' : 'cine.guessWrong', { name: aname })
     : c.kind === 'missed' ? t('cine.missedV', { name: tname })
     : t('cine.caughtV', { name: tname });
-  // The sub-line always answers "why did that card go": the lie that was exposed, or the weapon.
-  const sub = c.kind === 'caught' && c.character ? t('cine.bluffSub', { name: tname, character: chName })
+  // The sub-line always answers why: the lie that was exposed, the card that was named, or the weapon.
+  const sub = c.guess && c.character ? t(c.kind === 'caught' ? 'cine.guessRightSub' : 'cine.guessWrongSub', { name: tname, character: chName })
+    : c.kind === 'caught' && c.character ? t('cine.bluffSub', { name: tname, character: chName })
     : c.kind === 'missed' && c.character ? t('cine.trueSub', { name: tname, character: chName })
     : c.reason ? whyLine(c.reason)
     : null;

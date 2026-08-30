@@ -68,6 +68,7 @@ export interface Cine {
   targetId: string;
   loserId: string | null;
   character?: string;  // the card that was claimed or guessed (verdict scenes)
+  guess?: boolean;     // a Colonel naming a card, not a challenge — it is worded differently
   reason?: string;     // the weapon: paidkill, terrorist, colonel_correct, …
   lost: number;        // cards the loser handed over during this beat
   out: boolean;        // …and whether it finished them

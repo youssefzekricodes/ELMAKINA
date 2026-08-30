@@ -43,9 +43,12 @@ export function reactionSecsOf(room) {
 // so the bots would keep "playing" for eternity. The service-only `reap` sweep (also folded into
 // `tick_all`) throws away rooms that are provably dead. Tune the thresholds here.
 export const REAP_LIVE_MS = 120000;      // a human heartbeat newer than this ⇒ the room is live: never reaped
-export const REAP_ABANDONED_MS = 600000; // 10 min with no human heartbeat at all ⇒ dead, whatever the phase
-export const REAP_ENDED_MS = 600000;     // 10 min: a finished game nobody restarted or closed
-export const REAP_LOBBY_MS = 1800000;    // 30 min: a lobby where nothing at all happened
+// Five minutes of nothing and the room goes. Every one of these is reached only AFTER the
+// REAP_LIVE_MS check above has already established that no human has been heard from for two
+// minutes, so a table people are actually sitting at is never touched by any of them.
+export const REAP_ABANDONED_MS = 300000; //  5 min with no human heartbeat at all ⇒ dead, whatever the phase
+export const REAP_ENDED_MS = 300000;     //  5 min: a finished game nobody renewed or closed
+export const REAP_LOBBY_MS = 300000;     //  5 min: a lobby where nothing at all happened
 export const REAP_ORPHAN_MS = 300000;    //  5 min: a room that has no membership rows left at all
 export const REAP_MAX_AGE_MS = 43200000; // 12 h hard cap: nothing survives this long without a write
 export const REAP_BATCH = 200;           // rooms examined per sweep

@@ -253,12 +253,11 @@ await test('reap: an idle lobby and a finished game are collected; the service g
   const { code: lob } = await call(db, A, { op: 'create_room', name: 'Aay' });
   await call(db, B, { op: 'join_room', name: 'Bee', code: lob });
   NOW += 20 * 60_000; await call(db, A, { op: 'ping' }); await call(db, B, { op: 'ping' });
-  NOW += 3 * 60_000;                                    // present recently enough not to look abandoned
-  assert.equal((await reap(db)).reaped, 0, '23 min of doing nothing is not enough');
-  NOW += 9 * 60_000; await call(db, A, { op: 'ping' }); // keeps the abandoned rule from firing
-  NOW += 3 * 60_000;
+  NOW += 1 * 60_000;                                    // somebody was here a minute ago: hands off
+  assert.equal((await reap(db)).reaped, 0, 'a table people are sitting at is never reaped');
+  NOW += 2 * 60_000;                                    // now nobody has been heard from for 3 min
   let res = await reap(db);
-  assert.equal(res.reaped, 1); assert.equal(res.reasons.lobby, 1, '> 30 min without a single write');
+  assert.equal(res.reaped, 1); assert.equal(res.reasons.lobby, 1, '5 min without a single write, and nobody present');
   assert.deepEqual(traceOf(db, lob), GONE);
   // (2) a game that ended and that nobody restarted or closed
   const { code } = await call(db, A, { op: 'create_room', name: 'Aay' });
@@ -266,10 +265,10 @@ await test('reap: an idle lobby and a finished game are collected; the service g
   assert.ok((await call(db, A, { op: 'start_game' })).ok);
   assert.ok((await call(db, B, { op: 'leave_room' })).ok);           // forfeit → A wins, room sits on the winner screen
   assert.equal(db.rooms.get(code).phase, 'ended');
-  NOW += 11 * 60_000; await call(db, A, { op: 'ping' });             // A is still around, just not restarting
-  NOW += 3 * 60_000;
+  NOW += 6 * 60_000; await call(db, A, { op: 'ping' });              // A is still around, just not renewing
+  NOW += 3 * 60_000;                                                 // then stops answering too
   res = await reap(db);
-  assert.equal(res.reaped, 1); assert.equal(res.reasons.ended, 1);
+  assert.equal(res.reaped, 1); assert.equal(res.reasons.ended, 1, '5 min on the winner screen and gone');
   assert.deepEqual(traceOf(db, code), GONE);
   // reaping is service-only
   const { code: safe } = await call(db, A, { op: 'create_room', name: 'Aay' });

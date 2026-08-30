@@ -172,10 +172,19 @@ const nameOf = (id: string) => (store.get().state?.players.find((p) => p.id === 
    faces, the weapon and the cost, and nothing else competing. Everything they retell is held back
    until the mask lifts, so no animation plays where nobody can see it. */
 const CINE_MS = 5000;   // as long as the mask holds before it lifts on its own
+/**
+ * …and the shortest it may hold. Card loss is settled the instant it is incurred, so a scene very
+ * often opens at the exact moment the next window opens too — and yielding to that immediately
+ * meant the mask went up and straight back down, which reads as "I lost a card and was told
+ * nothing". A tap still cuts instantly; the game asking for an answer only cuts once the scene
+ * has actually been on screen.
+ */
+const CINE_MIN_MS = 1400;
 let cineSeq = 0;
 const cineQ: Cine[] = [];
 const cineAfter = new Map<number, (() => void)[]>();
 let cineTimer: any = null;
+let cineShownAt = 0;
 
 function runAfter(id: number) { const fns = cineAfter.get(id); cineAfter.delete(id); (fns || []).forEach((f) => { try { f(); } catch { /* one broken effect must not stall the queue */ } }); }
 function playNext() {
@@ -183,6 +192,7 @@ function playNext() {
   const next = cineQ.shift();
   if (!next) return store.set({ cine: null });
   store.set({ cine: next });
+  cineShownAt = Date.now();
   sfx.play(next.out ? 'lose' : next.kind === 'missed' ? 'block' : 'boom');
   if (!reducedMotion) cameraShake(document.getElementById('table'), true);
   cineTimer = setTimeout(() => { runAfter(next.id); playNext(); }, CINE_MS);
@@ -191,8 +201,19 @@ function queueScene(sc: Cine, after: (() => void)[]) {
   cineAfter.set(sc.id, after); cineQ.push(sc);
   if (!store.get().cine) playNext();
 }
-/** Cut the scene short — a tap on the mask, or the game needing an answer from me right now. */
+/** Cut the scene short — a tap on the mask. Immediate: the player has read it and said so. */
 export function endCine() { const cur = store.get().cine; if (!cur) return; clearTimeout(cineTimer); runAfter(cur.id); playNext(); }
+/**
+ * Stand down because the game wants an answer — but never before the scene has had CINE_MIN_MS on
+ * screen, or the player is told nothing at all.
+ */
+export function yieldCine() {
+  const cur = store.get().cine; if (!cur) return;
+  const left = CINE_MIN_MS - (Date.now() - cineShownAt);
+  if (left <= 0) return endCine();
+  clearTimeout(cineTimer);
+  cineTimer = setTimeout(() => { runAfter(cur.id); playNext(); }, left);
+}
 /** Drop everything queued (leaving a game mid-scene). */
 export function resetCine() { clearTimeout(cineTimer); cineQ.length = 0; cineAfter.forEach((_, id) => cineAfter.delete(id)); store.set({ cine: null }); }
 
@@ -256,7 +277,11 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
       const right = e.type === 'bluff' || (e.type === 'guess' && e.right);
       const accuser = e.type === 'guess' ? e.playerId : e.challengerId;
       const accused = e.type === 'guess' ? e.targetId : e.playerId;
-      add({ id: ++cineSeq, kind: right ? 'caught' : 'missed', actorId: accuser, targetId: accused, loserId: right ? accused : accuser, character: e.character, lost: 0, out: false });
+      // A wrong Colonel guess costs coins, not a card, so nobody is the loser — but it is still a
+      // beat worth the screen, and it has to be worded as a guess rather than a challenge.
+      const isGuess = e.type === 'guess';
+      add({ id: ++cineSeq, kind: right ? 'caught' : 'missed', actorId: accuser, targetId: accused,
+        loserId: right ? accused : (isGuess ? null : accuser), character: e.character, guess: isGuess, lost: 0, out: false });
     } else if (e.type === 'card_lost') {
       const L = open();
       if (L && L.loserId === e.playerId && !L.out) L.lost++;
