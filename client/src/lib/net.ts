@@ -94,6 +94,12 @@ function applyView(v: any) {
     countGame();
     track('game_end', { players: v.players.length, won: v.winnerId === me });
   }
+  // "Play again" goes ended -> playing without ever passing through the lobby, which is the only
+  // other place the effects layer is told to start over. Its event counter restarts at 1, so
+  // without this the previous game's high-water mark eats the new game's early beats and the
+  // announcements simply never appear. Saying it here, on the transition itself, is exact —
+  // fx.ts also spots a counter running backwards, but only when the WHOLE batch is below the mark.
+  if (v.phase === 'playing' && prev.state && prev.state.phase === 'ended') resetEvents();
   processEvents(v, me);
   const myTurnNow = v.phase === 'playing' && v.pending && v.pending.stage === 'turn' && v.pending.actorId === me;
   if (myTurnNow && (prevTurn !== me || prevStage !== 'turn') && turnSeen !== v.pending.deadline) {

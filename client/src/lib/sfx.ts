@@ -31,12 +31,11 @@ const CUES: Record<string, Cue> = {
   bluff:     { steps: [[500, 140, 0.3, 'sawtooth', 0.4], [180, 120, 0.3, 'square', 0.25, 0.05]] }, // caught!
   boom:      { noise: [0.34, 220, 0.55], steps: [[160, 46, 0.4, 'sine', 0.5]] },          // 7 coins, one hit
   // ── the mysterious set ──────────────────────────────────────────────────────
-  // Everything above tells you what happened. These tell you how it FEELS: a table where nobody
-  // knows who anybody is. Low, detuned, unhurried — they sit under the action rather than on it,
-  // so they are quieter than every cue above and none of them lands on a beat that already has one.
-  suspect:   { steps: [[196, 208, 0.5, 'sine', 0.2], [98, 104, 0.62, 'triangle', 0.17, 0.02]] },   // a claim goes on the table
-  whisper:   { noise: [0.4, 700, 0.1] },                                                          // the room leans in
-  hush:      { noise: [0.34, 400, 0.09], steps: [[300, 150, 0.32, 'sine', 0.1]] },                // and settles again
+  // Low, detuned, unhurried — they sit under the action rather than on it, and are quieter than
+  // every cue above. All three fire on a BEAT. There was also a sustained bed that held for as
+  // long as a claim was undecided; it was removed because a sound you cannot end by playing well
+  // is just noise, and waiting is most of this game.
+  whisper:   { noise: [0.4, 700, 0.1] },                                                          // a character card lands: it might be a lie
   sting:     { steps: [[440, 440, 0.26, 'sawtooth', 0.17], [622, 622, 0.3, 'sawtooth', 0.15, 0.01]] }, // a tritone: something is wrong
   creak:     { steps: [[130, 58, 0.8, 'sawtooth', 0.14], [65, 39, 0.95, 'sine', 0.18, 0.06]] },   // somebody is out
 };
@@ -79,54 +78,13 @@ function hiss(c: AudioContext, [dur, cut, g = 0.4]: [number, number, number?]) {
   src.connect(flt); flt.connect(env); env.connect(master!); src.start(t0); src.stop(t0 + dur);
 }
 
-/**
- * The bed under a live decision: two barely-detuned low oscillators and a fifth, through a lowpass
- * that a very slow LFO walks up and down. The detuning is the whole trick — two tones a fraction
- * apart beat against each other, which is what makes a held note sound like something circling the
- * table rather than a synth pad. It fades in over a second so it is never a "sound", only a
- * pressure you notice lifting when it stops.
- */
-let drone: { osc: OscillatorNode[]; gain: GainNode; lfo: OscillatorNode } | null = null;
-function droneOn(c: AudioContext) {
-  if (drone) return;
-  const gain = c.createGain(); gain.gain.value = 0.0001; gain.connect(master!);
-  const flt = c.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.value = 300; flt.Q.value = 5;
-  flt.connect(gain);
-  const mk = (f: number, type: Wave) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.connect(flt); o.start(); return o; };
-  const osc = [mk(55, 'sine'), mk(55.7, 'triangle'), mk(82.5, 'sine')];
-  const lfo = c.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.07;
-  const depth = c.createGain(); depth.gain.value = 130;
-  lfo.connect(depth); depth.connect(flt.frequency); lfo.start();
-  gain.gain.exponentialRampToValueAtTime(0.085, c.currentTime + 1.1);
-  drone = { osc, gain, lfo };
-}
-function droneOff(c: AudioContext) {
-  if (!drone) return;
-  const { osc, gain, lfo } = drone; drone = null;
-  const t = c.currentTime;
-  try {
-    gain.gain.cancelScheduledValues(t);
-    gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
-    osc.forEach((o) => o.stop(t + 0.8));
-    lfo.stop(t + 0.8);
-  } catch { /* already torn down */ }
-}
-
 export const sfx = {
   get enabled() { return on; },
   toggle() {
     on = !on;
     try { localStorage.setItem('mekina.sound', on ? 'on' : 'off'); } catch { /* ignore */ }
     if (on) { this.unlock(); this.play('click'); }
-    else if (ctx) droneOff(ctx);   // silence means silence, including anything already holding
     return on;
-  },
-  /** Hold (or release) the ambient bed. Safe to call repeatedly with the same value. */
-  mood(want: boolean) {
-    const c = on && want ? ensure() : ctx;
-    if (!c || c.state !== 'running') { if (!want && ctx) droneOff(ctx); return; }
-    try { if (want && on) droneOn(c); else droneOff(c); } catch { /* a dead context must never break the game */ }
   },
   /** Called from the first user gesture: browsers refuse to start audio any earlier. */
   unlock() { const c = ensure(); if (c && c.state === 'suspended') c.resume().catch(() => {}); },

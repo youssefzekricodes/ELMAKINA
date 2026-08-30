@@ -4,7 +4,6 @@ import { useStore, store } from './lib/store';
 import { connect, setLanguage } from './lib/net';
 import { goFullscreen } from './lib/fullscreen';
 import { sfx } from './lib/sfx';
-import { initMood } from './lib/mood';
 import { initAnalytics, sendPageView } from './lib/analytics';
 import { initAds } from './lib/ads';
 import { i18n } from './i18n';
@@ -41,7 +40,6 @@ export default function App() {
     document.addEventListener('pointerdown', unlock, { once: true });
     for (const c of CHARACTERS) { new Image().src = CH[c].card; new Image().src = CH[c].cardSm; }
     connect();
-    initMood();  // ambient bed while a claim is undecided
     initAnalytics();
     initAds(); // fetch the ad script early so the first break is not what loads it
     (window as any).__mekina = { store }; // debugging hook (inspect / inject state from the console)
