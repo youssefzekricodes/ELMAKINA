@@ -1772,12 +1772,18 @@
 
   /* ── touch targets on phones (portrait or landscape): nothing interactive below ~44px tall ── */
   @media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
-    /* The swipe arrows get a gutter of their own on either side of the row, so they sit BESIDE the
-       cards rather than on top of them. The gutter is unconditional: gating it on data-more would
-       change the row's client width, which is the very measurement that decides whether data-more
-       is set — the row would flip between overflowing and not, forever. */
-    .card-board { padding-inline: 30px; }
-    .board-grid { padding-inline: 6px; }
+    /* The swipe arrows are laid out BESIDE the row, as flex siblings of it — not floated over it.
+       Absolutely-positioned arrows can always end up on top of a card; columns in a flex row
+       cannot. They are always laid out (dimmed, or hidden when the row does not scroll at all)
+       so the row's width never changes: gating their space on data-more would change the very
+       measurement that decides whether data-more is set, and the row would flip forever. */
+    .card-board { flex-direction: row; align-items: stretch; gap: 0; }
+    .card-board .row-arrow { position: static; display: flex; flex: 0 0 auto; width: 28px; height: auto;
+      align-self: stretch; transform: none; }
+    .card-board .row-arrow:active { transform: scale(.86); }
+    .card-board:not([data-more]) .row-arrow { visibility: hidden; }
+    .card-board .board-grid { flex: 1 1 auto; min-width: 0; }
+    .board-grid { padding-inline: 4px; }
     .cm-call-sub { min-height: 44px; }               /* the secondary "call the bluff" link-button */
     .topbar-right button { min-height: 40px; }       /* topbar chrome: taller tap area without widening the crowded bar */
     .log-head { min-height: 44px; }

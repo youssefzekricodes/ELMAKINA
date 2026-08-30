@@ -109,7 +109,9 @@ await test('terrorist special case: a double hit takes two cards, both at random
   a.coins = 5; giveCard(g, a.id, 'terrorist');
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   g.challenge(b.id);
-  assert.equal(b.cards.length, 3, 'nothing is taken until the whole bill is known');
+  // The failed challenge costs a card THERE AND THEN, next to the reveal that caused it — not at
+  // the end of the turn, by which point nobody can tell what the card was paid for.
+  assert.equal(b.cards.length, 3 - 1, 'the wrong call is paid on the spot');
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(!g.pending.window.claim && g.pending.window.block, 'b may still block with Colonel, claim proven');
   g = reload(g);
   g.pass(b.id);
@@ -124,9 +126,9 @@ await test('a player who owes their whole hand is eliminated without being asked
   const a = g.active, b = g.players.find((p) => p.id !== a.id);
   a.coins = 5; giveCard(g, a.id, 'terrorist'); b.cards = b.cards.slice(0, 2);
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
-  g.challenge(b.id);                                 // owes 1 of 2 — still alive, may still block
-  assert.equal(b.alive, true); assert.equal(b.cards.length, 2);
-  g.pass(b.id);                                      // the hit lands: 2 owed, 2 held → out, no pointless pick
+  g.challenge(b.id);                                 // the wrong call costs one of two, immediately
+  assert.equal(b.alive, true); assert.equal(b.cards.length, 1, 'paid at once; the block is still open');
+  g.pass(b.id);                                      // the hit lands on the last card → out, no pointless pick
   assert.equal(b.alive, false); assert.equal(g.phase, 'ended'); assert.equal(g.winnerId, a.id);
 });
 
@@ -583,6 +585,24 @@ await test('swap fires wherever cards are exchanged, with how many moved', () =>
   from = g.events.length;
   g.decide(a.id, { swap: false });
   assert.deepEqual(swaps(g, from), [], 'keeping the card is not a swap');
+});
+
+await test('a caught bluff costs the card immediately, not at the end of the turn', () => {
+  const g = newGame(3); g.start();
+  const a = g.active, [b, c] = g.players.filter((p) => p.id !== a.id);
+  a.cards = ['taxman', 'taxman']; a.coins = 5;      // claiming Terrorist is a lie
+  const from = g.events.length;
+  g.declareAction(a.id, { type: 'terrorist', targetId: c.id });
+  g.challenge(b.id);
+  // the liar pays before anything else happens — the turn has not ended, nobody has moved on
+  assert.equal(a.cards.length, 1, 'the card is gone the moment the bluff is exposed');
+  assert.equal(g.owed.length, 0, 'and nothing is left owing');
+  const fresh = g.events.slice(from);
+  const bluffAt = fresh.findIndex((e) => e.type === 'bluff');
+  const lostAt = fresh.findIndex((e) => e.type === 'card_lost' && e.playerId === a.id);
+  assert.ok(bluffAt >= 0 && lostAt > bluffAt, 'and the table is told, right after the verdict');
+  assert.equal(fresh[lostAt].reason, 'caught_bluffing');
+  assert.equal(g.phase, 'playing', 'the turn is still resolving — this did not wait for it');
 });
 
 await test('a card loss names its weapon and its killer, so the cut-scene can retell it', () => {

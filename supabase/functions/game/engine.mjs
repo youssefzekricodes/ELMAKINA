@@ -480,22 +480,23 @@ export class Game {
   }
   // ───────────────────────── owed cards ─────────────────────────
   /**
-   * A turn can hit the same player twice — call a bluff wrongly on a Terrorist and you pay for the
-   * failed challenge *and* for the hit. Rather than asking twice, every loss is written into
-   * `this.owed` and the whole bill is settled in ONE pick at the end of the turn. A player who owes
-   * their entire hand is never asked at all: they are eliminated on the spot.
+   * A card that is owed is paid ON THE SPOT. Which card goes is random — nobody picks — so there is
+   * nothing to ask and nothing to batch: get caught bluffing and the card leaves with the verdict,
+   * where the table can connect the two. Holding the loss back until the end of the turn (which is
+   * what the ledger used to do, from when players still chose a card) meant the consequence
+   * arrived detached from its cause.
+   *
+   * The ledger survives for the one debt that IS a question: a Paid Kill you can buy your way out
+   * of for 9 coins. That waits for `settleDebts` to ask.
    */
   owedBy(id) { return this.owed.filter((d) => d.playerId === id); }
   owe(p, reason, killerId = null, canPay = false) {
-    // NB the card itself is picked at random when the debt settles — see settleDebts.
     if (!p || !p.alive) return;
     this.owed.push({ playerId: p.id, reason, killerId: killerId || null, canPay: !!canPay });
     const debts = this.owedBy(p.id);
-    const canBuyOut = debts.some((d) => d.canPay) && p.coins >= 9;
-    if (!canBuyOut && p.cards.length <= debts.length) { // nothing left to choose — settle it now
-      this.payDebts(p.id, p.cards.map((_, i) => i));
-      this.checkGameOver();
-    }
+    if (debts.some((d) => d.canPay) && p.coins >= 9) return; // a real choice — settleDebts will ask
+    this.payDebts(p.id, this.randomIndices(p, Math.min(debts.length, p.cards.length)));
+    this.checkGameOver();
   }
   /** Hand over the chosen cards (highest index first so the earlier indices stay valid). */
   payDebts(id, indices) {
