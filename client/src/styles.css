@@ -1121,8 +1121,15 @@
     transform: translateY(-50%); transition: opacity .15s; opacity: .95; }
   .card-board[data-more] .row-arrow { display: flex; }
   .row-arrow:active { transform: translateY(-50%) scale(.86); }
-  .row-arrow.start { inset-inline-start: 0; }
-  .row-arrow.end { inset-inline-end: 0; }
+  /* PHYSICAL left/right, not inset-inline-*. An engine that does not understand the logical
+     properties (older Safari, some in-app WebViews) drops them, and an absolutely-positioned box
+     with no inset falls back to its STATIC position — which for these two, either side of a
+     full-width row, is the same spot. That is the "arrows on top of each other" report: it cannot
+     be reproduced in a browser that supports the logical form, which is why it kept surviving. */
+  .row-arrow.start { left: 0; right: auto; }
+  .row-arrow.end { right: 0; left: auto; }
+  [dir="rtl"] .row-arrow.start { left: auto; right: 0; }
+  [dir="rtl"] .row-arrow.end { right: auto; left: 0; }
   .card-board:not([data-more~="start"]) .row-arrow.start,
   .card-board:not([data-more~="end"]) .row-arrow.end { opacity: .22; pointer-events: none; }
   [dir="rtl"] .row-arrow svg { transform: scaleX(-1); }
