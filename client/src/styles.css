@@ -1066,6 +1066,25 @@
     .cine, .cine-rip, .cine-body *, .cine-face { animation-duration: .01ms !important; animation-delay: 0ms !important; }
   }
 
+  /* Card-row swipe arrows. These MUST be styled outside the phone media query: the buttons are in
+     the markup at every size, so scoping the layout to phones left two full-width naked buttons
+     lying across the row on desktop and landscape. They only appear when the row actually scrolls
+     — `data-more` is removed outright when everything fits — and the side with nothing left to
+     reach dims and goes inert. Bare chevrons, no chip and no border; the drop-shadow is what keeps
+     the glyph readable over a card. tabIndex -1 keeps them out of the keyboard path. */
+  .card-board { position: relative; }
+  .row-arrow { position: absolute; top: calc(50% - 6px); z-index: 4; display: none; align-items: center; justify-content: center;
+    width: 30px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+    color: var(--gold); filter: drop-shadow(0 1px 3px rgba(0,0,0,.9)) drop-shadow(0 0 8px rgba(0,0,0,.7));
+    transform: translateY(-50%); transition: opacity .15s; opacity: .95; }
+  .card-board[data-more] .row-arrow { display: flex; }
+  .row-arrow:active { transform: translateY(-50%) scale(.86); }
+  .row-arrow.start { inset-inline-start: 0; }
+  .row-arrow.end { inset-inline-end: 0; }
+  .card-board:not([data-more~="start"]) .row-arrow.start,
+  .card-board:not([data-more~="end"]) .row-arrow.end { opacity: .22; pointer-events: none; }
+  [dir="rtl"] .row-arrow svg { transform: scaleX(-1); }
+
   /* fx */
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
@@ -1420,12 +1439,16 @@
     .table-area { min-height: 0; position: relative; padding: 0; border-radius: var(--radius-2xl); overflow: visible;
       --seat-inset: 48px; --seat-vinset: 46px; }
     .table-area::after { display: none; }
-    .arena { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: auto; height: auto; margin: 0; gap: 14px; }
-    .deck { width: 38px; height: 58px; } .deck .cardback { width: 38px; }
-    .deck-n { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; inset-inline-end: -10px; bottom: -8px; }
-    .bank .pile { width: 46px; height: 34px; } .bank .pile img { width: 22px; height: 22px; }
-    .bank .pile img:nth-child(1) { left: 0; top: 12px; } .bank .pile img:nth-child(2) { left: 14px; top: 13px; } .bank .pile img:nth-child(3) { left: 26px; top: 10px; }
-    .bank .pile img:nth-child(4) { left: 6px; top: 3px; } .bank .pile img:nth-child(5) { left: 20px; top: 2px; } .bank .pile img:nth-child(6) { left: 13px; top: -4px; }
+    /* The deck sits BELOW the ring's centre. Dead-centre it collided with the top seat's fan —
+       above the midline the ring is crowded (three opponents), below it only my own seat, which
+       has no cards on the table. Shorter deck for the same reason: on a 640px-tall phone the
+       vertical band between the top seat and my own is all the room there is. */
+    .arena { position: absolute; left: 50%; top: 57%; transform: translate(-50%, -50%); width: auto; height: auto; margin: 0; gap: 14px; }
+    .deck { width: 34px; height: 50px; } .deck .cardback { width: 34px; }
+    .deck-n { min-width: 21px; height: 21px; padding: 0 6px; font-size: 10.5px; inset-inline-end: -9px; bottom: -7px; }
+    .bank .pile { width: 42px; height: 30px; } .bank .pile img { width: 20px; height: 20px; }
+    .bank .pile img:nth-child(1) { left: 0; top: 10px; } .bank .pile img:nth-child(2) { left: 12px; top: 11px; } .bank .pile img:nth-child(3) { left: 23px; top: 8px; }
+    .bank .pile img:nth-child(4) { left: 5px; top: 2px; } .bank .pile img:nth-child(5) { left: 18px; top: 1px; } .bank .pile img:nth-child(6) { left: 11px; top: -5px; }
     .bank-lbl { font-size: 8.5px; letter-spacing: .1em; }
     .seats { position: absolute; inset: 0; display: block; }
     /* Just the face. No card, no border, no fill — the avatars ARE the table. */
@@ -1510,21 +1533,6 @@
     .board-grid::-webkit-scrollbar { height: 5px; }
     .board-grid::-webkit-scrollbar-track { background: rgba(255,240,214,.07); border-radius: 999px; }
     .board-grid::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--gold) 60%, transparent); border-radius: 999px; }
-    .card-board { position: relative; }
-    /* swipe arrows: bare chevrons, no chip and no border — the glyph carries a drop-shadow so it
-       stays readable over a card. Both sides are always present so the row's controls never move;
-       the side with nothing left to scroll simply dims and stops responding. tabIndex -1 keeps
-       them out of the keyboard path — the row is scrollable anyway. */
-    .row-arrow { position: absolute; top: calc(50% - 6px); z-index: 4; display: flex; align-items: center; justify-content: center;
-      width: 30px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
-      color: var(--gold); filter: drop-shadow(0 1px 3px rgba(0,0,0,.9)) drop-shadow(0 0 8px rgba(0,0,0,.7));
-      transform: translateY(-50%); transition: opacity .15s; opacity: .95; }
-    .row-arrow:active { transform: translateY(-50%) scale(.86); }
-    .row-arrow.start { inset-inline-start: 0; }
-    .row-arrow.end { inset-inline-end: 0; }
-    .card-board:not([data-more~="start"]) .row-arrow.start,
-    .card-board:not([data-more~="end"]) .row-arrow.end { opacity: .22; pointer-events: none; }
-    [dir="rtl"] .row-arrow svg { transform: scaleX(-1); }
     .board-grid.nudge { animation: row-nudge 1.25s var(--ease) .5s 2; }
     @keyframes row-nudge { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-26px); } }
     .board-card { width: 92px; flex-shrink: 0; transform: var(--fan, none); }
