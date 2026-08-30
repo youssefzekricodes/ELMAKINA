@@ -7,13 +7,22 @@ import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
 import { IMG } from '../theme';
-import { GoogleG, Html, Icon, LearnToggle, PlayerAvatar } from './ui';
+import { GoogleG, Html, Icon, PlayerAvatar } from './ui';
 
+/**
+ * The front door. One thing to press.
+ *
+ * It used to offer five ways to start a game, all at the same weight, plus a visibility toggle for
+ * a room that did not exist yet, plus a sign-in button as loud as Play. Everything that is not
+ * "start playing" is now quiet: three plain options on one line, the code field only when asked
+ * for, and the account and legal links reduced to footnotes. Room visibility moved into the lobby,
+ * where you are actually looking at the room and can change your mind.
+ */
 export function Home() {
   const s = useStore();
   const [code, setCode] = useState(s.autoJoinCode || '');
+  const [joining, setJoining] = useState(!!s.autoJoinCode);
   const [busy, setBusy] = useState<string | null>(null);
-  const [isPublic, setPublic] = useState(false);
   const name = s.name.trim();
   const setName = (v: string) => { store.set({ name: v }); localStorage.setItem('mekina.name', v); };
   const need = () => { if (!name) { notify(t('toast.name')); return false; } return true; };
@@ -29,7 +38,7 @@ export function Home() {
     setBusy(what);
     if (showingAd) { await adBreak('start'); goFullscreen(); } // best effort: the gesture may have expired
     if (what === 'random') { store.set({ searching: true }); await quickMatch(name); store.set({ searching: false }); }
-    else if (what === 'create') await createRoom(name, isPublic);
+    else if (what === 'create') await createRoom(name);
     else await playSolo(name);
     setBusy(null);
   };
@@ -49,16 +58,14 @@ export function Home() {
   return (
     <section className="screen home-screen">
       <div className="home-stage">
-        {/* top row: trophies + social pages */}
+        {/* Status and side rooms. Icon-only: none of it is why anyone opened the app. */}
         <div className="home-top">
           <span className="trophy-pill" title={t('lb.trophies')}><Icon name="win" className="size-4" />{s.trophies}</span>
           <div className="home-top-tools">
-            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')}><Icon name="win" className="size-4" /><span className="acct-tool-tx">{t('lb.title')}</span></button>
-            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')}>
-              <Icon name="users-room" className="size-4" /><span className="acct-tool-tx">{t('home.public')}</span>
-            </button>
-            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')}>
-              <Icon name="users-group-rounded" className="size-4" /><span className="acct-tool-tx">{t('fr.title')}</span>
+            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')} title={t('lb.title')}><Icon name="win" className="size-4" /></button>
+            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')} title={t('home.public')}><Icon name="users-room" className="size-4" /></button>
+            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')} title={t('fr.title')}>
+              <Icon name="users-group-rounded" className="size-4" />
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
             </button>
           </div>
@@ -82,83 +89,73 @@ export function Home() {
           </Alert>
         )}
 
-        {/* player badge — you assume an identity before you sit down */}
+        {/* Who you are at the table: one line, the placeholder does the labelling. */}
         <div className="home-badge">
           <button type="button" className="badge-photo" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')} title={t('profile.change')}>
-            <PlayerAvatar p={mePreview} size="lg" />
-            <span className="badge-photo-edit"><Icon name="gallery-add" className="size-3.5" /></span>
+            <PlayerAvatar p={mePreview} size="md" />
+            <span className="badge-photo-edit"><Icon name="pen" className="size-3" /></span>
           </button>
-          <div className="badge-fields">
-            <span className="badge-label">{t('home.name')}</span>
-            <input
-              className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
-              placeholder={t('home.name.ph')} maxLength={16} autoComplete="off" aria-label={t('home.name')}
-              autoFocus={!!s.autoJoinCode}
-              onKeyDown={(e) => { if (e.key === 'Enter') go(code ? 'join' : 'create'); }}
-            />
-          </div>
+          <input
+            className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
+            placeholder={t('home.name.ph')} maxLength={16} autoComplete="off" aria-label={t('home.name')}
+            autoFocus={!!s.autoJoinCode}
+            onKeyDown={(e) => { if (e.key === 'Enter') go(joining ? 'join' : 'random'); }}
+          />
         </div>
 
-        {/* sign-in / identity — sits right under your badge */}
-        {s.account && !s.account.isGuest ? (
-          <div className="home-signin signed">
-            {s.account.avatarUrl ? <img className="acct-photo" src={s.account.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <PlayerAvatar p={mePreview} size="sm" />}
-            <span className="acct-name">{s.account.name}</span>
-            <button type="button" className="acct-link" onClick={signOutAccount}>{t('acct.signout')}</button>
-          </div>
-        ) : (
-          <button type="button" className="home-signin acct-google" onClick={signInWithGoogle} disabled={!isConfigured}>
-            <GoogleG className="size-[18px]" />{t('acct.google')}
+        {/* The one thing to press. */}
+        <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'random'} onPress={() => go('random')}>
+          <span className="hp-tx"><b>{t('home.playNow')}</b><i>{t('home.randomSub')}</i></span>
+        </Button>
+
+        {/* Everything else, on one line and deliberately plain. */}
+        <div className="home-more">
+          <button type="button" className="hm-opt" onClick={() => go('create')} disabled={busy === 'create'}>
+            <Icon name="users-group-rounded" className="size-4" />{t('home.create')}
           </button>
+          {/* Short label: three tiles on one line have room for a word, not a sentence. The full
+              "against the machine" wording still lives in the guide. */}
+          <button type="button" className="hm-opt" onClick={() => go('solo')} disabled={busy === 'solo'} title={t('home.solo')}>
+            <Icon name="cpu-bolt" className="size-4" />{t('home.soloShort')}
+          </button>
+          <button type="button" className={`hm-opt ${joining ? 'on' : ''}`} aria-expanded={joining} onClick={() => setJoining((v) => !v)}>
+            <Icon name="login-2" className="size-4" />{t('home.joinCode')}
+          </button>
+        </div>
+
+        {/* The code field costs a whole row, so it only appears once somebody asks for it. */}
+        {joining && (
+          <div className="home-join">
+            <input
+              className="home-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder={t('home.code.ph')} maxLength={4} autoCapitalize="characters" autoComplete="off"
+              aria-label={t('home.code.ph')} dir="ltr" autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') go('join'); }}
+            />
+            <Button size="lg" variant="primary" className="home-join-go" isPending={busy === 'join'} onPress={() => go('join')}>
+              {t('home.join')}
+            </Button>
+          </div>
         )}
 
-        <div className="home-actions">
-          {/* Meeting people should not depend on passing a code around, so quick match leads. */}
-          <Button fullWidth size="lg" variant="primary" className="home-play" isPending={busy === 'random'} onPress={() => go('random')}>
-            <Icon name="users-room" className="size-5" />
-            <span className="ha-tx"><span>{t('home.random')}</span><i>{t('home.randomSub')}</i></span>
-          </Button>
-          <Button fullWidth size="lg" variant="secondary" isPending={busy === 'create'} onPress={() => go('create')}>
-            <Icon name="users-group-rounded" className="size-5" />{t('home.create')}
-          </Button>
-          {/* Who can walk in — decided before the room exists, because it cannot be changed after. */}
-          <div className="vis-toggle" role="group" aria-label={t('create.visibility')}>
-            {([false, true] as const).map((v) => (
-              <button key={String(v)} type="button" className={`vis-opt ${isPublic === v ? 'on' : ''}`} aria-pressed={isPublic === v} onClick={() => setPublic(v)}>
-                <Icon name={v ? 'users-room' : 'eye'} className="size-4" />
-                <span><b>{t(v ? 'create.public' : 'create.private')}</b><i>{t(v ? 'create.publicSub' : 'create.privateSub')}</i></span>
-              </button>
-            ))}
-          </div>
-          <Button fullWidth size="lg" variant="tertiary" isPending={busy === 'solo'} onPress={() => go('solo')}>
-            <Icon name="cpu-bolt" className="size-5" />{t('home.solo')}
-          </Button>
-        </div>
-
-        <div className="home-or"><span>{t('home.or')}</span></div>
-
-        <div className="home-join">
-          <input
-            className="home-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder={t('home.code.ph')} maxLength={4} autoCapitalize="characters" autoComplete="off"
-            aria-label={t('home.code.ph')} dir="ltr"
-            onKeyDown={(e) => { if (e.key === 'Enter') go('join'); }}
-          />
-          <Button size="lg" variant="primary" className="home-join-go" isPending={busy === 'join'} onPress={() => go('join')}>
-            <Icon name="login-2" className="size-4" />{t('home.join')}
-          </Button>
-        </div>
-
         <div className="home-foot-row">
-          {/* learning mode: persistent coaching in every game (see lib/store setLearn) */}
-          <LearnToggle />
-          <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>
-            <Icon name="question-circle" className="size-4" />{t('coach.rules')}
-          </button>
-          <p className="hero-foot">{t('home.foot')}</p>
-          {/* A reachable privacy policy is a hard requirement for both AdSense and Analytics.
-              It is a static page under public/ so crawlers (and the AdSense reviewer) can read it. */}
-          <a className="home-privacy" href="/privacy.html" target="_blank" rel="noopener">{t('home.privacy')}</a>
+          {s.account && !s.account.isGuest ? (
+            <span className="home-acct">
+              {s.account.avatarUrl && <img className="acct-photo" src={s.account.avatarUrl} alt="" referrerPolicy="no-referrer" />}
+              <span className="acct-name">{s.account.name}</span>
+              <button type="button" className="acct-link" onClick={signOutAccount}>{t('acct.signout')}</button>
+            </span>
+          ) : (
+            <button type="button" className="home-acct acct-google" onClick={signInWithGoogle} disabled={!isConfigured}>
+              <GoogleG className="size-4" />{t('acct.google')}
+            </button>
+          )}
+          <span className="home-links">
+            <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>{t('coach.rules')}</button>
+            {/* A reachable privacy policy is a hard requirement for both AdSense and Analytics.
+                It is a static page under public/ so crawlers (and the AdSense reviewer) can read it. */}
+            <a className="home-privacy" href="/privacy.html" target="_blank" rel="noopener">{t('home.privacy')}</a>
+          </span>
         </div>
       </div>
     </section>

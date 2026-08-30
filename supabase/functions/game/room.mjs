@@ -152,6 +152,7 @@ async function dispatch(ctx, op, body) {
     case 'remove_bot': return r.removeBot(me);
     case 'kick': return r.kick(me, body.targetId);
     case 'set_timings': return r.setTimings(me, body.seconds);
+    case 'set_public': return r.setPublic(me, body.isPublic);
     case 'close_room': return r.closeRoom(me);
     case 'start_game': return r.startGame(me);
     case 'back_to_lobby': return r.backToLobby(me);
@@ -460,6 +461,18 @@ class RoomOps {
     const n = Number(seconds);
     if (!Number.isFinite(n)) throw fail(`Pick a reaction time between ${REACTION_SECS_MIN} and ${REACTION_SECS_MAX} seconds`);
     room.settings = { ...(room.settings || {}), reactionSecs: clampReactionSecs(n) };
+    return this.done({ room: lobbyView(room) });
+  }
+  /**
+   * List the room publicly, or take it back off the list. It lives here rather than at room
+   * creation because it is a decision about a room you are already sitting in — and it is
+   * reversible, which the create-time toggle never was.
+   */
+  setPublic(me, isPublic) {
+    const room = this.room;
+    if (room.host_id !== me.id) throw fail('Only the host can change who may join');
+    if (room.phase !== 'lobby') throw fail('Go back to the lobby first to change who may join');
+    room.is_public = !!isPublic;
     return this.done({ room: lobbyView(room) });
   }
   /** Host closes the room for everyone, in any phase: room, state, views and memberships all go. */

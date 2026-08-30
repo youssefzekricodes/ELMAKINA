@@ -249,6 +249,8 @@ export async function leaveRoom() { exiting = true; await emit('leave_room'); ex
 export async function closeRoom() { exiting = true; const r = await emit('close_room'); if (r && r.ok) exitToHome(); else exiting = false; return r; }
 async function lobbyOp(op: string, data?: any) { const r = await emit(op, data); if (r && r.room) applyRoom(r.room); return r; }
 export const toggleReady = () => lobbyOp('toggle_ready');
+/** Host lists the room on the public board, or takes it back off. Lobby only. */
+export const setRoomPublic = (isPublic: boolean) => lobbyOp('set_public', { isPublic });
 export const startGame = () => { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); return emit('start_game'); };
 /** Host removes somebody from the lobby (works on bots too). */
 export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });

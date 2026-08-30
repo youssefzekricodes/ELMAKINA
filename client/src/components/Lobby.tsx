@@ -1,7 +1,7 @@
 import { Button, Tooltip } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { copyInvite, kickPlayer, leaveRoom, startGame, toggleReady } from '../lib/net';
+import { copyInvite, kickPlayer, leaveRoom, setRoomPublic, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
 import { Icon, PlayerAvatar } from './ui';
 import { AddFriendButton } from './Social';
@@ -30,9 +30,19 @@ export function Lobby() {
             <h1 className="lobby-title">{t('lobby.title')}</h1>
           </div>
           <div className="lobby-head-right">
-            <span className={`vis-badge ${room.isPublic ? 'pub' : 'priv'}`}>
-              <Icon name={room.isPublic ? 'users-room' : 'eye'} className="size-3.5" />{t(room.isPublic ? 'lobby.public' : 'lobby.private')}
-            </span>
+            {/* Who may walk in. The host can flip it here rather than having to have decided
+                before the room existed — and can take it back off the board just as easily. */}
+            {isHost ? (
+              <button type="button" className={`vis-badge act ${room.isPublic ? 'pub' : 'priv'}`}
+                aria-pressed={!!room.isPublic} title={t('lobby.makePublic')}
+                onClick={() => setRoomPublic(!room.isPublic)}>
+                <Icon name={room.isPublic ? 'users-room' : 'eye'} className="size-3.5" />{t(room.isPublic ? 'lobby.public' : 'lobby.private')}
+              </button>
+            ) : (
+              <span className={`vis-badge ${room.isPublic ? 'pub' : 'priv'}`}>
+                <Icon name={room.isPublic ? 'users-room' : 'eye'} className="size-3.5" />{t(room.isPublic ? 'lobby.public' : 'lobby.private')}
+              </span>
+            )}
             <span className="lobby-count" aria-label={`${n}/${cap}`}><b>{n}</b><i>/{cap}</i></span>
             <Button variant="outline" size="sm" className="lobby-leave" onPress={leaveRoom}>
               <Icon name="logout-2" className="size-4" /><span className="lobby-leave-tx">{t('lobby.leave')}</span>

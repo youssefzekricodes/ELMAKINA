@@ -405,6 +405,37 @@ await test('set_timings: the room setting survives a new game; guided games keep
   assert.equal(viewOf(db, solo.code, S).timings.challenge, 12000);
 });
 
+await test('set_public: the host lists the room from the lobby, and can take it back off', async () => {
+  const db = memDb();
+  const r = await call(db, 'host', { op: 'create_room', name: 'Amine' });
+  assert.equal(r.room.isPublic, false, 'rooms start private — visibility is decided in the lobby now');
+  assert.deepEqual(await db.listPublicRooms(), []);
+
+  const guest = await call(db, 'guest', { op: 'join_room', name: 'Guest', code: r.code });
+  assert.ok(guest.room, 'sanity: the guest is in');
+
+  // only the host may change it
+  let bad = await call(db, 'guest', { op: 'set_public', isPublic: true });
+  assert.equal(bad.ok, false); assert.match(bad.error, /host/i);
+  assert.deepEqual(await db.listPublicRooms(), [], 'and a refused call changes nothing');
+
+  const up = await call(db, 'host', { op: 'set_public', isPublic: true });
+  assert.equal(up.room.isPublic, true);
+  const list = await db.listPublicRooms();
+  assert.equal(list.length, 1); assert.equal(list[0].code, r.code);
+
+  // ...and it is reversible, which the create-time toggle never was
+  const down = await call(db, 'host', { op: 'set_public', isPublic: false });
+  assert.equal(down.room.isPublic, false);
+  assert.deepEqual(await db.listPublicRooms(), [], 'taken back off the board');
+
+  // not once the game has started — the public board only ever lists lobbies
+  await call(db, 'guest', { op: 'toggle_ready' });
+  await call(db, 'host', { op: 'start_game' });
+  bad = await call(db, 'host', { op: 'set_public', isPublic: true });
+  assert.equal(bad.ok, false); assert.match(bad.error, /lobby/i);
+});
+
 await test('public rooms: private stays hidden, public is listed, and quick match packs players in', async () => {
   const db = memDb();
   // a private room must never be advertised
