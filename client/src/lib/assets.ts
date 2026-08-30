@@ -104,5 +104,38 @@ export async function preloadAssets(onProgress?: (done: number, total: number) =
   db.files.where('ver').notEqual(ASSET_VER).delete().catch(() => { /* nothing to clean, or no access */ });
 }
 
+/* ─────────────────────────── kill clips ───────────────────────────
+   The elimination clips are an order of magnitude heavier than the rest of the art (7MB for four
+   GIFs), so they are deliberately NOT part of the boot set — holding the loading screen on them
+   would be a bad trade for something that is not needed until somebody dies. They are fetched in
+   the background once a game is actually running, through the same cache, so the first kill of the
+   session may go without one and every kill after that is instant and offline. */
+const CLIPS = {
+  terrorist: ['/img/clips/terorist-kill.gif'],
+  colonel: ['/img/clips/colonel-kill.gif', '/img/clips/colonel-kill-2.gif'],
+  normal: ['/img/clips/normal-kill.gif'],
+};
+const clipCache: Record<string, string> = {};
+
+/** Which clip a death gets. `pick` chooses between takes when there is more than one. */
+export function clipFor(reason?: string | null, pick = 0): string {
+  const r = (reason || '').replace(/_timeout$/, '');
+  const set = r === 'terrorist' ? CLIPS.terrorist : r === 'colonel_correct' ? CLIPS.colonel : CLIPS.normal;
+  return set[pick % set.length];
+}
+/** The cached copy if we have it, otherwise the plain path — an uncached clip still plays. */
+export const clipUrl = (path?: string | null) => (path ? clipCache[path] || path : '');
+
+let clipsStarted = false;
+/** Warm the clip cache in the background. Safe to call repeatedly; only the first call does work. */
+export async function prefetchClips(): Promise<void> {
+  if (clipsStarted) return;
+  clipsStarted = true;
+  for (const url of [...CLIPS.terrorist, ...CLIPS.colonel, ...CLIPS.normal]) {
+    const blob = await load(url);
+    if (blob) { const obj = URL.createObjectURL(blob); objectUrls.push(obj); clipCache[url] = obj; }
+  }
+}
+
 /** Release the object URLs (only meaningful if the app is ever torn down). */
 export function releaseAssets() { objectUrls.splice(0).forEach((u) => URL.revokeObjectURL(u)); }

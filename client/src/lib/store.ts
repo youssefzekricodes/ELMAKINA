@@ -70,6 +70,7 @@ export interface Cine {
   character?: string;  // the card that was claimed or guessed (verdict scenes)
   guess?: boolean;     // a Colonel naming a card, not a challenge — it is worded differently
   took?: string;       // the card actually taken, on the one path where the table already knows it
+  clip?: string;       // the kill clip this death gets (see lib/assets clipFor)
   reason?: string;     // the weapon: paidkill, terrorist, colonel_correct, …
   lost: number;        // cards the loser handed over during this beat
   out: boolean;        // …and whether it finished them

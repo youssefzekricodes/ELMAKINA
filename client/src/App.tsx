@@ -7,6 +7,7 @@ import { sfx } from './lib/sfx';
 import { initMood } from './lib/mood';
 import { initAnalytics, sendPageView } from './lib/analytics';
 import { initAds } from './lib/ads';
+import { prefetchClips } from './lib/assets';
 import { i18n } from './i18n';
 import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
@@ -55,6 +56,9 @@ export default function App() {
   const inGame = s.screen === 'game' && !!s.state;
   // Auto-fullscreen when a game begins (best-effort; the start-game clicks also request it within their gesture).
   useEffect(() => { if (inGame) goFullscreen(); }, [inGame]);
+  // The kill clips are heavy, so they are warmed only once a game is actually running — never on
+  // the loading screen, and never on a device that only ever visits the home page.
+  useEffect(() => { if (inGame) prefetchClips(); }, [inGame]);
   return (
     <>
       <Background inGame={inGame} screen={s.screen} />
