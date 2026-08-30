@@ -1777,18 +1777,19 @@
        cannot. They are always laid out (dimmed, or hidden when the row does not scroll at all)
        so the row's width never changes: gating their space on data-more would change the very
        measurement that decides whether data-more is set, and the row would flip forever. */
-    .card-board { flex-direction: row; align-items: stretch; gap: 0;
-      /* Full-bleed: cancel the game-screen and console padding so the row runs to the very edges
-         of the phone. The arrows then sit in space that was margin anyway, and the scrollable part
-         gets everything that is left. */
-      /* max-width:100% from the base rule would cap the width at the parent's content box, so the
-         negative margin would only slide the row sideways instead of widening it. */
-      margin-inline: -6px; max-width: none; }
-    .card-board .row-arrow { position: static; display: flex; flex: 0 0 auto; width: 22px; height: auto;
-      align-self: stretch; transform: none; }
+    /* The row is the full width of the phone — nothing is taken off it. Full-bleed first: the
+       negative inline margin cancels the game-screen and console padding (max-width:100% from the
+       base rule has to go, or the margin would only slide the row sideways instead of widening it).
+       The arrows then float at the two edges rather than standing beside the row, each over a soft
+       scrim so the glyph stays legible against card art without the chip and border that used to
+       box it in. A card sliding under an edge reads as a fade, which is what an edge affordance is
+       supposed to look like. */
+    .card-board { flex-direction: column; align-items: stretch; margin-inline: -6px; max-width: none; }
+    .card-board .board-grid { width: 100%; }
+    .card-board .row-arrow { position: absolute; top: 0; bottom: 0; height: auto; width: 34px; transform: none;
+      background: radial-gradient(ellipse 68% 42% at 50% 50%, rgba(12,8,5,.82), rgba(12,8,5,0) 72%); }
     .card-board .row-arrow:active { transform: scale(.86); }
     .card-board:not([data-more]) .row-arrow { visibility: hidden; }
-    .card-board .board-grid { flex: 1 1 auto; min-width: 0; }
     .board-grid { padding-inline: 0; }
     .cm-call-sub { min-height: 44px; }               /* the secondary "call the bluff" link-button */
     .topbar-right button { min-height: 40px; }       /* topbar chrome: taller tap area without widening the crowded bar */
