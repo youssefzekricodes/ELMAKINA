@@ -259,14 +259,19 @@
   .hp-tx b { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
   .hp-tx i { font-style: normal; font-size: 11.5px; font-weight: 500; opacity: .8; letter-spacing: .01em; }
   .home-more { width: 100%; display: flex; align-items: stretch; gap: 6px; }
-  .hm-opt { flex: 1 1 0; min-width: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-    padding: 11px 6px; border-radius: 12px; cursor: pointer; background: none; border: 1px solid rgba(255,240,214,.11);
-    color: rgba(243,233,214,.8); font-size: 11.5px; font-weight: 600; line-height: 1.2; text-align: center;
-    transition: color .12s, border-color .12s, background .12s; }
-  .hm-opt:hover { color: #F3E9D6; border-color: rgba(255,240,214,.24); background: rgba(255,255,255,.04); }
-  .hm-opt.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
+  /* Quiet next to Play, but still plainly buttons — they sit on busy background art, so they need
+     a surface of their own rather than a hairline outline. */
+  .hm-opt { flex: 1 1 0; min-width: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    padding: 13px 7px; border-radius: 13px; cursor: pointer; border: 1px solid rgba(255,240,214,.2);
+    background: rgba(28,20,14,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.06), 0 6px 18px rgba(0,0,0,.4);
+    color: #F3E9D6; font-size: 13px; font-weight: 700; line-height: 1.2; text-align: center;
+    transition: color .12s, border-color .12s, background .12s, transform .12s; }
+  .hm-opt:hover { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: rgba(38,28,18,.85); transform: translateY(-1px); }
+  .hm-opt.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 16%, rgba(28,20,14,.8)); }
   .hm-opt:disabled { opacity: .45; cursor: default; }
-  .hm-opt svg { flex-shrink: 0; opacity: .85; }
+  .hm-opt svg { flex-shrink: 0; color: var(--gold); }
+  .hm-opt.on svg { color: var(--accent); }
   .home-join { width: 100%; display: flex; gap: 8px; }
   .home-code { flex: 1; min-width: 0; height: 48px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: .3em; padding-inline-start: .3em; text-transform: uppercase; color: #F3E9D6; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,240,214,.14); }
   .home-code::placeholder { color: rgba(245,236,221,.4); letter-spacing: .2em; font-weight: 600; }
