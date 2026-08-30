@@ -148,9 +148,11 @@
   .bg-layer { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease-in-out; }
   .bg-layer.show { opacity: 1; }
   .bg-vignette { position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 32%, rgba(12,10,8,.34) 0%, rgba(12,10,8,.62) 58%, rgba(12,10,8,.88) 100%), linear-gradient(180deg, rgba(12,10,8,.5) 0%, rgba(12,10,8,.2) 30%, rgba(12,10,8,.58) 100%); }
-  /* in-game: sink the poster wall deep into shadow so the lit felt is the focus. */
-  .bg.in-game .bg-layer { opacity: .5; }
-  .bg.in-game .bg-vignette { background: radial-gradient(110% 80% at 50% 42%, rgba(8,6,4,.72) 0%, rgba(8,6,4,.88) 55%, rgba(6,4,2,.96) 100%); }
+  /* In game the poster wall used to be buried under a near-opaque black radial (.72 → .96) with the
+     art at half opacity — it read as a mask over the whole screen rather than atmosphere. Just
+     enough shading now to keep names and coins legible over the art. */
+  .bg.in-game .bg-layer { opacity: .82; }
+  .bg.in-game .bg-vignette { background: radial-gradient(120% 85% at 50% 42%, rgba(8,6,4,.18) 0%, rgba(8,6,4,.42) 60%, rgba(6,4,2,.62) 100%); }
 
   /* shell */
   .app { position: relative; z-index: 1; min-height: 100dvh; display: flex; flex-direction: column; padding-top: var(--sat); }
@@ -351,11 +353,6 @@
   /* spotlight focus: when someone is on turn, dim everyone else */
   .seats:has(.seat.turn) .seat:not(.turn) { filter: brightness(.66) saturate(.85); }
   .seats:has(.seat.turn) .seat:not(.turn) { transition: filter .35s var(--ease); }
-  /* whoever plays after the current turn: dimmed like the rest, but readable and ringed, so the
-     order around the table is legible without waiting to find out */
-  .seats:has(.seat.turn) .seat.up-next { filter: brightness(.9) saturate(.95); }
-  .seat.up-next .pavatar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 65%, transparent); }
-  .seat-status.next { background: color-mix(in srgb, var(--gold) 18%, var(--surface-secondary)); color: var(--gold); border-color: color-mix(in srgb, var(--gold) 45%, transparent); }
   /* YOUR turn is the one you must never miss: brighter ring, gold lamp, a heavier pill */
   .seat.me.turn .pavatar { box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px var(--background), 0 0 30px color-mix(in srgb, var(--gold) 70%, transparent); }
   .seat.me.turn .seat-status.playing { background: var(--gold); color: #241505; font-weight: 800; letter-spacing: .06em; }
@@ -1337,25 +1334,23 @@
     /* table region — felt over a single row of seats, both centred in whatever height is left.
        overflow stays VISIBLE so the claim badges / "tap" pills that hang above a seat aren't cut off;
        .game-screen above is the hidden one, so nothing can ever scroll the page. */
-    .table-area { min-height: 0; height: auto; padding: 10px 2px 2px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; justify-content: center; gap: 4px; overflow: visible; }
+    /* Phones get the SAME ring as desktop, just tighter. A flat grid row was never "the table":
+       it pushed your own seat off the edge, stacked the hands under the deck, and gave no sense of
+       who plays after whom. Ring + clockwise seating is the turn order. */
+    .table-area { min-height: 0; position: relative; padding: 0; border-radius: var(--radius-2xl); overflow: visible;
+      --seat-inset: 48px; --seat-vinset: 46px; }
     .table-area::after { display: none; }
-    .arena { position: relative; left: auto; top: auto; transform: none; flex: 0 0 auto; width: auto; height: auto; margin: 0 auto 4px; gap: 18px; }
+    .arena { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: auto; height: auto; margin: 0; gap: 14px; }
     .deck { width: 38px; height: 58px; } .deck .cardback { width: 38px; }
     .deck-n { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; inset-inline-end: -10px; bottom: -8px; }
     .bank .pile { width: 46px; height: 34px; } .bank .pile img { width: 22px; height: 22px; }
     .bank .pile img:nth-child(1) { left: 0; top: 12px; } .bank .pile img:nth-child(2) { left: 14px; top: 13px; } .bank .pile img:nth-child(3) { left: 26px; top: 10px; }
     .bank .pile img:nth-child(4) { left: 6px; top: 3px; } .bank .pile img:nth-child(5) { left: 20px; top: 2px; } .bank .pile img:nth-child(6) { left: 13px; top: -4px; }
     .bank-lbl { font-size: 8.5px; letter-spacing: .1em; }
-    /* opponents: ALWAYS one row. 3 columns up to three of them, then 4- and 5-across
-       (data-n is set by Table.tsx) — two rows of seats never fit next to the card hand. */
-    .seats { position: relative; inset: auto; flex: 0 0 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; align-content: center; justify-content: center; }
-    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 150px)); }
-    .seats[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .seats[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .seats[data-n="6"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; min-width: 0; gap: 2px; padding: 5px 3px 4px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
-    .seat.targetable:hover { transform: none; }
-    .seat.turn { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+    .seats { position: absolute; inset: 0; display: block; }
+    /* Just the face. No card, no border, no fill — the avatars ARE the table. */
+    .seat { position: absolute; width: 92px; transform: translate(-50%, -50%); gap: 1px; padding: 0; background: none; border: 0; border-radius: 0; }
+    .seat.targetable:hover { transform: translate(-50%, -50%); }
     .seat .av-wrap { margin-bottom: 7px; }
     .seat .pavatar { width: 40px !important; height: 40px !important; }
     .seats[data-n="5"] .seat .pavatar { width: 36px !important; height: 36px !important; }
@@ -1376,7 +1371,7 @@
     .seat .claim-badge { width: 24px; top: -24px; }
     .seat .seat-status { max-width: calc(100% + 14px); font-size: 9px; padding: 2px 6px 2px 5px; bottom: -9px; }
     .seat .target-tap { font-size: 8.5px; padding: 2px 6px; top: -11px; }
-    .seat.me { display: flex; }
+    .seat.me { display: flex; left: 50%; top: auto; bottom: 2px; transform: translateX(-50%); width: 104px; }
     .banner { position: fixed; font-size: 40px; }
     /* stack the console with the ACTIONS on top (column-reverse) so new players see the buttons first,
        not their own hand — the hand sits just below and is a short scroll away */
@@ -1439,7 +1434,10 @@
     .board-card:nth-child(9)  { --fan: translateY(5px); }
     .board-card:nth-child(10) { --fan: translateY(5px); }
     /* your framed cards still lift above the row */
-    .board-card.owned { transform: var(--fan, none) translateY(-8px); z-index: 2; }
+    .board-card.owned { transform: var(--fan, none) translateY(-4px); z-index: 2; width: 62px; }
+    .board-card.owned .bc-art { box-shadow: 0 6px 14px rgba(0,0,0,.45); }   /* no gold frame */
+    .board-card.owned .bc-own { display: none; }                            /* nor the "yours" tag */
+    .board-card.owned .bc-name { color: var(--foreground); font-weight: 700; }
     .board-card.off.owned { transform: var(--fan, none) translateY(-8px); }
     .board-card:not(.off):hover { transform: var(--fan, none) translateY(-5px); }
     .bc-name { font-size: 11px; }
@@ -1546,12 +1544,10 @@
     .bank .pile img:nth-child(1) { left: 0; top: 10px; } .bank .pile img:nth-child(2) { left: 12px; top: 11px; } .bank .pile img:nth-child(3) { left: 23px; top: 9px; }
     .bank .pile img:nth-child(4) { left: 5px; top: 2px; } .bank .pile img:nth-child(5) { left: 18px; top: 1px; } .bank .pile img:nth-child(6) { left: 11px; top: -4px; }
     .bank-lbl { font-size: 8px; }
-    .seats { position: relative; inset: auto; flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; align-content: center; justify-content: center; }
-    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 160px)); }
-    .seats[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .seats[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .seats[data-n="6"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; min-width: 0; gap: 2px; padding: 4px 4px 3px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
+    /* Landscape leaves only ~120px of table height — too little for a ring without the top seat
+       sitting on the bank. Seats spread across the strip instead, still just faces. */
+    .seats { position: relative; inset: auto; flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: space-evenly; gap: 6px; }
+    .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; min-width: 0; gap: 1px; padding: 0; background: none; border: 0; border-radius: 0; }
     .seat.targetable:hover, .seat.picking .hand .cardback:hover { transform: none; }
     .seat .av-wrap { margin-bottom: 6px; }
     .seat .pavatar { width: 34px !important; height: 34px !important; }
@@ -1566,7 +1562,7 @@
     .seat .claim-badge { width: 22px; top: -22px; }
     .seat .seat-status { max-width: calc(100% + 12px); font-size: 8.5px; padding: 2px 5px; bottom: -8px; }
     .seat .target-tap { font-size: 8px; padding: 2px 5px; top: -10px; }
-    .seat.me { display: flex; }
+    .seat.me { display: flex; position: relative; left: auto; top: auto; bottom: auto; transform: none; width: auto; }
     /* the card hand: one swipeable row on a wide-but-short screen */
     .console { min-height: 0; gap: 4px !important; padding: 0 !important; }
     .console-top { align-self: stretch; width: 100%; flex-wrap: nowrap; gap: 8px; padding: 2px 9px; margin-bottom: 0; }
@@ -1591,6 +1587,9 @@
     .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 14px 12px 5px; padding-inline-end: 56px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
     .board-card { width: 72px; flex-shrink: 0; transform: var(--fan, none); }
+    .board-card.owned { width: 58px; }
+    .board-card.owned .bc-art { box-shadow: 0 5px 12px rgba(0,0,0,.45); }
+    .board-card.owned .bc-own { display: none; }
     .board-card:nth-child(n)  { --fan: translateY(0); }
     .board-card.owned { transform: var(--fan, none) translateY(-7px); z-index: 2; }
     .board-card.off.owned { transform: var(--fan, none) translateY(-7px); }

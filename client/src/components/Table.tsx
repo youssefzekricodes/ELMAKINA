@@ -23,7 +23,7 @@ function claimedChar(p: GPlayer, st: any): CharacterId | null {
 }
 
 /** A persistent status pill pinned over a player's avatar (claim / deciding / playing / passed / …), or null. */
-function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>, nextId?: string | null): { icon: string; label: string; cls: string } | null {
+function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>): { icon: string; label: string; cls: string } | null {
   const st = s.state!; const w = st.pending?.window;
   if (!p.alive) return { icon: 'eliminated', label: t('seat.eliminated'), cls: 'out' };
   if (w && w.type === 'reaction') {
@@ -36,13 +36,12 @@ function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>, nextId?: string 
   if (isTurn && st.pending && st.pending.stage === 'turn') return { icon: 'bolt', label: p.id === s.me ? t('seat.yourTurn') : t('seat.theirTurn'), cls: 'playing' };
   if (st.pending && st.pending.actorId === p.id && st.pending.stage === 'resolving') return { icon: 'bolt', label: t('seat.acting'), cls: 'playing' };
   if (!p.connected) return { icon: 'cpu-bolt', label: t('seat.left'), cls: 'auto' };
-  if (nextId && p.id === nextId) return { icon: 'hourglass', label: t('seat.upNext'), cls: 'next' };
   return null;
 }
 
 /** The overlay pill markup, shared by opponents and "me". */
-function StatusPill({ p, s, nextId }: { p: GPlayer; s: ReturnType<typeof useStore>; nextId?: string | null }) {
-  const info = seatStatus(p, s, nextId);
+function StatusPill({ p, s }: { p: GPlayer; s: ReturnType<typeof useStore> }) {
+  const info = seatStatus(p, s);
   if (!info) return null;
   return <span className={`seat-status ${info.cls}`}><Icon name={info.icon} className="size-3" /><span className="ss-tx">{info.label}</span></span>;
 }
@@ -57,11 +56,8 @@ export function Table() {
   const mine = st.players.findIndex((p) => p.id === me);
   const ordered = mine < 0 ? st.players : st.players.slice(mine + 1).concat(st.players.slice(0, mine));
   const opponents = ordered.filter((p) => p.id !== me);
-  // Who acts after the current player. This walks the FULL turn order, not the rotated opponent
-  // list — that one has you removed, so "next" would skip straight past your own seat.
-  const alive = st.players.filter((p) => p.alive);
-  const curIdx = alive.findIndex((p) => p.id === st.turnPlayerId);
-  const nextId = st.phase === 'playing' && curIdx >= 0 && alive.length > 1 ? alive[(curIdx + 1) % alive.length].id : null;
+  // No "up next" marker: the seats are already laid out clockwise in turn order, so who follows is
+  // read off the ring itself. A badge on top of that was one more thing competing for attention.
   const angles = SEAT_ANGLES[opponents.length] || SEAT_ANGLES[5];
   const targets = s.targeting ? validTargets(st, me, s.targeting) : null;
   const meP = st.players.find((p) => p.id === me);
@@ -90,10 +86,13 @@ export function Table() {
           const rw = st.pending && st.pending.window && st.pending.window.type === 'reaction' ? st.pending.window : null;
           const isClaimer = !!(rw && rw.claim && rw.claim.claimerId === p.id);
           const claimCh = claimedChar(p, st);
-          const cls = ['seat', isTurn ? 'turn' : '', !isTurn && p.id === nextId ? 'up-next' : '', !p.alive ? 'dead' : '', !p.connected && p.alive ? 'offline' : '', targetable ? 'targetable' : '', s.targetId === p.id ? 'selected' : '', pickSlots ? 'picking' : '', isClaimer ? 'claimer' : ''].join(' ');
+          const cls = ['seat', isTurn ? 'turn' : '', !p.alive ? 'dead' : '', !p.connected && p.alive ? 'offline' : '', targetable ? 'targetable' : '', s.targetId === p.id ? 'selected' : '', pickSlots ? 'picking' : '', isClaimer ? 'claimer' : ''].join(' ');
           return (
             <div key={p.id} className={cls} data-seat={p.id} onClick={() => onSeat(p.id)} role={targetable ? 'button' : undefined}
-              style={{ left: `clamp(80px, ${50 + 40 * Math.cos(a)}%, calc(100% - 80px))`, top: `clamp(100px, ${52 + 33 * Math.sin(a)}%, calc(100% - 100px))` }}>
+              style={{
+                left: `clamp(var(--seat-inset, 80px), ${50 + 40 * Math.cos(a)}%, calc(100% - var(--seat-inset, 80px)))`,
+                top: `clamp(var(--seat-vinset, 100px), ${52 + 33 * Math.sin(a)}%, calc(100% - var(--seat-vinset, 100px)))`,
+              }}>
               {targetable && !pickSlots && <span className="target-tap"><Icon name="cursor" className="size-3" />{t('pick.tap')}</span>}
               <div className={`av-wrap ${inCall(p.id) ? 'in-call' : ''} ${speakingOf(p.id) ? 'speaking' : ''}`}>
                 {claimCh && <span className="claim-badge" style={{ ['--c' as any]: CH[claimCh].color }} title={i18n.charName(claimCh)}><img src={CH[claimCh].cardSm} alt={i18n.charName(claimCh)} /></span>}
@@ -102,7 +101,7 @@ export function Table() {
                 {inCall(p.id) && (p.id in v.peers && v.peers[p.id].muted
                   ? <span className="mic-tag muted"><Icon name="microphone-off" className="size-3" /></span>
                   : speakingOf(p.id) ? <SoundWaves className="wave-tag" /> : <span className="mic-tag"><Icon name="microphone" className="size-3" /></span>)}
-                <StatusPill p={p} s={s} nextId={nextId} />
+                <StatusPill p={p} s={s} />
               </div>
               <div className="nm">{p.name}{p.isBot && <span className="bot-chip">{t('seat.bot')}</span>}</div>
               <Coins n={p.coins} />
@@ -122,14 +121,14 @@ export function Table() {
         {/* You sit in the ring with everyone else. Kept out of it, your own seat was hidden entirely
             on phones, so the one player you most need to track had no seat at all. */}
         {meP && (
-        <div className={`seat me ${isMyTurn ? 'turn' : ''} ${!isMyTurn && me === nextId ? 'up-next' : ''} ${!meP.alive ? 'dead' : ''}`} data-seat={me || ''}>
+        <div className={`seat me ${isMyTurn ? 'turn' : ''} ${!meP.alive ? 'dead' : ''}`} data-seat={me || ''}>
           <div className={`av-wrap ${inCall(me || '') ? 'in-call' : ''} ${speakingOf(me || '') ? 'speaking' : ''}`}>
             {claimedChar(meP, st) && <span className="claim-badge" style={{ ['--c' as any]: CH[claimedChar(meP, st)!].color }}><img src={CH[claimedChar(meP, st)!].cardSm} alt="" /></span>}
             <PlayerAvatar p={meP} size="md" />
             {inCall(me || '') && (v.muted
               ? <span className="mic-tag muted"><Icon name="microphone-off" className="size-3" /></span>
               : speakingOf(me || '') ? <SoundWaves className="wave-tag" /> : <span className="mic-tag"><Icon name="microphone" className="size-3" /></span>)}
-            <StatusPill p={meP} s={s} nextId={nextId} />
+            <StatusPill p={meP} s={s} />
           </div>
           <div className="nm">{meP.name} <span className="you-chip">{t('game.you')}</span></div>
           <Coins n={meP.coins} />
