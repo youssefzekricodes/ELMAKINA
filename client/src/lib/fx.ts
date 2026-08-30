@@ -135,6 +135,8 @@ export function playedCard(type: string, local = false) {
   const src = CH[type as keyof typeof CH]?.card || ACTION_CARDS[type];
   if (!src) return;
   sfx.play('play');
+  // Only a character card can be a lie, so only a character card gets the hush that follows one.
+  if (CH[type as keyof typeof CH]) setTimeout(() => sfx.play('whisper'), 110);
   const d = document.createElement('div'); d.className = 'fx-played';
   d.innerHTML = `<img src="${src}" alt="" />`;
   fxRoot().appendChild(d);
@@ -194,6 +196,9 @@ function playNext() {
   store.set({ cine: next });
   cineShownAt = Date.now();
   sfx.play(next.out ? 'lose' : next.kind === 'missed' ? 'block' : 'boom');
+  // …and the unease underneath it. An elimination gets the low creak; a lie exposed gets the
+  // tritone. Slightly late so it reads as a consequence of the hit rather than part of it.
+  setTimeout(() => sfx.play(next.out ? 'creak' : next.kind === 'caught' ? 'sting' : 'whisper'), 140);
   if (!reducedMotion) cameraShake(document.getElementById('table'), true);
   cineTimer = setTimeout(() => { runAfter(next.id); playNext(); }, CINE_MS);
 }
