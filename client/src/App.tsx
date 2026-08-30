@@ -70,13 +70,14 @@ export default function App() {
               <Console />
             </div>
             <Prompt />
-            <Coach />
             <Tour />
           </section>
         )}
       </div>
       {VOICE_ENABLED && s.room && <VoiceDock />}
       {inGame && <Reactions />}
+      {/* The briefing prefers the lobby, where no clock is running; Coach decides for itself. */}
+      <Coach />
       {inGame && <Cinematic />}
       <RulesModal />
       <CharactersModal />

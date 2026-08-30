@@ -1,10 +1,10 @@
 /* Guided mode: an interactive, step-by-step walkthrough of the rules for first-time players.
    Opened from Home, the first-game Coach, or the topbar "How to play". Controlled via store.modal === 'guide'. */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import { CHARACTERS } from '../theme';
 import { i18n, t } from '../i18n';
-import { useStore, store } from '../lib/store';
+import { needsMe, useStore, store } from '../lib/store';
 import { playSolo } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
 import { GameCard, Icon, LearnToggle } from './ui';
@@ -25,7 +25,11 @@ export function Guide() {
   const s = useStore();
   const open = s.modal === 'guide';
   const [i, setI] = useState(0);
-  if (!open) return null;
+  // Reading the rules mid-game is fine right up until the game wants an answer: every window is on
+  // a server deadline, so the sheet closes itself rather than letting one run out behind it.
+  const myMove = open && needsMe(s);
+  useEffect(() => { if (myMove) { setI(0); store.set({ modal: null }); } }, [myMove]);
+  if (!open || myMove) return null;
   const step = STEPS[i];
   const last = i === STEPS.length - 1;
   const close = () => { setI(0); store.set({ modal: null }); };

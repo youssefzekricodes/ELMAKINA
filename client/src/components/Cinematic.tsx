@@ -1,7 +1,7 @@
 /* The cut-scene: one beat of the game, told across the whole screen.
    Who moved on whom, with what, and what it cost — then the mask lifts and play resumes. */
 import { useEffect } from 'react';
-import { useStore } from '../lib/store';
+import { needsMe, useStore } from '../lib/store';
 import { endCine } from '../lib/fx';
 import { i18n, t } from '../i18n';
 import { ACTION_CARDS, CH, type CharacterId } from '../theme';
@@ -45,13 +45,8 @@ export function Cinematic() {
   const me = s.me;
 
   // The mask never costs anyone a turn: the moment the game wants an answer from me, it lifts.
-  const w = st?.pending?.window;
-  const needsMe = !!c && !!st && (
-    (w && w.type === 'reaction' && Array.isArray(w.eligible) && w.eligible.includes(me) && !w.passed?.includes(me)) ||
-    (w && w.type === 'decision' && w.playerId === me) ||
-    (st.phase === 'playing' && st.turnPlayerId === me && st.pending?.stage === 'turn')
-  );
-  useEffect(() => { if (needsMe) endCine(); }, [needsMe]);
+  const myMove = !!c && needsMe(s);
+  useEffect(() => { if (myMove) endCine(); }, [myMove]);
 
   if (!c || !st) return null;
   const pl = (id?: string | null) => (id ? st.players.find((p) => p.id === id) : null) || null;

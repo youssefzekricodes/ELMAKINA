@@ -126,6 +126,30 @@ export const setLearn = (on: boolean) => { try { localStorage.setItem('mekina.le
 /** True whenever the client should coach: the guide's one-off practice tour OR persistent learning mode. */
 export const isCoaching = (s: Snapshot) => !!(s.tour || s.learn);
 
+/**
+ * True when the game is waiting on THIS player — their turn, a reaction they are eligible for, or
+ * a decision only they can answer. Every window runs on a server deadline, so anything covering
+ * the board has to get out of the way when this flips: a tutorial that eats a reaction window
+ * costs a real card.
+ */
+export function needsMe(s: Snapshot): boolean {
+  const st = s.state; if (!st || st.phase !== 'playing') return false;
+  const w = st.pending?.window;
+  if (w && w.type === 'reaction') return !!(Array.isArray(w.eligible) && w.eligible.includes(s.me) && !(w.passed || []).includes(s.me));
+  if (w && w.type === 'decision') return w.playerId === s.me;
+  return st.turnPlayerId === s.me && st.pending?.stage === 'turn';
+}
+
+/**
+ * True when something is on the table that players are meant to be looking at: a claim open for
+ * reactions, or an action resolving. Deliberately NOT another player's plain turn — waiting for
+ * somebody to move is the one moment a briefing can sit on screen without costing anything.
+ */
+export function tableBusy(s: Snapshot): boolean {
+  const st = s.state; if (!st || st.phase !== 'playing') return false;
+  return !!(st.pending?.window || st.pending?.stage === 'resolving');
+}
+
 export const saveProfile = (p: Profile) => localStorage.setItem('mekina.profile', JSON.stringify(p));
 
 /** Custom avatar data URLs received in room payloads (by player id). */
