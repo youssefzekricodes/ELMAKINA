@@ -557,11 +557,11 @@
   .board-card.owned:not(.off):hover .bc-art { box-shadow: 0 0 0 3px var(--gold), 0 0 26px color-mix(in srgb, var(--gold) 80%, transparent), 0 14px 30px rgba(0,0,0,.55); }
   /* cards you don't hold read as "claimable but not yours" — muted so your real hand pops */
   .board-card:not(.owned) .bc-art img { filter: brightness(.9) saturate(.92); }
-  .board-card.off:not(.owned) .bc-art { opacity: .46; }
+  .board-card.off:not(.owned) .bc-art { opacity: 1; }   /* out of reach is said by the filter below, not by going see-through */
   .board-card.off:not(.owned) .bc-art img { filter: grayscale(.8) brightness(.65); }
   /* owned but not playable right now (not your turn / can't afford): keep the gold frame but clearly disabled */
   .board-card.off.owned { transform: translateY(-10px); }
-  .board-card.off.owned .bc-art { opacity: .62; box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 55%, transparent), 0 8px 18px rgba(0,0,0,.4); }
+  .board-card.off.owned .bc-art { opacity: 1; box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 55%, transparent), 0 8px 18px rgba(0,0,0,.4); }
   .board-card.off.owned .bc-art img { filter: brightness(.72) saturate(.8); }
   .bc-cost { position: absolute; top: 4px; inset-inline-end: 4px; display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0,0,0,.62); padding: 1px 6px; border-radius: 999px; }
   .bc-cost img { width: 11px; height: 11px; }
@@ -1780,14 +1780,12 @@
     /* The row is the full width of the phone — nothing is taken off it. Full-bleed first: the
        negative inline margin cancels the game-screen and console padding (max-width:100% from the
        base rule has to go, or the margin would only slide the row sideways instead of widening it).
-       The arrows then float at the two edges rather than standing beside the row, each over a soft
-       scrim so the glyph stays legible against card art without the chip and border that used to
-       box it in. A card sliding under an edge reads as a fade, which is what an edge affordance is
-       supposed to look like. */
+       The arrows then float at the two edges rather than standing beside the row: bare chevrons,
+       no chip, no border, no scrim — the glyph's own drop-shadow is what keeps it legible over
+       card art. */
     .card-board { flex-direction: column; align-items: stretch; margin-inline: -6px; max-width: none; }
     .card-board .board-grid { width: 100%; }
-    .card-board .row-arrow { position: absolute; top: 0; bottom: 0; height: auto; width: 34px; transform: none;
-      background: radial-gradient(ellipse 68% 42% at 50% 50%, rgba(12,8,5,.82), rgba(12,8,5,0) 72%); }
+    .card-board .row-arrow { position: absolute; top: 0; bottom: 0; height: auto; width: 34px; transform: none; }
     .card-board .row-arrow:active { transform: scale(.86); }
     .card-board:not([data-more]) .row-arrow { visibility: hidden; }
     .board-grid { padding-inline: 0; }
