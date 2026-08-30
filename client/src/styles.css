@@ -1055,41 +1055,9 @@
     mask-image: radial-gradient(ellipse 52% 38% at 50% 50%, #000 18%, transparent 76%);
     animation: cine-rip 5s linear both; }
   .cine-body { position: relative; display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.4vh, 26px); text-align: center; max-width: min(880px, 100%); }
-  /* ── the kill clip ────────────────────────────────────────────────────────────
-     When a death has a clip it becomes the hero and everything else moves under it: the faces
-     shrink to a caption and the evidence cards tuck into the clip's own corner, so the scene reads
-     as one picture rather than a picture plus a row of unrelated objects. */
-  .cine-clip { position: relative; width: min(86vw, 460px); aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
-    background: #070503; box-shadow: 0 0 0 2px color-mix(in srgb, var(--k) 55%, transparent), 0 0 60px color-mix(in srgb, var(--k) 30%, transparent), 0 26px 60px rgba(0,0,0,.75);
-    animation: cine-clip-in .42s var(--ease) both; }
-  .cine-clip > img:first-child { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* the weapon (and, where it is public, the card it took) sit on the clip like a caption stamp */
-  .cine-clip-card { position: absolute; bottom: 8px; inset-inline-end: 8px; width: clamp(38px, 9vw, 56px); aspect-ratio: .62;
-    object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--k) 80%, transparent), 0 8px 20px rgba(0,0,0,.8);
-    animation: cine-strike .45s .25s var(--ease) both; }
-  .cine-clip-card.took { inset-inline-end: calc(8px + clamp(38px, 9vw, 56px) * .62); transform: rotate(-7deg); z-index: 1;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--k) 90%, #FFF4E2), 0 8px 20px rgba(0,0,0,.8);
-    animation: cine-strike .45s .38s var(--ease) both; }
-  [dir="rtl"] .cine-clip-card.took { transform: rotate(7deg); }
-  @keyframes cine-clip-in { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
-  /* with a clip on screen the duel is a caption, not the subject */
-  .cine.has-clip .cine-body { gap: clamp(8px, 1.8vh, 16px); }
-  .cine.has-clip .cine-face .pavatar { width: clamp(40px, 8vw, 62px) !important; height: clamp(40px, 8vw, 62px) !important; }
-  .cine.has-clip .cine-name { font-size: clamp(12px, 2.6vw, 16px); }
-  .cine.has-clip .cine-duel { gap: clamp(10px, 3vw, 28px); }
-  .cine.has-clip .cine-verdict { font-size: clamp(22px, 5.4vw, 46px); }
-  .cine.has-clip .cine-skip { display: none; }
-  /* landscape has no vertical room for a stack, so the clip takes one column and the story the other */
-  @media (orientation: landscape) and (max-height: 560px) {
-    .cine.has-clip .cine-body { flex-direction: row; align-items: center; gap: 18px; max-width: 100%; }
-    .cine.has-clip .cine-clip { width: min(46vw, 380px); flex: 0 0 auto; }
-    .cine.has-clip .cine-eyebrow { position: absolute; top: -26px; inset-inline-start: 0; }
-    .cine.has-clip .cine-story { gap: 8px; flex: 1 1 auto; }
-  }
   .cine-eyebrow { font-family: var(--font-display); font-weight: 700; font-size: clamp(11px, 1.5vw, 15px); letter-spacing: .22em; text-transform: uppercase;
     color: color-mix(in srgb, var(--k) 45%, #FFF4E2); padding: 5px 18px; border: 1px solid color-mix(in srgb, var(--k) 55%, transparent); border-radius: 999px;
     background: color-mix(in srgb, var(--k) 18%, transparent); animation: cine-drop .3s var(--ease) both; }
-  .cine-story { display: flex; flex-direction: column; align-items: center; gap: inherit; width: 100%; min-width: 0; }
   .cine-duel { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 4.5vw, 52px); width: 100%; }
   .cine-duel.solo .cine-vs { margin: 0; }
   .cine-face { display: flex; flex-direction: column; align-items: center; gap: 9px; min-width: 0; flex: 0 1 auto; }

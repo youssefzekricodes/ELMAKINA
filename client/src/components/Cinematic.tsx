@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { needsMe, useStore } from '../lib/store';
 import { endCine, yieldCine } from '../lib/fx';
-import { clipUrl } from '../lib/assets';
 import { i18n, t } from '../i18n';
 import { ACTION_CARDS, CH, type CharacterId } from '../theme';
 import { Icon, PlayerAvatar } from './ui';
@@ -92,43 +91,26 @@ export function Cinematic() {
   // A timed-out hit or a player walking out has no aggressor, so the duel collapses to one face
   // rather than pointing an arrow at nobody.
   const solo = !actor || actor.id === c.targetId;
-  // A death gets its clip as the hero of the scene; the faces and the verdict move under it. The
-  // clip is only ever decoration — if it has not been cached yet the scene plays without it rather
-  // than waiting on a 3MB download in the middle of a hand.
-  const clip = clipUrl(c.clip);
   return (
-    <div key={c.id} dir={i18n.dir()} className={`cine k-${c.kind} ${c.out ? 'is-out' : ''} ${clip ? 'has-clip' : ''}`} onClick={endCine} role="presentation">
+    <div key={c.id} dir={i18n.dir()} className={`cine k-${c.kind} ${c.out ? 'is-out' : ''}`} onClick={endCine} role="presentation">
       <div className="cine-rip" aria-hidden="true" />
       <div className="cine-body">
         <span className="cine-eyebrow">{eyebrow}</span>
-        {clip && (
-          <div className="cine-clip">
-            <img src={clip} alt="" />
-            {art && <img className="cine-clip-card" src={art} alt="" />}
-            {took && <img className="cine-clip-card took" src={took} alt="" />}
-          </div>
-        )}
-        {/* The story half: who, what happened, why. A wrapper so landscape can put it beside the
-            clip instead of under it — there is no vertical room for a stack at 390px tall. */}
-        <div className="cine-story">
         <div className={`cine-duel ${solo ? 'solo' : ''}`}>
           {!solo && <Face p={actor} me={me} cost={actor!.id === c.loserId ? cost : undefined} />}
           <div className="cine-vs">
             {/* The evidence: what was used, and — when the table already knows it — what it took.
                 A correct Colonel call is the only loss where both halves are public. */}
-            {!clip && (
-              <div className="cine-evidence">
-                {art ? <img className="cine-art" src={art} alt="" /> : !took && <Icon name="bolt" className="size-8" />}
-                {took && <img className="cine-art took" src={took} alt="" />}
-              </div>
-            )}
+            <div className="cine-evidence">
+              {art ? <img className="cine-art" src={art} alt="" /> : !took && <Icon name="bolt" className="size-8" />}
+              {took && <img className="cine-art took" src={took} alt="" />}
+            </div>
             {!solo && <Icon name={i18n.dir() === 'rtl' ? 'alt-arrow-left' : 'alt-arrow-right'} className="cine-arrow size-6" />}
           </div>
           <Face p={target} me={me} cost={target && target.id === c.loserId ? cost : undefined} />
         </div>
         <h2 className="cine-verdict">{verdict}</h2>
         {sub && <p className="cine-sub">{sub}</p>}
-        </div>
         <span className="cine-skip">{t('cine.skip')}</span>
       </div>
     </div>

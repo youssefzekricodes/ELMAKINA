@@ -3,7 +3,6 @@
 import { ACTION_CARDS, IMG, CH } from '../theme';
 import { sfx } from './sfx';
 import { store, type Cine } from './store';
-import { clipFor } from './assets';
 import { i18n, t } from '../i18n';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -300,10 +299,6 @@ export function processEvents(s: { events?: any[] }, me: string | null) {
     covered.add(e.id);
     afters[afters.length - 1].push(() => boardFx(e, me));
   }
-  // A death gets a clip, chosen once here rather than at render time so it cannot re-roll. Only
-  // scenes that actually cost somebody a card get one — a wrong Colonel guess costs coins.
-  for (const sc of scenes) if (sc.lost > 0 || sc.out) sc.clip = clipFor(sc.reason || (sc.kind === 'caught' ? 'caught_bluffing' : null), Math.floor(Math.random() * 2));
-
   if (!scenes.length) return runStream(fresh, me);
 
   // Pass 2 — everything up to the first covered event happened before the story, so it plays now;
