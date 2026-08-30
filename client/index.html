@@ -116,8 +116,18 @@
         font: 700 clamp(26px, 7vw, 40px)/1 system-ui, -apple-system, "Segoe UI", sans-serif;
         letter-spacing: .34em; text-indent: .34em; color: #F3E9D6;
       }
-      #splash .sp-bar { width: min(46vw, 190px); height: 3px; border-radius: 3px; background: rgba(243,233,214,.14); overflow: hidden; }
-      #splash .sp-bar i { display: block; width: 40%; height: 100%; border-radius: 3px; background: #E5661A; animation: sp-slide 1.15s ease-in-out infinite; }
+      /* A real progress bar, pinned to the bottom of the screen: the art is fetched up front and
+         cached, so there IS a number to show and an indeterminate sweep would be a lie. It starts
+         as a sweep and switches to a fill the moment the loader reports its first figure. */
+      #splash .sp-foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 0; }
+      #splash .sp-pct { font: 700 15px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .08em; color: #F3E9D6;
+        text-shadow: 0 2px 6px rgba(0,0,0,.8); padding-bottom: 7px; opacity: 0; transition: opacity .2s; }
+      #splash[data-loading] .sp-pct { opacity: 1; }
+      #splash .sp-bar { width: 100%; height: 10px; border-radius: 0; background: rgba(0,0,0,.55); overflow: hidden; }
+      #splash .sp-bar i { display: block; width: 40%; height: 100%; background: linear-gradient(180deg, #F2803A, #E5661A);
+        animation: sp-slide 1.15s ease-in-out infinite; }
+      /* data-loading is set once the loader knows the total; from then on the width IS the truth. */
+      #splash[data-loading] .sp-bar i { animation: none; transform: none; width: var(--sp, 0%); transition: width .18s ease-out; }
       @keyframes sp-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
       @keyframes sp-slide { 0% { transform: translateX(-105%); } 100% { transform: translateX(355%); } }
       @media (prefers-reduced-motion: reduce) {
@@ -133,7 +143,7 @@
     <div id="splash" role="status" aria-label="Loading ELMEKINA">
       <div class="sp-mark"><img src="/img/machine-sm.webp" alt="" fetchpriority="high" decoding="async" /></div>
       <div class="sp-word">ELMEKINA</div>
-      <div class="sp-bar"><i></i></div>
+      <div class="sp-foot"><span class="sp-pct">0%</span><div class="sp-bar"><i></i></div></div>
     </div>
     <div id="root"></div>
     <noscript>

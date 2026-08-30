@@ -7,6 +7,7 @@ import '@fontsource/ibm-plex-sans-arabic/600.css';
 import '@fontsource/ibm-plex-sans-arabic/700.css';
 import './styles.css';
 import App from './App';
+import { preloadAssets } from './lib/assets';
 
 // Keep the last runtime errors reachable for debugging (window.__mekinaErrors) and show a readable fallback.
 const errs: string[] = ((window as any).__mekinaErrors = []);
@@ -32,13 +33,39 @@ class Boundary extends React.Component<{ children: React.ReactNode }, { err: any
   }
 }
 
-createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Boundary>
-      <App />
-    </Boundary>
-  </React.StrictMode>,
-);
+/** Drive the splash's progress bar. It lives in index.html, so this talks to it through the DOM. */
+function splashProgress(done: number, total: number) {
+  const el = document.getElementById('splash');
+  if (!el || !total) return;
+  const pct = Math.round((done / total) * 100);
+  el.setAttribute('data-loading', '');
+  el.style.setProperty('--sp', pct + '%');
+  const label = el.querySelector('.sp-pct');
+  if (label) label.textContent = pct + '%';
+}
+
+function mount() {
+  createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <Boundary>
+        <App />
+      </Boundary>
+    </React.StrictMode>,
+  );
+  dismissSplash();
+}
+
+/**
+ * Fill the art cache before the first paint, so the board never renders against half-loaded
+ * images — and on every visit after the first, so it never touches the network for them at all.
+ * Capped: a slow or blocked cache must not hold the game hostage, and every asset falls back to
+ * its own path anyway, so mounting early costs nothing but a few late images.
+ */
+const BOOT_CAP_MS = 6000;
+Promise.race([
+  preloadAssets(splashProgress),
+  new Promise((r) => setTimeout(r, BOOT_CAP_MS)),
+]).catch(() => { /* the theme keeps its original paths */ }).then(mount);
 
 /**
  * Take down the boot splash from index.html once React has actually painted.
@@ -66,7 +93,6 @@ function dismissSplash() {
   requestAnimationFrame(() => requestAnimationFrame(go));
   setTimeout(go, 1200);
 }
-dismissSplash();
 
 // Register the PWA service worker (installable + offline shell). Prod only — no SW in dev.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

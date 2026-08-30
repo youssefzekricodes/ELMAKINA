@@ -1134,6 +1134,19 @@
   .card-board:not([data-more~="end"]) .row-arrow.end { opacity: .22; pointer-events: none; }
   [dir="rtl"] .row-arrow svg { transform: scaleX(-1); }
 
+  /* Low-network badge: on the board, not buried in the header, because a slow line is exactly
+     when you are staring at the table wondering why nothing moved. */
+  .net-badge { position: fixed; z-index: 58; top: calc(var(--sat) + 56px); left: 50%; transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 9px; border-radius: 999px;
+    background: rgba(24,17,11,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent); color: #F3E9D6;
+    font-size: 12.5px; font-weight: 700; white-space: nowrap; pointer-events: none;
+    box-shadow: 0 10px 26px rgba(0,0,0,.5); animation: net-badge-in .22s var(--ease); }
+  .net-badge img { width: 22px; height: 22px; object-fit: contain; }
+  .net-badge.off { border-color: color-mix(in srgb, var(--danger) 55%, transparent); animation: net-badge-in .22s var(--ease), net-throb 1.4s ease-in-out .22s infinite; }
+  @keyframes net-badge-in { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  @media (prefers-reduced-motion: reduce) { .net-badge, .net-badge.off { animation: none; } }
+
   /* fx */
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }

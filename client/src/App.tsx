@@ -21,6 +21,7 @@ import { LeaderboardPage, FriendsPage, PublicRoomsPage, InviteModal, InviteBanne
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
 import { Cinematic } from './components/Cinematic';
+import { NetBadge } from './components/NetBadge';
 import { Coach } from './components/Coach';
 
 // Voice chat is hidden for now (kept in the tree so it can be flipped back on in one place).
@@ -79,6 +80,7 @@ export default function App() {
       {/* The briefing prefers the lobby, where no clock is running; Coach decides for itself. */}
       <Coach />
       {inGame && <Cinematic />}
+      <NetBadge />
       <RulesModal />
       <CharactersModal />
       <Guide />

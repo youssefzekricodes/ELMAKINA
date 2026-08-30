@@ -155,5 +155,10 @@ export const saveProfile = (p: Profile) => localStorage.setItem('mekina.profile'
 
 /** Custom avatar data URLs received in room payloads (by player id). */
 export const customAvatars: Record<string, string> = {};
-export const avatarSrc = (p?: { id?: string; avatar?: string; avatarData?: string | null } | null) =>
-  p && p.avatar === 'custom' ? (customAvatars[p.id || ''] || p.avatarData || '') : `/img/avatars/${(p && p.avatar) || 'boy-1'}.webp`;
+/** Built-in avatars resolved through the IndexedDB cache when it has them (see lib/assets). */
+export const builtInAvatars: Record<string, string> = {};
+export const avatarSrc = (p?: { id?: string; avatar?: string; avatarData?: string | null } | null) => {
+  if (p && p.avatar === 'custom') return customAvatars[p.id || ''] || p.avatarData || '';
+  const name = (p && p.avatar) || 'boy-1';
+  return builtInAvatars[name] || `/img/avatars/${name}.webp`;
+};
