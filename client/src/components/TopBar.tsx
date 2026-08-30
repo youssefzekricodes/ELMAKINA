@@ -91,12 +91,14 @@ export function TopBar() {
             <IconButton label={t('top.sound')} icon={s.soundOn ? 'volume-loud' : 'volume-cross'} onPress={toggleSound} className={s.soundOn ? '' : 'is-muted'} />
           </>
         )}
-        {s.net === 'ok'
-          ? <span className={`lamp ${s.connected ? 'on' : 'off'}`} title={t('net.ok')} />
-          : <span className={`net-pill ${s.net}`} role="status" title={t(s.net === 'off' ? 'net.off' : 'net.slow')}>
-              <Icon name={s.net === 'off' ? 'danger-triangle' : 'hourglass'} className="size-3.5" />
-              <span className="net-tx">{t(s.net === 'off' ? 'net.off' : 'net.slow')}</span>
-            </span>}
+        {/* Only trouble is worth a badge. A green "everything is fine" dot sat in the header for
+            the whole session saying nothing — the slow/offline pills are the states you need. */}
+        {s.net !== 'ok' && (
+          <span className={`net-pill ${s.net}`} role="status" title={t(s.net === 'off' ? 'net.off' : 'net.slow')}>
+            <Icon name={s.net === 'off' ? 'danger-triangle' : 'hourglass'} className="size-3.5" />
+            <span className="net-tx">{t(s.net === 'off' ? 'net.off' : 'net.slow')}</span>
+          </span>
+        )}
         {inGame && (
           <Button variant="danger" size="sm" onPress={onLeave} className="leave-btn">
             <Icon name="logout-2" className="size-4" /><span className="leave-tx">{t('top.leave')}</span>

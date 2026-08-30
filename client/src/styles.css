@@ -1568,7 +1568,7 @@
     /* The row scrolls, and it must LOOK like it does — players were not finding cards past the
        edge. A thin visible track, a fade on whichever side has more to show, and a one-time nudge
        on the very first game (see lib/hint.ts). */
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 16px 34px 10px; margin-inline: -2px;
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 16px 6px 10px;
       scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--gold) 60%, transparent) transparent; }
     .board-grid::-webkit-scrollbar { height: 5px; }
     .board-grid::-webkit-scrollbar-track { background: rgba(255,240,214,.07); border-radius: 999px; }
@@ -1772,6 +1772,12 @@
 
   /* ── touch targets on phones (portrait or landscape): nothing interactive below ~44px tall ── */
   @media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
+    /* The swipe arrows get a gutter of their own on either side of the row, so they sit BESIDE the
+       cards rather than on top of them. The gutter is unconditional: gating it on data-more would
+       change the row's client width, which is the very measurement that decides whether data-more
+       is set — the row would flip between overflowing and not, forever. */
+    .card-board { padding-inline: 30px; }
+    .board-grid { padding-inline: 6px; }
     .cm-call-sub { min-height: 44px; }               /* the secondary "call the bluff" link-button */
     .topbar-right button { min-height: 40px; }       /* topbar chrome: taller tap area without widening the crowded bar */
     .log-head { min-height: 44px; }
