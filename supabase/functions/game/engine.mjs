@@ -184,11 +184,11 @@ export class Game {
     const [card] = p.cards.splice(idx, 1);
     this.deck.push(card);
     this.addLog('loss', 'card.lost', { name: p.name, reason, left: p.cards.length });
-    this.event('card_lost', { playerId: p.id, killerId: killerId || null }); // which card was lost stays secret — it returns to the deck unseen
+    this.event('card_lost', { playerId: p.id, killerId: killerId || null, reason }); // which card was lost stays secret — it returns to the deck unseen
     if (p.cards.length === 0) {
       p.alive = false;
       if (!this.outOrder.includes(p.id)) this.outOrder.push(p.id); // record finish order for trophies
-      this.event('eliminated', { playerId: p.id, killerId: killerId && killerId !== p.id ? killerId : null });
+      this.event('eliminated', { playerId: p.id, killerId: killerId && killerId !== p.id ? killerId : null, reason });
       const killer = killerId && killerId !== p.id ? this.player(killerId) : null;
       const bounty = p.coins; p.coins = 0;
       if (killer && killer.alive && bounty > 0) { const got = this.gain(killer, bounty, p.id); this.addLog('eliminated', 'elim.bounty', { name: p.name, bounty, killer: killer.name, gain: { got, n: bounty, max: MAX_COINS } }); }

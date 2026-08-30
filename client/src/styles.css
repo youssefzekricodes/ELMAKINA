@@ -983,6 +983,89 @@
   .rule-chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 6px 0; }
   .rule-char { display: flex; gap: 10px; align-items: flex-start; background: var(--surface-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px; font-size: 13px; }
 
+  /* ── cut-scenes: one beat of the game, told across the whole screen ──────────
+     Black mask, a raking streak in the verdict's colour, both faces and the card that did it.
+     The colour IS the verdict: red for a hit, orange for a lie exposed, green for a claim that
+     held — the same three colours the seat stamps already use. */
+  .cine { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center;
+    padding: calc(20px + var(--sat)) 16px calc(20px + var(--sab)); overflow: hidden; cursor: pointer;
+    background: radial-gradient(ellipse 90% 70% at 50% 50%, rgba(14,10,7,.92), #070503 78%);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    animation: cine-in .22s var(--ease) both; --k: var(--danger); }
+  .cine.k-caught { --k: var(--accent); }
+  .cine.k-missed { --k: var(--success); }
+  /* the raking streak behind the duel */
+  .cine-rip { position: absolute; inset: -20% -10%; pointer-events: none; opacity: .62;
+    background:
+      repeating-linear-gradient(-14deg, transparent 0 26px, color-mix(in srgb, var(--k) 85%, transparent) 26px 32px, transparent 32px 74px),
+      repeating-linear-gradient(-14deg, transparent 0 13px, color-mix(in srgb, var(--k) 30%, transparent) 13px 15px, transparent 15px 41px),
+      radial-gradient(ellipse 60% 46% at 50% 50%, color-mix(in srgb, var(--k) 55%, transparent), transparent 72%);
+    -webkit-mask-image: radial-gradient(ellipse 52% 38% at 50% 50%, #000 18%, transparent 76%);
+    mask-image: radial-gradient(ellipse 52% 38% at 50% 50%, #000 18%, transparent 76%);
+    animation: cine-rip 5s linear both; }
+  .cine-body { position: relative; display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.4vh, 26px); text-align: center; max-width: min(880px, 100%); }
+  .cine-eyebrow { font-family: var(--font-display); font-weight: 700; font-size: clamp(11px, 1.5vw, 15px); letter-spacing: .22em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--k) 45%, #FFF4E2); padding: 5px 18px; border: 1px solid color-mix(in srgb, var(--k) 55%, transparent); border-radius: 999px;
+    background: color-mix(in srgb, var(--k) 18%, transparent); animation: cine-drop .3s var(--ease) both; }
+  .cine-duel { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 4.5vw, 52px); width: 100%; }
+  .cine-duel.solo .cine-vs { margin: 0; }
+  .cine-face { display: flex; flex-direction: column; align-items: center; gap: 9px; min-width: 0; flex: 0 1 auto; }
+  /* the avatar comes in at PlayerAvatar's `lg`; a cut-scene wants it poster-sized */
+  /* !important because PlayerAvatar's size utility sits in Tailwind's utilities layer, which
+     outranks anything here no matter how specific the selector is. */
+  .cine-face .pavatar { width: clamp(62px, 12vw, 124px) !important; height: clamp(62px, 12vw, 124px) !important;
+    box-shadow: 0 0 0 3px rgba(243,233,214,.16), 0 14px 34px rgba(0,0,0,.7); }
+  .cine-face:first-child { animation: cine-from-start .38s var(--ease) both; }
+  .cine-face:last-child { animation: cine-from-end .38s var(--ease) both; }
+  .cine-duel.solo .cine-face { animation: cine-drop .38s var(--ease) both; }
+  .cine-face.is-loser .pavatar { box-shadow: 0 0 0 3px var(--k), 0 0 34px color-mix(in srgb, var(--k) 60%, transparent); }
+  .cine-face.is-loser { animation-name: cine-shove; }
+  .cine-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(14px, 3.4vw, 26px); letter-spacing: .04em;
+    color: #F3E9D6; max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cine-face.is-me .cine-name { color: var(--gold); }
+  .cine-cost { font-family: var(--font-display); font-weight: 700; font-size: clamp(11px, 1.5vw, 15px); letter-spacing: .1em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--k) 40%, #FFF4E2); padding: 3px 11px; border-radius: 999px; background: color-mix(in srgb, var(--k) 22%, transparent);
+    border: 1px solid color-mix(in srgb, var(--k) 60%, transparent); animation: cine-pop .3s .5s var(--ease) both; }
+  .cine-cost.out { color: #FFF4E2; background: var(--k); border-color: color-mix(in srgb, var(--k) 60%, #FFF4E2); }
+  .cine-vs { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--k); flex: 0 0 auto; }
+  .cine-art { width: clamp(58px, 14vw, 124px); aspect-ratio: .62; object-fit: cover; border-radius: 8px;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--k) 70%, transparent), 0 16px 38px rgba(0,0,0,.75);
+    animation: cine-strike .45s .12s var(--ease) both; }
+  .cine-arrow { width: 30px; height: 30px; opacity: 1; color: color-mix(in srgb, var(--k) 45%, #FFF4E2);
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--k) 70%, transparent)); animation: cine-pop .3s .3s var(--ease) both; }
+  .cine-verdict { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; line-height: 1.05;
+    font-size: clamp(26px, 7.4vw, 78px); color: #FFF4E2; text-shadow: 0 0 30px color-mix(in srgb, var(--k) 55%, transparent), 0 10px 34px rgba(0,0,0,.8);
+    margin: 0; animation: cine-slam .4s .3s var(--ease) both; }
+  .cine-sub { margin: -4px 0 0; font-size: clamp(13px, 2.4vw, 21px); color: rgba(243,233,214,.72); animation: cine-drop .3s .45s var(--ease) both; }
+  .cine-skip { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(-14px - 6vh); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; white-space: nowrap; color: rgba(243,233,214,.4); animation: cine-fade-up 1.4s 1.1s var(--ease) both; }
+  @keyframes cine-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes cine-rip { 0% { opacity: 0; transform: translateX(-6%) scale(1.1); } 12% { opacity: .62; } 100% { opacity: .28; transform: translateX(4%) scale(1); } }
+  @keyframes cine-drop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  @keyframes cine-pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+  @keyframes cine-fade-up { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes cine-from-start { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: none; } }
+  @keyframes cine-from-end { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+  @keyframes cine-shove { 0% { opacity: 0; transform: translateY(-6px); } 55% { opacity: 1; transform: none; } 68% { transform: translateX(-6px) rotate(-2deg); } 80% { transform: translateX(5px) rotate(1.5deg); } 100% { transform: none; } }
+  @keyframes cine-slam { 0% { opacity: 0; transform: scale(1.5); letter-spacing: .3em; } 100% { opacity: 1; transform: none; letter-spacing: .04em; } }
+  @keyframes cine-strike { 0% { opacity: 0; transform: scale(.5) rotate(-22deg); } 60% { opacity: 1; transform: scale(1.12) rotate(4deg); } 100% { opacity: 1; transform: none; } }
+  /* RTL reads right-to-left, so the two entrances swap sides with it. */
+  [dir="rtl"].cine .cine-face:first-child { animation-name: cine-from-end; }
+  [dir="rtl"].cine .cine-face:last-child { animation-name: cine-from-start; }
+  [dir="rtl"].cine .cine-face.is-loser { animation-name: cine-shove; }
+  /* Short screens (landscape phones): the duel goes one row and the type comes down a size. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .cine-body { gap: 8px; }
+    .cine-face .pavatar { width: 52px !important; height: 52px !important; }
+    .cine-art { width: 54px; }
+    .cine-verdict { font-size: clamp(22px, 5vw, 34px); }
+    .cine-sub { font-size: 13px; }
+    .cine-skip { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cine, .cine-rip, .cine-body *, .cine-face { animation-duration: .01ms !important; animation-delay: 0ms !important; }
+  }
+
   /* fx */
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
@@ -1422,23 +1505,25 @@
     /* The row scrolls, and it must LOOK like it does — players were not finding cards past the
        edge. A thin visible track, a fade on whichever side has more to show, and a one-time nudge
        on the very first game (see lib/hint.ts). */
-    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 16px 14px 10px; padding-inline-end: 44px; margin-inline: -2px;
+    .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 16px 34px 10px; margin-inline: -2px;
       scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--gold) 60%, transparent) transparent; }
     .board-grid::-webkit-scrollbar { height: 5px; }
     .board-grid::-webkit-scrollbar-track { background: rgba(255,240,214,.07); border-radius: 999px; }
     .board-grid::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--gold) 60%, transparent); border-radius: 999px; }
     .card-board { position: relative; }
-    /* swipe arrows: only shown on the side that still has cards (data-more), so they never sit
-       there inert. tabIndex -1 keeps them out of the keyboard path — the row is scrollable anyway. */
-    .row-arrow { position: absolute; top: calc(50% - 6px); z-index: 4; display: none; align-items: center; justify-content: center;
-      width: 34px; height: 34px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
-      background: rgba(24,17,11,.88); color: var(--gold); box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent), 0 6px 16px rgba(0,0,0,.55);
-      transform: translateY(-50%); }
-    .row-arrow:active { transform: translateY(-50%) scale(.92); }
-    .row-arrow.start { inset-inline-start: 2px; }
-    .row-arrow.end { inset-inline-end: 2px; }
-    .card-board[data-more~="start"] .row-arrow.start { display: flex; }
-    .card-board[data-more~="end"] .row-arrow.end { display: flex; }
+    /* swipe arrows: bare chevrons, no chip and no border — the glyph carries a drop-shadow so it
+       stays readable over a card. Both sides are always present so the row's controls never move;
+       the side with nothing left to scroll simply dims and stops responding. tabIndex -1 keeps
+       them out of the keyboard path — the row is scrollable anyway. */
+    .row-arrow { position: absolute; top: calc(50% - 6px); z-index: 4; display: flex; align-items: center; justify-content: center;
+      width: 30px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+      color: var(--gold); filter: drop-shadow(0 1px 3px rgba(0,0,0,.9)) drop-shadow(0 0 8px rgba(0,0,0,.7));
+      transform: translateY(-50%); transition: opacity .15s; opacity: .95; }
+    .row-arrow:active { transform: translateY(-50%) scale(.86); }
+    .row-arrow.start { inset-inline-start: 0; }
+    .row-arrow.end { inset-inline-end: 0; }
+    .card-board:not([data-more~="start"]) .row-arrow.start,
+    .card-board:not([data-more~="end"]) .row-arrow.end { opacity: .22; pointer-events: none; }
     [dir="rtl"] .row-arrow svg { transform: scaleX(-1); }
     .board-grid.nudge { animation: row-nudge 1.25s var(--ease) .5s 2; }
     @keyframes row-nudge { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-26px); } }

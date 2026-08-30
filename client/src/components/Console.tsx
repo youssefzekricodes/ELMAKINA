@@ -185,13 +185,13 @@ export function Console() {
       ) : (
         <div className="card-board" ref={wrapRef}>
           {/* Tap-to-scroll arrows. The row has always been swipeable, but a swipe is invisible —
-              these say so, and give a target for anyone not holding the phone two-handed. They
-              hide at each end via data-more, the same flag the fade used. */}
+              these say so, and give a target for anyone not holding the phone two-handed. Both
+              sides always show; data-more dims the one that has nothing left to reach. */}
           <button type="button" className="row-arrow start" aria-label={t('board.scrollPrev')} tabIndex={-1}
-            onClick={() => nudgeRow(-1)}><Icon name="alt-arrow-left" className="size-5" /></button>
+            onClick={() => nudgeRow(-1)}><Icon name="alt-arrow-left" className="size-6" /></button>
           <div className="board-grid" ref={boardRef}>{orderedActions.map(card)}</div>
           <button type="button" className="row-arrow end" aria-label={t('board.scrollNext')} tabIndex={-1}
-            onClick={() => nudgeRow(1)}><Icon name="alt-arrow-right" className="size-5" /></button>
+            onClick={() => nudgeRow(1)}><Icon name="alt-arrow-right" className="size-6" /></button>
         </div>
       )}
 

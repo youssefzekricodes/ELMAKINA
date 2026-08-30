@@ -2,7 +2,7 @@
    seats expose data-seat="<playerId>" and data-coins, the bank is #bank, the effects layer is #fx. */
 import { ACTION_CARDS, IMG, CH } from '../theme';
 import { sfx } from './sfx';
-import { store } from './store';
+import { store, type Cine } from './store';
 import { i18n, t } from '../i18n';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -166,49 +166,115 @@ export function banner(text: string, cls = '') {
 
 const nameOf = (id: string) => (store.get().state?.players.find((p) => p.id === id) || ({} as any)).name || '?';
 
+/* ─────────────────────────── cut-scenes ───────────────────────────
+   Some beats are the story of the game, not a footnote: somebody attacked somebody, somebody
+   called a bluff and was right — or wasn't. Those take the whole screen for a moment, with both
+   faces, the weapon and the cost, and nothing else competing. Everything they retell is held back
+   until the mask lifts, so no animation plays where nobody can see it. */
+const CINE_MS = 5000;   // as long as the mask holds before it lifts on its own
+let cineSeq = 0;
+const cineQ: Cine[] = [];
+const cineAfter = new Map<number, (() => void)[]>();
+let cineTimer: any = null;
+
+function runAfter(id: number) { const fns = cineAfter.get(id); cineAfter.delete(id); (fns || []).forEach((f) => { try { f(); } catch { /* one broken effect must not stall the queue */ } }); }
+function playNext() {
+  clearTimeout(cineTimer);
+  const next = cineQ.shift();
+  if (!next) return store.set({ cine: null });
+  store.set({ cine: next });
+  sfx.play(next.out ? 'lose' : next.kind === 'missed' ? 'block' : 'boom');
+  if (!reducedMotion) cameraShake(document.getElementById('table'), true);
+  cineTimer = setTimeout(() => { runAfter(next.id); playNext(); }, CINE_MS);
+}
+function queueScene(sc: Cine, after: (() => void)[]) {
+  cineAfter.set(sc.id, after); cineQ.push(sc);
+  if (!store.get().cine) playNext();
+}
+/** Cut the scene short — a tap on the mask, or the game needing an answer from me right now. */
+export function endCine() { const cur = store.get().cine; if (!cur) return; clearTimeout(cineTimer); runAfter(cur.id); playNext(); }
+/** Drop everything queued (leaving a game mid-scene). */
+export function resetCine() { clearTimeout(cineTimer); cineQ.length = 0; cineAfter.forEach((_, id) => cineAfter.delete(id)); store.set({ cine: null }); }
+
+/** The board-level effects for one event: seat flashes, flying cards, coins, stamps. */
+function boardFx(e: any, me: string | null) {
+  switch (e.type) {
+    case 'coins': flyCoins(e.from, e.to, e.n); break;
+    case 'play': if (e.playerId !== me || Date.now() - localPlayAt > 4000) playedCard(e.move); break; // a basic move: the card is the announcement
+    case 'coup':
+      sfx.play('boom'); cameraShake(document.getElementById('table'), true);
+      headline(t('head.coup', { name: nameOf(e.playerId), target: nameOf(e.targetId) }), 'coup', ACTION_CARDS.paidkill);
+      break;
+    // The cut-scene already named who lost what, so these only play the board half.
+    case 'card_lost':
+      flyCard(e.playerId, e.playerId === me); cameraShake(document.getElementById('table'));
+      if (e.playerId === me) shake(document.getElementById('console'));
+      break;
+    // cards traded: back under the deck, fresh ones dealt out — see swapCards
+    case 'swap':
+      swapCards(e.playerId, e.n || 1);
+      headline(e.playerId === me ? t('head.swapMe', { n: e.n || 1 }) : t('head.swap', { name: nameOf(e.playerId), n: e.n || 1 }), 'swap');
+      break;
+    case 'reveal': stamp(e.playerId, t('stamp.true'), 'ok'); setTimeout(() => stamp(e.challengerId, t('stamp.wrong')), 600); break;
+    // Colonel called a card on somebody: the cut-scene showed the card and the verdict; the log line
+    // and the seat stamp are what is left on the board afterwards.
+    case 'guess':
+      banner(t('banner.guess', { name: nameOf(e.playerId), character: i18n.charName(e.character), target: nameOf(e.targetId) }), 'sm');
+      stamp(e.playerId, t(e.right ? 'stamp.true' : 'stamp.wrong'), e.right ? 'ok' : '');
+      break;
+    case 'bluff': sfx.play('bluff'); stamp(e.playerId, t('stamp.bluff')); flashSeat(e.playerId, 'hit'); break;
+    case 'block': sfx.play('block'); stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); break;
+    case 'eliminated': stamp(e.playerId, t('stamp.out'), ''); flashSeat(e.playerId, 'out'); break;
+    case 'win': if (e.playerId === me) { confetti(); sfx.play('win'); } else sfx.play('lose'); break;
+  }
+}
+const runStream = (list: any[], me: string | null) => list.forEach((e, i) => setTimeout(() => boardFx(e, me), i * 350));
+
+/** Which events a cut-scene retells — these never play in the open stream. */
+const CINE_TYPES = ['card_lost', 'eliminated', 'bluff', 'reveal', 'guess'];
+
 let lastEventId: number | null = null;
-export function resetEvents() { lastEventId = null; }
+export function resetEvents() { lastEventId = null; resetCine(); }
 export function processEvents(s: { events?: any[] }, me: string | null) {
   const evs = s.events || [];
   if (lastEventId === null) { lastEventId = evs.length ? evs[evs.length - 1].id : 0; return; } // don't replay history on (re)join
   const fresh = evs.filter((e) => e.id > (lastEventId as number));
   if (!fresh.length) return;
   lastEventId = fresh[fresh.length - 1].id;
-  fresh.forEach((e, i) => setTimeout(() => {
-    switch (e.type) {
-      case 'coins': flyCoins(e.from, e.to, e.n); break;
-      case 'play': if (e.playerId !== me || Date.now() - localPlayAt > 4000) playedCard(e.move); break; // a basic move: the card is the announcement
-      case 'coup':
-        sfx.play('boom'); cameraShake(document.getElementById('table'), true);
-        headline(t('head.coup', { name: nameOf(e.playerId), target: nameOf(e.targetId) }), 'coup', ACTION_CARDS.paidkill);
-        break;
-      case 'card_lost':
-        flyCard(e.playerId, e.playerId === me); cameraShake(document.getElementById('table'));
-        headline(e.playerId === me ? t('head.hitMe') : t('head.hit', { name: nameOf(e.playerId) }), 'hit');
-        if (e.playerId === me) shake(document.getElementById('console'));
-        break;
-      // cards traded: back under the deck, fresh ones dealt out — see swapCards
-      case 'swap':
-        swapCards(e.playerId, e.n || 1);
-        headline(e.playerId === me ? t('head.swapMe', { n: e.n || 1 }) : t('head.swap', { name: nameOf(e.playerId), n: e.n || 1 }), 'swap');
-        break;
-      case 'reveal': reveal(e.character); cameraShake(document.getElementById('table'), true); stamp(e.playerId, t('stamp.true'), 'ok'); setTimeout(() => stamp(e.challengerId, t('stamp.wrong')), 600); break;
-      // Colonel called a card on somebody: show the guessed card to the whole table, say who/at whom,
-      // then stamp the guesser TRUE!/WRONG!. The card_lost that follows keeps the real hand secret.
-      case 'guess': {
-        banner(t('banner.guess', { name: nameOf(e.playerId), character: i18n.charName(e.character), target: nameOf(e.targetId) }), 'sm');
-        reveal(e.character); cameraShake(document.getElementById('table'), true);
-        setTimeout(() => stamp(e.playerId, t(e.right ? 'stamp.true' : 'stamp.wrong'), e.right ? 'ok' : ''), 600);
-        break;
-      }
-      case 'bluff': sfx.play('bluff'); stamp(e.playerId, t('stamp.bluff')); flashSeat(e.playerId, 'hit'); cameraShake(document.getElementById('table'), true); break;
-      case 'block': sfx.play('block'); stamp(e.playerId, t(e.kind === 'veto' ? 'stamp.veto' : e.kind === 'tax' ? 'stamp.tax' : 'stamp.blocked'), 'blue'); break;
-      case 'eliminated':
-        stamp(e.playerId, t('stamp.out'), ''); flashSeat(e.playerId, 'out');
-        headline(e.playerId === me ? t('head.outMe') : t('head.out', { name: nameOf(e.playerId) }), 'out');
-        cameraShake(document.getElementById('table'), true); sfx.play('lose');
-        break;
-      case 'win': if (e.playerId === me) { confetti(); sfx.play('win'); } else sfx.play('lose'); break;
+
+  // Pass 1 — build the scenes, merging what is really one beat. A challenge lost, the card it cost
+  // and the elimination that followed are three events and one story, so they get one screen.
+  const scenes: Cine[] = [];
+  const afters: (() => void)[][] = [];
+  const covered = new Set<number>();
+  const open = () => scenes[scenes.length - 1];
+  const add = (sc: Cine) => { scenes.push(sc); afters.push([]); };
+  for (const e of fresh) {
+    if (!CINE_TYPES.includes(e.type)) continue;
+    if (e.type === 'bluff' || e.type === 'reveal' || e.type === 'guess') {
+      // Who accused whom, and whether it stuck. `guess` is the Colonel naming a card — same shape.
+      const right = e.type === 'bluff' || (e.type === 'guess' && e.right);
+      const accuser = e.type === 'guess' ? e.playerId : e.challengerId;
+      const accused = e.type === 'guess' ? e.targetId : e.playerId;
+      add({ id: ++cineSeq, kind: right ? 'caught' : 'missed', actorId: accuser, targetId: accused, loserId: right ? accused : accuser, character: e.character, lost: 0, out: false });
+    } else if (e.type === 'card_lost') {
+      const L = open();
+      if (L && L.loserId === e.playerId && !L.out) L.lost++;
+      else add({ id: ++cineSeq, kind: 'hit', actorId: e.killerId || null, targetId: e.playerId, loserId: e.playerId, reason: e.reason, lost: 1, out: false });
+    } else {
+      const L = open();
+      if (L && L.loserId === e.playerId) { L.out = true; if (!L.reason) L.reason = e.reason; }
+      else add({ id: ++cineSeq, kind: 'out', actorId: e.killerId || null, targetId: e.playerId, reason: e.reason, loserId: e.playerId, lost: 0, out: true });
     }
-  }, i * 350));
+    covered.add(e.id);
+    afters[afters.length - 1].push(() => boardFx(e, me));
+  }
+  if (!scenes.length) return runStream(fresh, me);
+
+  // Pass 2 — everything up to the first covered event happened before the story, so it plays now;
+  // everything after it waits for the last mask to lift, or it would run behind one.
+  const cut = fresh.findIndex((e) => covered.has(e.id));
+  afters[afters.length - 1].push(() => runStream(fresh.slice(cut).filter((e) => !covered.has(e.id)), me));
+  runStream(fresh.slice(0, cut), me);
+  scenes.forEach((sc, i) => queueScene(sc, afters[i]));
 }

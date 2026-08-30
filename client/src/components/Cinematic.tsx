@@ -1,0 +1,107 @@
+/* The cut-scene: one beat of the game, told across the whole screen.
+   Who moved on whom, with what, and what it cost — then the mask lifts and play resumes. */
+import { useEffect } from 'react';
+import { useStore } from '../lib/store';
+import { endCine } from '../lib/fx';
+import { i18n, t } from '../i18n';
+import { ACTION_CARDS, CH, type CharacterId } from '../theme';
+import { Icon, PlayerAvatar } from './ui';
+
+/** The card that did the damage: the weapon for an attack, the disputed card for a challenge. */
+function artOf(kind: string, reason?: string, character?: string): string | null {
+  if (kind === 'caught' || kind === 'missed') return character && CH[character as CharacterId] ? CH[character as CharacterId].card : null;
+  const r = (reason || '').replace(/_timeout$/, '');
+  if (r === 'paidkill') return ACTION_CARDS.paidkill;
+  if (r === 'terrorist') return CH.terrorist.card;
+  if (r === 'colonel_correct' || r === 'wrong_guess') return CH.colonel.card;
+  return character && CH[character as CharacterId] ? CH[character as CharacterId].card : null;
+}
+
+/** Why the card went: a plain sentence, not the log's shorthand. Falls back to the log wording
+    for any reason that has no sentence of its own. */
+function whyLine(reason: string): string {
+  const base = reason.replace(/_timeout$/, '');
+  const key = 'cine.why.' + base;
+  const line = t(key);
+  return line === key ? i18n.reason(base) : line;
+}
+
+/** One face: avatar, name, and — on the loser — what this beat took off them. */
+function Face({ p, me, cost }: { p: any; me: string | null; cost?: React.ReactNode }) {
+  if (!p) return null;
+  return (
+    <div className={`cine-face ${p.id === me ? 'is-me' : ''} ${cost ? 'is-loser' : ''}`}>
+      <PlayerAvatar p={p} size="lg" />
+      <span className="cine-name">{p.name}</span>
+      {cost}
+    </div>
+  );
+}
+
+export function Cinematic() {
+  const s = useStore();
+  const c = s.cine;
+  const st = s.state;
+  const me = s.me;
+
+  // The mask never costs anyone a turn: the moment the game wants an answer from me, it lifts.
+  const w = st?.pending?.window;
+  const needsMe = !!c && !!st && (
+    (w && w.type === 'reaction' && Array.isArray(w.eligible) && w.eligible.includes(me) && !w.passed?.includes(me)) ||
+    (w && w.type === 'decision' && w.playerId === me) ||
+    (st.phase === 'playing' && st.turnPlayerId === me && st.pending?.stage === 'turn')
+  );
+  useEffect(() => { if (needsMe) endCine(); }, [needsMe]);
+
+  if (!c || !st) return null;
+  const pl = (id?: string | null) => (id ? st.players.find((p) => p.id === id) : null) || null;
+  const actor = pl(c.actorId);
+  const target = pl(c.targetId);
+  const loser = pl(c.loserId);
+  const chName = c.character ? i18n.charName(c.character) : '';
+  const art = artOf(c.kind, c.reason, c.character);
+  const mine = c.loserId === me;
+
+  const lname = loser?.name || '?', tname = target?.name || '?';
+  const eyebrow = c.kind === 'caught' ? t('cine.caught') : c.kind === 'missed' ? t('cine.missed')
+    : c.reason ? i18n.reason(c.reason.replace(/_timeout$/, '')) : t('cine.attack');
+  // The cost leads when there is one; a challenge whose bill has not landed yet still gets a verdict.
+  const verdict = c.out ? t(mine ? 'cine.outMe' : 'cine.out', { name: lname })
+    : c.lost > 1 ? t(mine ? 'cine.hitMeN' : 'cine.hitN', { name: lname, n: c.lost })
+    : c.lost === 1 ? t(mine ? 'cine.hitMe' : 'cine.hit', { name: lname })
+    : c.kind === 'missed' ? t('cine.missedV', { name: tname })
+    : t('cine.caughtV', { name: tname });
+  // The sub-line always answers "why did that card go": the lie that was exposed, or the weapon.
+  const sub = c.kind === 'caught' && c.character ? t('cine.bluffSub', { name: tname, character: chName })
+    : c.kind === 'missed' && c.character ? t('cine.trueSub', { name: tname, character: chName })
+    : c.reason ? whyLine(c.reason)
+    : null;
+  const cost = c.out ? <span className="cine-cost out">{t('seat.eliminated')}</span>
+    : c.lost > 0 ? <span className="cine-cost">{c.lost > 1 ? t('cine.cost', { n: c.lost }) : t('cine.cost1')}</span>
+    : null;
+
+  // The accuser sits on the left of a challenge, the attacker on the left of an attack — the
+  // reading order is always "this player did that to this one", whichever way the cost landed.
+  // A timed-out hit or a player walking out has no aggressor, so the duel collapses to one face
+  // rather than pointing an arrow at nobody.
+  const solo = !actor || actor.id === c.targetId;
+  return (
+    <div key={c.id} dir={i18n.dir()} className={`cine k-${c.kind} ${c.out ? 'is-out' : ''}`} onClick={endCine} role="presentation">
+      <div className="cine-rip" aria-hidden="true" />
+      <div className="cine-body">
+        <span className="cine-eyebrow">{eyebrow}</span>
+        <div className={`cine-duel ${solo ? 'solo' : ''}`}>
+          {!solo && <Face p={actor} me={me} cost={actor!.id === c.loserId ? cost : undefined} />}
+          <div className="cine-vs">
+            {art ? <img className="cine-art" src={art} alt="" /> : <Icon name="bolt" className="size-8" />}
+            {!solo && <Icon name={i18n.dir() === 'rtl' ? 'alt-arrow-left' : 'alt-arrow-right'} className="cine-arrow size-6" />}
+          </div>
+          <Face p={target} me={me} cost={target && target.id === c.loserId ? cost : undefined} />
+        </div>
+        <h2 className="cine-verdict">{verdict}</h2>
+        {sub && <p className="cine-sub">{sub}</p>}
+        <span className="cine-skip">{t('cine.skip')}</span>
+      </div>
+    </div>
+  );
+}

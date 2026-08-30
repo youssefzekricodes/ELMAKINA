@@ -20,6 +20,7 @@ import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
 import { LeaderboardPage, FriendsPage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
+import { Cinematic } from './components/Cinematic';
 import { Coach } from './components/Coach';
 
 // Voice chat is hidden for now (kept in the tree so it can be flipped back on in one place).
@@ -76,6 +77,7 @@ export default function App() {
       </div>
       {VOICE_ENABLED && s.room && <VoiceDock />}
       {inGame && <Reactions />}
+      {inGame && <Cinematic />}
       <RulesModal />
       <CharactersModal />
       <Guide />

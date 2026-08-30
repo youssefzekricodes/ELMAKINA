@@ -42,6 +42,7 @@ export interface Snapshot {
   logCollapsed: boolean;
   unread: number;
   banner: { text: string; id: number; cls?: string } | null;
+  cine: Cine | null;            // the full-screen cut-scene playing right now (attack / verdict), or null
   modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews (one game, from the guide)
   learn: boolean; // persistent "learning mode": the same coaching in EVERY game until it's switched off
@@ -53,6 +54,23 @@ export interface Snapshot {
   invite: RoomInvite | null; // a friend invited me to their room (live push)
   searching: boolean;        // quick match is running / we are sitting in a public room waiting for company
   tick: number; // bumps when language changes so every text re-renders
+}
+
+/**
+ * A cut-scene: the full-screen retelling of one beat — who did what to whom and what it cost.
+ * `actorId` is the aggressor or the accuser, `targetId` the other face on screen, `loserId`
+ * whoever actually pays (on a wrong accusation that is the accuser, not the target).
+ */
+export interface Cine {
+  id: number;
+  kind: 'hit' | 'out' | 'caught' | 'missed';
+  actorId: string | null;
+  targetId: string;
+  loserId: string | null;
+  character?: string;  // the card that was claimed or guessed (verdict scenes)
+  reason?: string;     // the weapon: paidkill, terrorist, colonel_correct, …
+  lost: number;        // cards the loser handed over during this beat
+  out: boolean;        // …and whether it finished them
 }
 
 /** A live emoji reaction floating over the table; removed automatically after a few seconds. */
@@ -78,7 +96,7 @@ let snap: Snapshot = {
   screen: 'home', connected: false, net: (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'off' : 'ok', room: null, state: null, me: null,
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
-  targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
+  targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
   account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false, tick: 0,
 };
 const listeners = new Set<() => void>();

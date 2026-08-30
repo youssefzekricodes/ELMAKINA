@@ -585,4 +585,41 @@ await test('swap fires wherever cards are exchanged, with how many moved', () =>
   assert.deepEqual(swaps(g, from), [], 'keeping the card is not a swap');
 });
 
+await test('a card loss names its weapon and its killer, so the cut-scene can retell it', () => {
+  // Paid Kill: the attacker is on the event, and so is what they used.
+  let g = newGame(2); g.start();
+  let a = g.active, b = g.players.find((p) => p.id !== a.id);
+  a.coins = 7; b.coins = 0; // no buy-out, so the card goes straight away
+  let from = g.events.length;
+  g.declareAction(a.id, { type: 'paidkill', targetId: b.id });
+  let lost = g.events.slice(from).find((e) => e.type === 'card_lost');
+  assert.equal(lost.playerId, b.id);
+  assert.equal(lost.killerId, a.id, 'who swung it');
+  assert.equal(lost.reason, 'paidkill', 'what they swung');
+
+  // Caught bluffing: the challenger is the killer, and the elimination carries the same pair.
+  g = newGame(2); g.start();
+  a = g.active; b = g.players.find((p) => p.id !== a.id);
+  a.cards = ['taxman', 'taxman']; // claiming terrorist is a lie
+  a.coins = 5;
+  from = g.events.length;
+  g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
+  g.challenge(b.id);
+  lost = g.events.slice(from).find((e) => e.type === 'card_lost');
+  assert.equal(lost.playerId, a.id);
+  assert.equal(lost.killerId, b.id, 'the challenger did this');
+  assert.equal(lost.reason, 'caught_bluffing');
+
+  // The last card: elimination repeats the pair rather than making the client guess.
+  g = newGame(2); g.start();
+  a = g.active; b = g.players.find((p) => p.id !== a.id);
+  a.coins = 7; b.coins = 0; b.cards = ['taxman'];
+  from = g.events.length;
+  g.declareAction(a.id, { type: 'paidkill', targetId: b.id });
+  const out = g.events.slice(from).find((e) => e.type === 'eliminated');
+  assert.equal(out.playerId, b.id);
+  assert.equal(out.killerId, a.id);
+  assert.equal(out.reason, 'paidkill');
+});
+
 console.log(`\n${passed} test group(s) passed${process.exitCode ? ' (with failures)' : ''}`);
