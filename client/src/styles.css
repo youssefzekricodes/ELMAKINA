@@ -1777,13 +1777,19 @@
        cannot. They are always laid out (dimmed, or hidden when the row does not scroll at all)
        so the row's width never changes: gating their space on data-more would change the very
        measurement that decides whether data-more is set, and the row would flip forever. */
-    .card-board { flex-direction: row; align-items: stretch; gap: 0; }
-    .card-board .row-arrow { position: static; display: flex; flex: 0 0 auto; width: 28px; height: auto;
+    .card-board { flex-direction: row; align-items: stretch; gap: 0;
+      /* Full-bleed: cancel the game-screen and console padding so the row runs to the very edges
+         of the phone. The arrows then sit in space that was margin anyway, and the scrollable part
+         gets everything that is left. */
+      /* max-width:100% from the base rule would cap the width at the parent's content box, so the
+         negative margin would only slide the row sideways instead of widening it. */
+      margin-inline: -6px; max-width: none; }
+    .card-board .row-arrow { position: static; display: flex; flex: 0 0 auto; width: 22px; height: auto;
       align-self: stretch; transform: none; }
     .card-board .row-arrow:active { transform: scale(.86); }
     .card-board:not([data-more]) .row-arrow { visibility: hidden; }
     .card-board .board-grid { flex: 1 1 auto; min-width: 0; }
-    .board-grid { padding-inline: 4px; }
+    .board-grid { padding-inline: 0; }
     .cm-call-sub { min-height: 44px; }               /* the secondary "call the bluff" link-button */
     .topbar-right button { min-height: 40px; }       /* topbar chrome: taller tap area without widening the crowded bar */
     .log-head { min-height: 44px; }
