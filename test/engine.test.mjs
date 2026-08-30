@@ -27,18 +27,13 @@ function withoutCard(g, pid, ch) { const p = g.player(pid); while (p.cards.inclu
 function pickN(pl, n) { const idx = []; while (idx.length < Math.min(n, pl.cards.length)) { const r = Math.floor(Math.random() * pl.cards.length); if (!idx.includes(r)) idx.push(r); } return idx; }
 /** Round-trip through JSON the way the edge function does between requests. */
 const reload = (g) => Game.fromJSON(JSON.parse(JSON.stringify(g.toJSON())), { now: clock });
-/** Answer a pending lose_card decision. Every card a player owes this turn is picked in ONE decision,
-    so this hands over `count` cards starting at `index` and returns the array that was lost. */
-function settleLoss(g, index = 0) {
+/** The only lose_card decision left is the Paid Kill buy-out. Decline it if one is open; which
+    card goes is random and never asked. Returns true if a prompt was answered. */
+function declineBuyout(g) {
   const w = g.pending && g.pending.window;
-  if (!(w && w.type === 'decision' && w.kind === 'lose_card')) return null;
-  const loser = g.player(w.playerId);
-  const n = Math.min((w.data && w.data.count) || 1, loser.cards.length);
-  const idx = [];
-  for (let k = 0; idx.length < n; k++) { const i = (index + k) % loser.cards.length; if (!idx.includes(i)) idx.push(i); }
-  const chosen = idx.map((i) => loser.cards[i]);
-  g.decide(w.playerId, { indices: idx });
-  return chosen;
+  if (!(w && w.type === 'decision' && w.kind === 'lose_card')) return false;
+  g.decide(w.playerId, {});
+  return true;
 }
 
 await test('Queue is FIFO', () => {
@@ -92,8 +87,9 @@ await test('loan veto: truthful tax man veto stops loan, challenger loses a card
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(g.pending.window.claim && !g.pending.window.block);
   const cCards = c.cards.length;
   g.challenge(c.id);
-  const [cLost] = settleLoss(g, 1);                  // challenger chooses which card to lose
-  assert.equal(c.cards.length, cCards - 1); assert.ok(!c.cards.includes(cLost) || c.cards.filter((x) => x === cLost).length < cCards, 'the chosen card was lost');
+  // no prompt: the card goes at random the moment the turn settles
+  assert.equal(g.pending && g.pending.window && g.pending.window.kind, undefined, 'nobody is asked which card');
+  assert.equal(c.cards.length, cCards - 1);
   assert.equal(a.coins, 2); assert.ok(v.cards.length === 3);
 });
 
@@ -104,11 +100,10 @@ await test('bluff caught: claimer loses a card and action fails; terrorist cost 
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   assert.equal(a.coins, 2);
   g.challenge(b.id);
-  settleLoss(g);                                     // caught claimer chooses which card to lose
   assert.equal(a.cards.length, 2); assert.equal(b.cards.length, 3); assert.equal(g.active.id, b.id);
 });
 
-await test('terrorist special case: target challenges truthful terrorist, loses 2 cards in ONE pick', () => {
+await test('terrorist special case: a double hit takes two cards, both at random', () => {
   let g = newGame(2); g.start();
   const a = g.active, b = g.players.find((p) => p.id !== a.id);
   a.coins = 5; giveCard(g, a.id, 'terrorist');
@@ -119,12 +114,9 @@ await test('terrorist special case: target challenges truthful terrorist, loses 
   g = reload(g);
   g.pass(b.id);
   const w = g.pending.window;
-  assert.equal(w.type, 'decision'); assert.equal(w.kind, 'lose_card');
-  assert.equal(w.data.count, 2, 'failed challenge + the hit are settled together');
-  const bBefore = g.player(b.id).cards.slice();
-  const lost = settleLoss(g, 0);
-  assert.deepEqual(lost, [bBefore[0], bBefore[1]], 'both chosen cards are the ones lost');
-  assert.deepEqual(g.player(b.id).cards, [bBefore[2]]); assert.equal(g.phase, 'playing');
+  assert.equal(w, null, 'no prompt: nobody picks which cards go');
+  assert.equal(g.player(b.id).cards.length, 1, 'failed challenge + the hit, both taken');
+  assert.equal(g.phase, 'playing');
 });
 
 await test('a player who owes their whole hand is eliminated without being asked to choose', () => {
@@ -152,10 +144,7 @@ await test('block with Colonel: successful block stops kill; lying block fails a
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   g.block(b.id);
   g.challenge(a.id);
-  const w2 = g.pending.window;
-  assert.equal(w2.type, 'decision'); assert.equal(w2.data.count, 2, 'the failed block and the kill it let through are one pick');
-  settleLoss(g);
-  assert.equal(b.cards.length, 1);
+  assert.equal(b.cards.length, 1, 'the failed block and the kill it let through both landed');
 });
 
 await test('anyone may counter: a non-target blocks the Terrorist with Colonel', () => {
@@ -165,11 +154,10 @@ await test('anyone may counter: a non-target blocks the Terrorist with Colonel',
   g.declareAction(a.id, { type: 'terrorist', targetId: b.id });
   assert.deepEqual([...g.pending.window.blockEligible].sort(), [b.id, c.id].sort());
   g.block(c.id); g.challenge(a.id);
-  settleLoss(g);                                     // failed challenger chooses
   assert.equal(a.cards.length, 2); assert.equal(b.cards.length, 3); assert.equal(c.cards.length, 3); assert.notEqual(g.active.id, a.id);
 });
 
-await test('paid kill: target can pay 9 to survive; otherwise chooses card', () => {
+await test('paid kill: the buy-out is still a choice; the card itself is not', () => {
   const g = newGame(2); g.start();
   const a = g.active, b = g.players.find((p) => p.id !== a.id);
   a.coins = 14; b.coins = 10;
@@ -179,8 +167,8 @@ await test('paid kill: target can pay 9 to survive; otherwise chooses card', () 
   assert.equal(b.coins, 1); assert.equal(b.cards.length, 3);
   g.declareAction(b.id, { type: 'income' });
   g.declareAction(a.id, { type: 'paidkill', targetId: b.id });
-  assert.equal(g.pending.window.data.canPay, false);
-  g.decide(b.id, { index: 2 });
+  // too poor to buy out → no prompt at all, a random card is simply gone
+  assert.equal(g.pending && g.pending.window && g.pending.window.kind, undefined);
   assert.equal(b.cards.length, 2);
 });
 
@@ -256,15 +244,13 @@ await test('business woman: the BW claim can still be called after someone taxed
   assert.equal(w.type, 'reaction'); assert.ok(w.claim && w.claim.claimerId === a.id, 'the BW is still challengeable');
   assert.ok(w.challengeEligible.includes(c.id));
   g.challenge(c.id);                   // c calls the BW bluff — a was lying
-  settleLoss(g);
   assert.equal(a.cards.length, 2); assert.equal(a.coins, 2, 'no payout'); assert.notEqual(g.active.id, a.id);
   // proven BW: after a true challenge the claim is gone from later windows
   g = newGame(3); g.start();
   const x = g.active; const [y, z] = g.players.filter((p) => p.id !== x.id);
   giveCard(g, x.id, 'businesswoman'); giveCard(g, y.id, 'taxman');
   g.declareAction(x.id, { type: 'businesswoman' });
-  g.challenge(z.id);                   // wrong call → z loses a card (their choice), BW proven; collection reopens
-  settleLoss(g);
+  g.challenge(z.id);                   // wrong call → z loses a card at random, BW proven; collection reopens
   assert.equal(g.pending.window.type, 'reaction'); assert.equal(g.pending.window.claim, null, 'proven: only tax remains');
   g.block(y.id);                       // y skims → x may now call the bluff on y
   assert.ok(g.pending.window.challengeEligible.includes(x.id), 'anyone alive may challenge a skim');
@@ -291,7 +277,6 @@ await test('business woman concurrent multi-challenge: call bluff on several Tax
   g.challengeTarget(a.id, d.id);                  // caught → d owes one too
   assert.equal(g.pending.window.bwMulti, true); assert.equal(g.pending.window.targets.length, 1, 'only b remains');
   for (const p of g.players) g.pass(p.id);        // nobody challenges b → honest Tax Man keeps the coin → payout
-  settleLoss(g); settleLoss(g);                   // c then d hand their card over as the turn closes
   assert.equal(g.player(c.id).cards.length, cCards - 1, 'c lost a card');
   assert.equal(g.player(d.id).cards.length, dCards - 1, 'd lost a card');
   assert.equal(g.player(b.id).cards.length, bCards, 'honest b kept his cards');
@@ -347,7 +332,6 @@ await test('readable pauses: turn-end and bluff-call results show a result windo
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'challenge'); assert.equal(g.pending.window.data.result, 'true');
   assert.equal(g.nextDue(), NOW + 60);
   advance(g, 90);
-  settleLoss(g);                                     // a hands over the card the failed call cost
   assert.equal(g.pending.window.type, 'result'); assert.equal(g.pending.window.kind, 'turn_end');
 });
 
@@ -482,9 +466,9 @@ await test('forfeit: leaving mid-game eliminates the player and the game moves o
   g.forfeit(c.id);
   assert.equal(g.phase, 'playing');
   assert.equal(g.pending.window.type, 'reaction'); assert.ok(g.pending.window.passed.includes(c.id), 'treated as passed');
+  const bHeld = b.cards.length;
   g.pass(b.id);
-  assert.equal(g.pending.window.type, 'decision', 'the kill went ahead');
-  g.decide(b.id, { index: 0 });
+  assert.equal(b.cards.length, bHeld - 1, 'the kill went ahead — a random card is gone');
   assert.equal(cards(g), 21); assert.ok(g.deadline != null);
 
   // (c) the claimer walks out mid-window → the claim dies with them, the action fails
@@ -498,10 +482,11 @@ await test('forfeit: leaving mid-game eliminates the player and the game moves o
   assert.ok(g.log.some((e) => e.key === 'action.fail'));
   assert.notEqual(g.active.id, a.id); assert.ok(g.deadline != null); assert.equal(cards(g), 21);
 
-  // (d) the player owing a decision walks out → resolved exactly like a timeout
+  // (d) the player owing a decision walks out → resolved exactly like a timeout.
+  // The buy-out is the only lose_card prompt left, so f needs the 9 coins for one to exist at all.
   g = newGame(3); g.start();
   a = g.active; const f = g.players.find((p) => p.id !== a.id);
-  a.coins = 7; f.coins = 0;
+  a.coins = 7; f.coins = 10;
   g.declareAction(a.id, { type: 'paidkill', targetId: f.id });
   assert.equal(g.pending.window.type, 'decision'); assert.equal(g.pending.window.playerId, f.id);
   g.forfeit(f.id);

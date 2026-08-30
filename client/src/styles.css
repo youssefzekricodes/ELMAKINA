@@ -447,9 +447,6 @@
   .gcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .gcard.pick { cursor: pointer; transition: transform .15s var(--ease), box-shadow .15s; box-shadow: 0 0 0 3px var(--gold), 0 0 18px rgba(247,183,80,.6); animation: pick-pulse 1s infinite; }
   .gcard.pick:hover { transform: translateY(-6px) rotate(-1deg); animation: none; box-shadow: 0 0 0 3px var(--accent), 0 16px 30px rgba(0,0,0,.4); }
-  /* marked for the chopping block: a card you have already chosen to give up in a multi-card loss */
-  .gcard.pick.doomed { animation: none; transform: translateY(-6px) scale(.94); filter: grayscale(.55) brightness(.75); box-shadow: 0 0 0 3px var(--danger, #C0403A), 0 10px 24px rgba(0,0,0,.45); }
-  .gcard.pick.doomed::after { content: '\2716'; position: absolute; inset-inline-end: 6px; top: 6px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 999px; background: var(--danger, #C0403A); color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
   .gcard.in { animation: card-in .5s var(--ease) both; }
   @keyframes card-in { from { opacity: 0; transform: translateY(24px) rotateY(70deg); } to { opacity: 1; transform: none; } }
   .flip { perspective: 900px; overflow: visible; background: transparent; box-shadow: none; }

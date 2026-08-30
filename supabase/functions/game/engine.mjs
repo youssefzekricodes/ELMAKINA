@@ -487,6 +487,7 @@ export class Game {
    */
   owedBy(id) { return this.owed.filter((d) => d.playerId === id); }
   owe(p, reason, killerId = null, canPay = false) {
+    // NB the card itself is picked at random when the debt settles — see settleDebts.
     if (!p || !p.alive) return;
     this.owed.push({ playerId: p.id, reason, killerId: killerId || null, canPay: !!canPay });
     const debts = this.owedBy(p.id);
@@ -510,7 +511,13 @@ export class Game {
     while (idx.length < Math.min(n, p.cards.length)) { const r = Math.floor(Math.random() * p.cards.length); if (!idx.includes(r)) idx.push(r); }
     return idx;
   }
-  /** Ask each player who owes cards to pick them (all at once), then continue with `then`. */
+  /**
+   * Settle what each player owes, then continue with `then`.
+   *
+   * WHICH card goes is random — nobody picks. The only decision left is the Paid Kill buy-out
+   * (pay 9 and keep the card), and that is a question about coins, not about which card to give up,
+   * so it is still asked. Everything else resolves on the spot.
+   */
   settleDebts(then) {
     if (this.phase !== 'playing') return;
     const next = this.owed.find((d) => { const p = this.player(d.playerId); return p && p.alive && p.cards.length; });
@@ -518,8 +525,8 @@ export class Game {
     const id = next.playerId, p = this.player(id), debts = this.owedBy(id);
     const n = Math.min(debts.length, p.cards.length);
     const canPay = debts.some((d) => d.canPay) && p.coins >= 9;
-    if (!canPay && p.cards.length <= n) { // owes the whole hand: no choice to make
-      this.payDebts(id, p.cards.map((_, i) => i));
+    if (!canPay) { // nothing to ask: the cards go, chosen at random
+      this.payDebts(id, this.randomIndices(p, n));
       if (this.checkGameOver()) return;
       return this.settleDebts(then);
     }
@@ -535,11 +542,9 @@ export class Game {
       if (i >= 0 && p.coins >= 9) { this.pay(p, 9); this.addLog('coins', 'kill.survive', { name: p.name, reason: this.owed[i].reason }); this.owed.splice(i, 1); }
       return this.settleDebts(c.then);
     }
-    const n = this.owedBy(c.playerId).length;
-    const picked = Array.isArray(choice && choice.indices) ? choice.indices : Number.isInteger(choice && choice.index) ? [choice.index] : [];
-    const idx = [...new Set(picked.filter((i) => Number.isInteger(i) && i >= 0 && i < p.cards.length))].slice(0, n);
-    for (const r of this.randomIndices(p, n)) { if (idx.length >= Math.min(n, p.cards.length)) break; if (!idx.includes(r)) idx.push(r); }
-    this.payDebts(c.playerId, idx);
+    // Declined the buy-out (or never had one): random, same as everywhere else. Any `indices` a
+    // client sends are ignored — the choice is not theirs to make.
+    this.payDebts(c.playerId, this.randomIndices(p, this.owedBy(c.playerId).length));
     if (this.checkGameOver()) return;
     this.settleDebts(c.then);
   }
@@ -710,16 +715,8 @@ export class Game {
     const w = this.pending && this.pending.window;
     if (!w || w.type !== 'decision') throw new GameError('No decision pending');
     if (w.playerId !== playerId) throw new GameError('This decision is not yours');
-    if (w.kind === 'lose_card') {
-      const p = this.player(playerId);
-      const need = (w.data && w.data.count) || 1;
-      if (choice && choice.pay && !w.data.canPay) throw new GameError('You cannot pay to survive');
-      if (choice && !choice.pay) {
-        const picked = Array.isArray(choice.indices) ? choice.indices : Number.isInteger(choice.index) ? [choice.index] : [];
-        const valid = [...new Set(picked.filter((i) => Number.isInteger(i) && i >= 0 && i < p.cards.length))];
-        if (valid.length !== Math.min(need, p.cards.length)) throw new GameError(need > 1 ? `Choose ${need} cards` : 'Invalid card');
-      }
-    }
+    // The only lose_card choice is whether to buy out; which card goes is never the player's call.
+    if (w.kind === 'lose_card' && choice && choice.pay && !w.data.canPay) throw new GameError('You cannot pay to survive');
     this.clearDue();
     const { onChoice } = w.cb; this.closeWindow();
     this.run(onChoice, choice || {});

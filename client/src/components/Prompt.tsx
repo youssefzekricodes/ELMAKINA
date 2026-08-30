@@ -328,7 +328,7 @@ export function Prompt() {
       urgent = true;
       if (w.kind === 'lose_card') {
         head = <><Chip variant="primary" color="danger">{t('decision.hit', { reason: i18n.reason(w.data.reason) })}</Chip><Ring deadline={w.deadline} total={st.timings.decision} tick /></>;
-        body = <LoseCards key={w.deadline} cards={st.you?.cards || []} count={w.data.count || 1} canPay={!!w.data.canPay} payCost={w.data.payCost} />;
+        body = <LoseCards key={w.deadline} count={w.data.count || 1} canPay={!!w.data.canPay} payCost={w.data.payCost} />;
       } else if (w.kind === 'police') {
         const owner = w.data.targetId === me ? t('prompt.owner.you') : t('prompt.owner.of', { name: pname(w.data.targetId) });
         head = <><Chip variant="primary" color="accent">{t('decision.police.strip')}</Chip><Ring deadline={w.deadline} total={st.timings.decision} tick /></>;
@@ -358,29 +358,16 @@ export function Prompt() {
   );
 }
 
-/** The card(s) a hit costs. One turn can hit you twice (a failed bluff call *and* the attack it let
-    through) — the server bills them together, so you pick every card in a single go. */
-function LoseCards({ cards, count, canPay, payCost }: { cards: string[]; count: number; canPay: boolean; payCost: number }) {
-  const [sel, setSel] = useState<number[]>([]);
-  const need = Math.min(count, cards.length);
-  const toggle = (i: number) => {
-    if (need <= 1) { decide({ indices: [i] }); return; }
-    setSel((s) => (s.includes(i) ? s.filter((x) => x !== i) : s.length >= need ? [...s.slice(1), i] : [...s, i]));
-  };
-  const left = need - sel.length;
+/** The only lose_card prompt left: buy your way out, or take the hit. WHICH card goes is random —
+    the player never picks, so there is no card grid here any more. */
+function LoseCards({ count, canPay, payCost }: { count: number; canPay: boolean; payCost: number }) {
   return (
     <>
-      <div className="p-sub">{need > 1 ? t('decision.chooseN', { n: need }) : t('decision.choose')}</div>
-      <PickBanner text={need > 1 ? (left > 0 ? t('decision.pickMore', { n: left }) : t('pick.loseReady')) : t('pick.lose')} danger />
-      <div className="p-cards picking">
-        {cards.map((c, i) => <GameCard key={i} c={c} w={104} small pick className={sel.includes(i) ? 'doomed' : ''} onPress={() => toggle(i)} />)}
+      <div className="p-sub">{count > 1 ? t('decision.chooseN', { n: count }) : t('decision.choose')}</div>
+      <div className="p-actions">
+        {canPay && <KeyBtn variant="primary" icon="wallet-money" onPress={() => decide({ pay: true })} main={t('decision.pay', { n: payCost })} />}
+        <KeyBtn variant="danger" icon="danger-triangle" onPress={() => decide({})} main={t('decision.takeHit')} />
       </div>
-      {need > 1 && (
-        <div className="p-actions">
-          <KeyBtn variant="danger" icon="danger-triangle" disabled={left > 0} onPress={() => decide({ indices: sel })} main={t('decision.confirmLose', { n: need })} />
-        </div>
-      )}
-      {canPay && <div className="p-actions"><KeyBtn variant="primary" icon="wallet-money" onPress={() => decide({ pay: true })} main={t('decision.pay', { n: payCost })} /></div>}
     </>
   );
 }

@@ -119,15 +119,10 @@ function decide(g, botId) {
   const v = g.viewFor(botId);
   const w = v.pending && v.pending.window; if (!w || w.type !== 'decision' || w.playerId !== botId) return;
   const hand = v.you.cards, me = v.players.find((p) => p.id === botId);
+  // The only question left is the Paid Kill buy-out; which card goes is random for bots too.
   if (w.kind === 'lose_card') {
     if (w.data && w.data.canPay && me.coins >= 9 && (hand.length === 1 || me.coins >= 12)) return g.decide(botId, { pay: true });
-    // One bill, possibly several cards: give up the cheapest ones (duplicates first — they buy nothing).
-    const need = Math.min((w.data && w.data.count) || 1, hand.length);
-    const order = hand.map((c, i) => ({ i, c })).sort((a, b) => {
-      const dup = (x) => (hand.filter((c) => c === x.c).length > 1 ? 0 : 1);
-      return dup(a) - dup(b) || (VALUE[a.c] || 0) - (VALUE[b.c] || 0);
-    });
-    return g.decide(botId, { indices: order.slice(0, need).map((x) => x.i) });
+    return g.decide(botId, {});
   }
   if (w.kind === 'police') {
     const card = w.data && w.data.card; const own = w.data && w.data.targetId === botId;
