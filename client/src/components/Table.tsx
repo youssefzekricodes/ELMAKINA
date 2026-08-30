@@ -81,7 +81,7 @@ export function Table() {
         </div>
       </div>
       {/* data-n = how many opponents are on screen: phones use it to keep every seat on ONE row (3/4/5 across). */}
-      <div className={`seats ${s.targeting ? 'targeting' : ''}`} data-n={opponents.length}>
+      <div className={`seats ${s.targeting ? 'targeting' : ''}`} data-n={opponents.length + 1}>
         {opponents.map((p, i) => {
           const a = ((angles[i] !== undefined ? angles[i] : -90) * Math.PI) / 180;
           const isTurn = st.turnPlayerId === p.id && st.phase === 'playing';
@@ -119,8 +119,9 @@ export function Table() {
             </div>
           );
         })}
-      </div>
-      {meP && (
+        {/* You sit in the ring with everyone else. Kept out of it, your own seat was hidden entirely
+            on phones, so the one player you most need to track had no seat at all. */}
+        {meP && (
         <div className={`seat me ${isMyTurn ? 'turn' : ''} ${!isMyTurn && me === nextId ? 'up-next' : ''} ${!meP.alive ? 'dead' : ''}`} data-seat={me || ''}>
           <div className={`av-wrap ${inCall(me || '') ? 'in-call' : ''} ${speakingOf(me || '') ? 'speaking' : ''}`}>
             {claimedChar(meP, st) && <span className="claim-badge" style={{ ['--c' as any]: CH[claimedChar(meP, st)!].color }}><img src={CH[claimedChar(meP, st)!].cardSm} alt="" /></span>}
@@ -131,8 +132,10 @@ export function Table() {
             <StatusPill p={meP} s={s} nextId={nextId} />
           </div>
           <div className="nm">{meP.name} <span className="you-chip">{t('game.you')}</span></div>
+          <Coins n={meP.coins} />
         </div>
-      )}
+        )}
+      </div>
       {s.banner && <div key={s.banner.id} className={`banner ${s.banner.cls || ''}`} role="status" aria-live="polite">{s.banner.text}</div>}
     </div>
   );

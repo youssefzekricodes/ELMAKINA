@@ -300,16 +300,11 @@
   /* clean light "table": a soft neutral surface, hairline edge, one gentle shadow */
   /* card-table felt: rounded rectangle ringed by a two-tone wooden rail */
   /* ── the arena ──────────────────────────────────────────────────────────────
-     No table object: a soft round pool of light with the deck and bank floating in it, and the
-     players ringed around. The slab, its dashed inset and the watermark logo are gone — they made
-     the board read as a document with panels on it rather than a game. */
+     No table shape at all — just the spot the deck and bank live in. The round pool read as another
+     object competing with the cards; the players ringed around are the layout. */
   .arena { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: min(52%, 520px); aspect-ratio: 1.35; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; gap: clamp(20px, 4vw, 42px);
-    background: radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--felt-hi) 70%, transparent) 0%, color-mix(in srgb, var(--felt) 42%, transparent) 45%, transparent 72%);
     pointer-events: none; }
-  .arena::before { content: ''; position: absolute; inset: 6%; border-radius: 50%;
-    box-shadow: inset 0 0 60px rgba(0,0,0,.28), 0 0 0 1px color-mix(in srgb, var(--gold) 12%, transparent); pointer-events: none; }
   .arena > * { pointer-events: auto; }
   .deck { position: relative; width: 64px; height: 104px; }
   .deck .cardback { position: absolute; left: 0; top: 0; width: 64px; border-radius: 7px; }
@@ -631,11 +626,8 @@
 
   /* prompt */
   /* the action/reaction prompt: a centred modal over the table */
-  /* Anchored LOW, not centred. Pinned at top:44% the verdict buttons sat mid-screen — nowhere near
-     where a hand rests on a big display or a thumb reaches on a phone — and players were mis-tapping
-     under a 12s clock. It now sits just above the card console, inside the natural reach arc. */
-  .prompt { position: fixed; left: 50%; top: auto; bottom: clamp(76px, 15dvh, 190px); transform: translateX(-50%); width: min(480px, calc(100vw - 24px)); max-height: min(58dvh, 520px); overflow-y: auto; z-index: 40; padding: 0; gap: 0; animation: prompt-rise .24s var(--ease); color: var(--foreground); background: rgba(24,17,11,.92); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,240,214,.12); border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255,240,214,.06), 0 24px 70px rgba(0,0,0,.65); }
-  @keyframes prompt-rise { from { transform: translateX(-50%) translateY(14px) scale(.97); opacity: 0; } to { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; } }
+  .prompt { position: fixed; left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); width: min(480px, calc(100vw - 24px)); max-height: min(76dvh, 620px); overflow-y: auto; z-index: 40; padding: 0; gap: 0; animation: prompt-rise .24s var(--ease); color: var(--foreground); background: rgba(24,17,11,.92); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,240,214,.12); border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255,240,214,.06), 0 24px 70px rgba(0,0,0,.65); }
+  @keyframes prompt-rise { from { transform: translate(-50%, -50%) scale(.95); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
   @keyframes rise { from { transform: translate(-50%, 24px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
   .prompt.urgent { box-shadow: var(--overlay-shadow), 0 0 0 2px var(--danger); }
   .log-drawer { color: var(--foreground); background: rgba(20,14,9,.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-inline-start: 1px solid rgba(255,240,214,.1); }
@@ -1347,8 +1339,7 @@
        .game-screen above is the hidden one, so nothing can ever scroll the page. */
     .table-area { min-height: 0; height: auto; padding: 10px 2px 2px; border-radius: var(--radius-2xl); display: flex; flex-direction: column; justify-content: center; gap: 4px; overflow: visible; }
     .table-area::after { display: none; }
-    .arena { position: relative; left: auto; top: auto; transform: none; flex: 0 0 auto; width: calc(100% - 20px); height: 84px; aspect-ratio: auto; border-radius: 999px; margin: 0 auto 6px; gap: 20px; }
-    .arena::before { inset: 3px; box-shadow: inset 0 0 34px rgba(0,0,0,.26), 0 0 0 1px color-mix(in srgb, var(--gold) 10%, transparent); }
+    .arena { position: relative; left: auto; top: auto; transform: none; flex: 0 0 auto; width: auto; height: auto; margin: 0 auto 4px; gap: 18px; }
     .deck { width: 38px; height: 58px; } .deck .cardback { width: 38px; }
     .deck-n { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; inset-inline-end: -10px; bottom: -8px; }
     .bank .pile { width: 46px; height: 34px; } .bank .pile img { width: 22px; height: 22px; }
@@ -1357,11 +1348,11 @@
     .bank-lbl { font-size: 8.5px; letter-spacing: .1em; }
     /* opponents: ALWAYS one row. 3 columns up to three of them, then 4- and 5-across
        (data-n is set by Table.tsx) — two rows of seats never fit next to the card hand. */
-    .seats { position: relative; inset: auto; flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; align-content: center; justify-content: center; }
-    .seats[data-n="1"] { grid-template-columns: minmax(0, 170px); }
-    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 160px)); }
-    .seats[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .seats { position: relative; inset: auto; flex: 0 0 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; align-content: center; justify-content: center; }
+    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 150px)); }
+    .seats[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .seats[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .seats[data-n="6"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; min-width: 0; gap: 2px; padding: 5px 3px 4px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
     .seat.targetable:hover { transform: none; }
     .seat.turn { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
@@ -1378,14 +1369,14 @@
     .seat .hand .cardback { width: 12px; }
     /* police slot-pick blows the card-backs up to a real tap target: shrink the felt for the
        duration so the taller seat still fits the table region instead of spilling on the console */
-    .table-area:has(.seat.picking) .arena { height: 62px; }
+
     .seat .lamp { width: 8px; height: 8px; border-width: 1.5px; right: 0; bottom: 2px; }
     .seat .status { min-height: 0; }
     /* the floating overlays on a seat must not widen a 5-across column */
     .seat .claim-badge { width: 24px; top: -24px; }
     .seat .seat-status { max-width: calc(100% + 14px); font-size: 9px; padding: 2px 6px 2px 5px; bottom: -9px; }
     .seat .target-tap { font-size: 8.5px; padding: 2px 6px; top: -11px; }
-    .seat.me { display: none; }
+    .seat.me { display: flex; }
     .banner { position: fixed; font-size: 40px; }
     /* stack the console with the ACTIONS on top (column-reverse) so new players see the buttons first,
        not their own hand — the hand sits just below and is a short scroll away */
@@ -1411,7 +1402,7 @@
     .countdown-unit { font-size: 9px; }
     /* "My cards" — your real grip as one low strip: caption on the lead edge, cards beside it
        (duplicates still show twice). Sized off the viewport height so it shrinks on short phones. */
-    .my-cards { align-self: stretch; flex-direction: row; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 12px; }
+    .my-cards { display: none; }   /* redundant: your cards are already framed in the row above */
     .mc-head { flex-direction: column; align-items: flex-start; gap: 3px; flex-shrink: 0; }
     .mc-label { font-size: 9px; letter-spacing: .08em; }
     .mc-chars { font-size: 9.5px; padding: 1px 7px; }
@@ -1433,11 +1424,6 @@
     .board-grid::-webkit-scrollbar-track { background: rgba(255,240,214,.07); border-radius: 999px; }
     .board-grid::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--gold) 60%, transparent); border-radius: 999px; }
     .card-board { position: relative; }
-    /* edge fades, toggled by data-more on the wrapper so they vanish at each end */
-    .card-board::before, .card-board::after { content: ''; position: absolute; top: 0; bottom: 10px; width: 34px; pointer-events: none; z-index: 3; opacity: 0; transition: opacity .2s; }
-    .card-board::before { inset-inline-start: 0; background: linear-gradient(to right, var(--surface) 10%, transparent); }
-    .card-board::after { inset-inline-end: 0; background: linear-gradient(to left, var(--surface) 10%, transparent); }
-    .card-board[data-more~="start"]::before, .card-board[data-more~="end"]::after { opacity: .95; }
     .board-grid.nudge { animation: row-nudge 1.25s var(--ease) .5s 2; }
     @keyframes row-nudge { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-26px); } }
     .board-card { width: 78px; flex-shrink: 0; transform: var(--fan, none); }
@@ -1471,7 +1457,7 @@
     .basic-tile .bt-cost { position: static; margin-inline-start: auto; }
     .act-tile { min-height: 56px; padding: 8px; }
     .act-tile .d { font-size: 10.5px; }
-    .prompt { width: min(420px, calc(100vw - 16px)); bottom: calc(clamp(58px, 11dvh, 110px) + var(--sab)); max-height: 62dvh; }
+    .prompt { width: min(420px, calc(100vw - 16px)); max-height: 78dvh; }
     /* the three verdict buttons (Pass / Block / Call liar) don't fit one row on phones — stack them,
        and left-align the icon+label so every icon lines up down the column instead of drifting with label length */
     /* stacked verdict buttons: a fixed [icon | label] grid so every icon and every label line up */
@@ -1497,7 +1483,7 @@
        Kept in @supports (and NOT as a duplicate declaration) because the CSS minifier drops
        same-property fallbacks — pre-dvh webviews keep the plain px sizes declared above. */
     @supports (height: 1dvh) {
-      .arena { height: clamp(72px, 13dvh, 116px); }
+
       .my-cards .hand .gcard { width: clamp(38px, 6.2dvh, 54px) !important; }
       .board-card { width: clamp(64px, 13.8dvh, 96px); }
     }
@@ -1513,7 +1499,7 @@
     .seat .coins img { width: 11px; height: 11px; }
     .seat .hand .cardback { width: 11px; }
     .mc-label { font-size: 8.5px; }
-    .table-area:has(.seat.picking) .arena { height: 52px; }
+
     .hand .gcard { width: min(40vw, 100px) !important; }
     .brand-word { display: none; }
   }
@@ -1524,7 +1510,7 @@
      the stacked claim panel runs past the fold inside itself, so the last verdict is unreachable
      without scrolling the panel. Trim the same things — the card, the gaps, the explanatory line. */
   @media (max-width: 760px) and (max-height: 700px) {
-    .prompt { bottom: calc(44px + var(--sab)); max-height: 76dvh; }
+    .prompt { max-height: 84dvh; }
     .claim-min { padding: 12px 12px 12px; gap: 8px; }
     .claim-min .cm-effect { display: none; }
     .cm-card .gcard { width: 58px !important; }
@@ -1536,7 +1522,7 @@
        verdicts. That ran past the fold INSIDE the panel — the buttons existed but you had to
        scroll the panel to reach them, which is worse than them being far away. Lay the verdicts
        across instead and drop the explanatory line; the card and the title carry the meaning. */
-    .prompt { bottom: calc(6px + var(--sab)); max-height: min(86dvh, 100dvh - 46px); width: min(600px, calc(100vw - 20px)); }
+    .prompt { max-height: min(92dvh, 100dvh - 24px); width: min(600px, calc(100vw - 20px)); }
     .claim-min { padding: 10px 12px 11px; gap: 7px; }
     .claim-min .cm-effect { display: none; }
     .cm-card .gcard { width: 54px !important; }
@@ -1553,19 +1539,18 @@
     /* felt on the lead edge, the single row of opponents filling the rest of the width */
     .table-area { min-height: 0; height: auto; padding: 2px 8px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; border-radius: var(--radius-2xl); overflow: visible; }
     .table-area::after { display: none; }
-    .arena { position: relative; left: auto; top: auto; transform: none; flex: 0 0 auto; width: min(34%, 260px); height: 64px; aspect-ratio: auto; border-radius: 999px; margin: 0; gap: 14px; }
-    .arena::before { inset: 3px; box-shadow: inset 0 0 26px rgba(0,0,0,.26); }
+    .arena { position: relative; left: auto; top: auto; transform: none; flex: 0 0 auto; width: auto; height: auto; margin: 0; gap: 12px; }
     .deck { width: 30px; height: 46px; } .deck .cardback { width: 30px; }
     .deck-n { min-width: 20px; height: 20px; padding: 0 5px; font-size: 10px; inset-inline-end: -9px; bottom: -7px; }
     .bank .pile { width: 42px; height: 30px; } .bank .pile img { width: 20px; height: 20px; }
     .bank .pile img:nth-child(1) { left: 0; top: 10px; } .bank .pile img:nth-child(2) { left: 12px; top: 11px; } .bank .pile img:nth-child(3) { left: 23px; top: 9px; }
     .bank .pile img:nth-child(4) { left: 5px; top: 2px; } .bank .pile img:nth-child(5) { left: 18px; top: 1px; } .bank .pile img:nth-child(6) { left: 11px; top: -4px; }
     .bank-lbl { font-size: 8px; }
-    .seats { position: relative; inset: auto; flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-content: center; justify-content: center; }
-    .seats[data-n="1"] { grid-template-columns: minmax(0, 180px); }
-    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 170px)); }
-    .seats[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .seats { position: relative; inset: auto; flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; align-content: center; justify-content: center; }
+    .seats[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 160px)); }
+    .seats[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .seats[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .seats[data-n="6"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .seat { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; min-width: 0; gap: 2px; padding: 4px 4px 3px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
     .seat.targetable:hover, .seat.picking .hand .cardback:hover { transform: none; }
     .seat .av-wrap { margin-bottom: 6px; }
@@ -1581,7 +1566,7 @@
     .seat .claim-badge { width: 22px; top: -22px; }
     .seat .seat-status { max-width: calc(100% + 12px); font-size: 8.5px; padding: 2px 5px; bottom: -8px; }
     .seat .target-tap { font-size: 8px; padding: 2px 5px; top: -10px; }
-    .seat.me { display: none; }
+    .seat.me { display: flex; }
     /* the card hand: one swipeable row on a wide-but-short screen */
     .console { min-height: 0; gap: 4px !important; padding: 0 !important; }
     .console-top { align-self: stretch; width: 100%; flex-wrap: nowrap; gap: 8px; padding: 2px 9px; margin-bottom: 0; }
@@ -1595,7 +1580,7 @@
     .countdown-body { min-width: 38px; gap: 2px; }
     .countdown-num { font-size: 11px; }
     .countdown-unit { font-size: 9px; }
-    .my-cards { align-self: stretch; flex-direction: row; align-items: center; padding: 3px 8px; border-radius: 11px; gap: 8px; }
+    .my-cards { display: none; }
     .mc-head { flex-direction: column; align-items: flex-start; gap: 2px; flex-shrink: 0; }
     .mc-label { font-size: 8.5px; }
     .mc-chars { font-size: 9px; padding: 1px 6px; }
@@ -1615,7 +1600,7 @@
     .react-launch { width: 40px; height: 40px; }
     .react-dock { bottom: calc(8px + var(--sab)); }
     @supports (height: 1dvh) {
-      .arena { height: clamp(56px, 18dvh, 88px); }
+
       .my-cards .hand .gcard { width: clamp(30px, 8dvh, 46px) !important; }
       .board-card { width: clamp(58px, 22dvh, 96px); }
     }
