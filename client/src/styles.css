@@ -1394,13 +1394,25 @@
     .countdown-unit { font-size: 9px; }
     /* "My cards" — your real grip as one low strip: caption on the lead edge, cards beside it
        (duplicates still show twice). Sized off the viewport height so it shrinks on short phones. */
-    .my-cards { display: none; }   /* redundant: your cards are already framed in the row above */
+    /* Your hand, in its own strip ABOVE the row. Deliberately the small thing on screen: it is a
+       reminder of what you hold, not the thing you tap — you play from the row below. */
+    .my-cards { display: flex; align-self: stretch; flex-direction: row; align-items: center; gap: 7px;
+      padding: 2px 8px; border-radius: 10px; background: none; border: 0; box-shadow: none; }
+    .mc-head { flex-direction: row; align-items: center; gap: 5px; flex-shrink: 0; }
+    .mc-label { font-size: 8.5px; letter-spacing: .06em; opacity: .75; }
+    .mc-label svg { display: none; }
+    .mc-chars { font-size: 8.5px; padding: 0 5px; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 5px; padding: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .mc-hand::-webkit-scrollbar { display: none; }
+    .mc-hand .hand-card { gap: 0; flex-shrink: 0; }
+    .mc-hand .hc-name { display: none; }
+    .my-cards .hand .gcard { width: 30px !important; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
     .mc-head { flex-direction: column; align-items: flex-start; gap: 3px; flex-shrink: 0; }
     .mc-label { font-size: 9px; letter-spacing: .08em; }
     .mc-chars { font-size: 9.5px; padding: 1px 7px; }
     .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 7px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
-    .my-cards .hand .gcard { width: 40px !important; }
+    .my-cards .hand .gcard { width: 30px !important; }
     .mc-hand .hand-card { gap: 3px; flex-shrink: 0; }
     .mc-hand .hc-name { max-width: 60px; font-size: 8px; }
     /* phone card hand: one swipeable row — upright cards on a subtle arc (no tilt), horizontal
@@ -1418,7 +1430,7 @@
     .card-board { position: relative; }
     .board-grid.nudge { animation: row-nudge 1.25s var(--ease) .5s 2; }
     @keyframes row-nudge { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-26px); } }
-    .board-card { width: 78px; flex-shrink: 0; transform: var(--fan, none); }
+    .board-card { width: 92px; flex-shrink: 0; transform: var(--fan, none); }
     /* subtle arc via height only — cards stay upright (kept shallow: the row clips on the y axis) */
     .board-card:nth-child(1)  { --fan: translateY(0); }
     .board-card:nth-child(2)  { --fan: translateY(1px); }
@@ -1431,10 +1443,8 @@
     .board-card:nth-child(9)  { --fan: translateY(5px); }
     .board-card:nth-child(10) { --fan: translateY(5px); }
     /* your framed cards still lift above the row */
-    .board-card.owned { transform: var(--fan, none) translateY(-4px); z-index: 2; width: 62px; }
-    .board-card.owned .bc-art { box-shadow: 0 6px 14px rgba(0,0,0,.45); }   /* no gold frame */
-    .board-card.owned .bc-own { display: none; }                            /* nor the "yours" tag */
-    .board-card.owned .bc-name { color: var(--foreground); font-weight: 700; }
+    /* Owned cards are the same size as the rest — the SECTION above is the small one, not these. */
+    .board-card.owned { transform: var(--fan, none) translateY(-6px); z-index: 2; }
     .board-card.off.owned { transform: var(--fan, none) translateY(-8px); }
     .board-card:not(.off):hover { transform: var(--fan, none) translateY(-5px); }
     .bc-name { font-size: 11px; }
@@ -1479,8 +1489,8 @@
        same-property fallbacks — pre-dvh webviews keep the plain px sizes declared above. */
     @supports (height: 1dvh) {
 
-      .my-cards .hand .gcard { width: clamp(38px, 6.2dvh, 54px) !important; }
-      .board-card { width: clamp(64px, 13.8dvh, 96px); }
+      .my-cards .hand .gcard { width: clamp(26px, 4dvh, 34px) !important; }
+      .board-card { width: clamp(80px, 16dvh, 116px); }
     }
   }
   @media (max-width: 420px) {
@@ -1573,20 +1583,19 @@
     .countdown-body { min-width: 38px; gap: 2px; }
     .countdown-num { font-size: 11px; }
     .countdown-unit { font-size: 9px; }
-    .my-cards { display: none; }
-    .mc-head { flex-direction: column; align-items: flex-start; gap: 2px; flex-shrink: 0; }
+    .my-cards { display: flex; align-self: stretch; flex-direction: row; align-items: center; gap: 6px; padding: 1px 6px; border-radius: 9px; background: none; border: 0; box-shadow: none; }
+    .mc-head { flex-direction: row; align-items: center; gap: 4px; flex-shrink: 0; }
+    .mc-label svg { display: none; }
+    .mc-hand .hc-name { display: none; }
     .mc-label { font-size: 8.5px; }
     .mc-chars { font-size: 9px; padding: 1px 6px; }
     .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 6px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
-    .my-cards .hand .gcard { width: 34px !important; }
+    .my-cards .hand .gcard { width: 28px !important; }
     .mc-hand .hand-card { gap: 2px; flex-shrink: 0; }
     .mc-hand .hc-name { max-width: 52px; font-size: 8px; }
     .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 14px 12px 5px; padding-inline-end: 56px; scrollbar-width: none; }
     .board-grid::-webkit-scrollbar { display: none; }
     .board-card { width: 72px; flex-shrink: 0; transform: var(--fan, none); }
-    .board-card.owned { width: 58px; }
-    .board-card.owned .bc-art { box-shadow: 0 5px 12px rgba(0,0,0,.45); }
-    .board-card.owned .bc-own { display: none; }
     .board-card:nth-child(n)  { --fan: translateY(0); }
     .board-card.owned { transform: var(--fan, none) translateY(-7px); z-index: 2; }
     .board-card.off.owned { transform: var(--fan, none) translateY(-7px); }
@@ -1597,7 +1606,7 @@
     .react-dock { bottom: calc(8px + var(--sab)); }
     @supports (height: 1dvh) {
 
-      .my-cards .hand .gcard { width: clamp(30px, 8dvh, 46px) !important; }
+      .my-cards .hand .gcard { width: clamp(24px, 5dvh, 32px) !important; }
       .board-card { width: clamp(58px, 22dvh, 96px); }
     }
   }
