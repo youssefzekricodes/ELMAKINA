@@ -355,7 +355,10 @@
      the one thing every seat has to be routed around, and they compete with the centre of the
      board for attention while being the least interactive part of it. In a corner no seat ever
      reaches, they can hold their full size and the ring gets its middle back. */
-  .arena { position: absolute; left: auto; top: auto; inset-inline-start: 10px; bottom: 6px; transform: none;
+  /* The inset has to clear the deck-count badge, which hangs 14px past the deck and 10px below it
+     by design. In the middle of the table that never mattered; in a corner, with .table-area
+     clipping its overflow, it was cutting the badge in half. */
+  .arena { position: absolute; left: auto; top: auto; inset-inline-start: 24px; bottom: 18px; transform: none;
     display: flex; align-items: flex-end; justify-content: flex-start; gap: clamp(18px, 3vw, 34px);
     pointer-events: none; }
   .arena > * { pointer-events: auto; }
@@ -363,7 +366,9 @@
   .deck .cardback { position: absolute; left: 0; top: 0; width: 64px; border-radius: 7px; }
   .deck .cardback:nth-child(2) { transform: translate(3px, -3px) rotate(2deg); }
   .deck .cardback:nth-child(3) { transform: translate(6px, -6px) rotate(-1.5deg); }
-  .deck-n { position: absolute; right: -14px; bottom: -10px; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 13px; background: var(--surface); color: var(--foreground); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(26,25,24,.12); }
+  /* A smaller overhang than the -14/-10 it had: in a corner every pixel it hangs out by is a
+     pixel of clearance the arena has to buy back from the table. */
+  .deck-n { position: absolute; inset-inline-end: -8px; bottom: -6px; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 13px; background: var(--surface); color: var(--foreground); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(26,25,24,.12); }
   .bank { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .bank .pile { position: relative; width: 70px; height: 54px; }
   .bank .pile img { position: absolute; width: 34px; height: 34px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
@@ -1113,7 +1118,7 @@
        ring that short cannot separate six seats however round it is. Give it the room the screen
        already has. */
     .table-area { min-height: 54dvh; --seat-inset: 38px; --seat-vinset: 86px; --ring-rx: 20%; --ring-ry: 30%; }
-    .arena { position: absolute; left: auto; top: auto; transform: none; inset-inline-start: 6px; bottom: 2px;
+    .arena { position: absolute; left: auto; top: auto; transform: none; inset-inline-start: 18px; bottom: 14px;
       width: auto; height: auto; margin: 0; gap: 14px; align-items: flex-end; }
     .seat { width: 104px; }
     .seats[data-n="5"] .seat, .seats[data-n="6"] .seat { width: 66px; }   /* a full table is the tight case: the box narrows, the avatar and hand do not */
@@ -1614,7 +1619,7 @@
        top seat's fan and my own row, which is why they had to keep shrinking until neither could
        be read. Out of the ring's way they can be a decent size again, and the ring gets the middle
        back, which is what lets it be round instead of a flattened oval. */
-    .arena { position: absolute; left: auto; top: auto; transform: none; inset-inline-start: 2px; bottom: 0;
+    .arena { position: absolute; left: auto; top: auto; transform: none; inset-inline-start: 12px; bottom: 10px;
       width: auto; height: auto; margin: 0; gap: 10px; align-items: flex-end; }
     .deck { width: 42px; height: 62px; } .deck .cardback { width: 42px; }
     .deck-n { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; inset-inline-end: -8px; bottom: -6px; }
