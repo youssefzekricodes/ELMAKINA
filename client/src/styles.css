@@ -2321,59 +2321,56 @@
   .acct-tool.is-muted { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
 
   /* ── the main nav ────────────────────────────────────────────────────────────
-     A rail that floats: clear of both side edges and lifted off the bottom, so it reads as an
-     object laid on the table rather than a strip welded to the screen. Brass-edged and slightly
-     domed, like the rail round the table itself; the stop you are on rises out of it as a chip,
-     notched around its rim the way a real one is. Phones and tablets only. */
+     Parchment, not more darkness. Two dark-on-dark attempts read as mud against the table art —
+     the reference works because it is a LIGHT bar carrying saturated icons, and this game already
+     has a light material of its own: the face of its cards. So the rail is a card laid on the
+     table, and the stop you are on is an ember token pressed into it.
+
+     Floating on every edge, as asked. Phones and tablets only. */
   .navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; pointer-events: none;
     display: flex; justify-content: center;
     padding: 0 calc(14px + var(--sal)) calc(14px + var(--sab)) calc(14px + var(--sar)); }
   .nav-shelf { pointer-events: auto; position: relative; width: min(430px, 100%); display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; gap: 2px;
-    padding: 9px 8px 8px; border-radius: 24px;
-    background: linear-gradient(180deg, #46341f 0%, #2a1e12 42%, #150e08 100%);
-    border: 1px solid rgba(255,214,150,.30);
-    box-shadow: inset 0 1px 0 rgba(255,232,190,.22), inset 0 -3px 8px rgba(0,0,0,.55),
-      0 14px 34px rgba(0,0,0,.6), 0 2px 0 rgba(0,0,0,.5); }
-  /* a second, inner brass line — the rail is banded, not just outlined */
-  .nav-shelf::before { content: ''; position: absolute; inset: 3px; border-radius: 21px;
-    border: 1px solid rgba(255,214,150,.13); pointer-events: none; }
+    padding: 9px 8px 7px; border-radius: 22px;
+    background: linear-gradient(180deg, #FCF5E7 0%, #F1E4CB 62%, #E4D3B2 100%);
+    border: 1px solid rgba(74,52,26,.22);
+    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 4px rgba(120,92,52,.18),
+      0 14px 34px rgba(0,0,0,.55), 0 3px 0 rgba(0,0,0,.25); }
 
   .nav-stop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 50px; padding: 2px 2px 13px; border: 0; background: none; cursor: pointer; color: rgba(243,233,214,.72);
-    font-size: 10.5px; font-weight: 700; line-height: 1.1; transition: color .14s, transform .12s var(--ease); }
+    min-height: 50px; padding: 2px 2px 13px; border: 0; background: none; cursor: pointer; color: #7A6038;
+    font-size: 10.5px; font-weight: 800; line-height: 1.1; transition: color .14s, transform .12s var(--ease); }
   .nav-stop:active { transform: translateY(2px); }
   .nav-ic { position: relative; display: inline-flex; align-items: center; justify-content: center;
     width: 36px; height: 36px; border-radius: 12px;
     transition: background .18s var(--ease), box-shadow .18s var(--ease), width .18s var(--ease), height .18s var(--ease), border-radius .18s var(--ease), transform .18s var(--ease); }
-  .nav-art { width: 25px; height: 25px; object-fit: contain; display: block;
-    opacity: .8; transition: opacity .18s, width .18s var(--ease), height .18s var(--ease); }
+  .nav-art { width: 26px; height: 26px; object-fit: contain; display: block;
+    /* On parchment a dimmed icon reads as disabled, not unselected — they stay nearly full and the
+       raised ember token does the work of saying which one you are on. */
+    opacity: .88; transition: opacity .18s, width .18s var(--ease), height .18s var(--ease); }
   .nav-stop:hover .nav-art { opacity: 1; }
   .nav-label { position: absolute; left: 2px; right: 2px; bottom: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     opacity: 0; transform: translateY(-3px); transition: opacity .16s, transform .16s; pointer-events: none; }
 
-  /* the active stop is a chip lifted out of the rail */
-  .nav-stop.on { color: var(--gold); }
-  /* A banded rim — brass, dark, brass — which is what gives a chip its edge. Built from stacked
-     box-shadows rather than a conic-gradient mask: masks are the first thing to go wrong on older
-     WebKit, and this has to look the same everywhere. */
-  .nav-stop.on .nav-ic { width: 56px; height: 56px; border-radius: 50%; transform: translateY(-25px);
-    background: radial-gradient(circle at 50% 32%, #5a4226 0%, #2c1f12 62%, #171009 100%);
-    box-shadow: 0 0 0 2px #120c07, 0 0 0 4px rgba(233,190,96,.92), 0 0 0 6px #120c07,
-      0 0 0 7px rgba(233,190,96,.42), inset 0 2px 0 rgba(255,232,190,.30),
-      inset 0 -4px 8px rgba(0,0,0,.65), 0 12px 22px rgba(0,0,0,.65); }
-  /* and a gloss across the top, so the chip reads as something with a surface */
-  .nav-stop.on .nav-ic::before { content: ''; position: absolute; left: 7px; right: 7px; top: 4px; height: 38%;
+  /* the active stop: an ember token pressed into the card, ringed in white like the reference */
+  .nav-stop.on { color: #C2530F; }
+  .nav-stop.on .nav-ic { width: 56px; height: 56px; border-radius: 50%; transform: translateY(-24px);
+    background: linear-gradient(180deg, #F2894A 0%, #E5661A 55%, #C4500F 100%);
+    box-shadow: 0 0 0 5px #FCF5E7, 0 0 0 6px rgba(74,52,26,.18),
+      inset 0 2px 0 rgba(255,236,214,.55), inset 0 -4px 8px rgba(120,40,0,.35),
+      0 10px 20px rgba(0,0,0,.45); }
+  .nav-stop.on .nav-ic::before { content: ''; position: absolute; left: 8px; right: 8px; top: 5px; height: 36%;
     border-radius: 50%; pointer-events: none;
-    background: linear-gradient(180deg, rgba(255,240,214,.26), rgba(255,240,214,0)); }
-  .nav-stop.on .nav-art { width: 31px; height: 31px; opacity: 1; filter: drop-shadow(0 2px 5px rgba(0,0,0,.5)); }
+    background: linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0)); }
+  .nav-stop.on .nav-art { width: 31px; height: 31px; opacity: 1; filter: drop-shadow(0 2px 4px rgba(90,30,0,.45)); }
   .nav-stop.on .nav-label { opacity: 1; transform: none; }
   .nav-badge { position: absolute; top: -3px; inset-inline-end: -3px; min-width: 17px; height: 17px; padding: 0 4px;
     display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
     background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; line-height: 1;
-    box-shadow: 0 0 0 2px #150e08; }
+    box-shadow: 0 0 0 2px #FCF5E7; }
   .nav-stop:focus-visible { outline: none; }
-  .nav-stop:focus-visible .nav-ic { box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 55%, transparent); }
+  .nav-stop:focus-visible .nav-ic { box-shadow: 0 0 0 3px rgba(229,102,26,.55); }
   @media (prefers-reduced-motion: reduce) { .nav-stop, .nav-ic, .nav-art, .nav-label { transition: none; } }
 
   /* Desktop keeps its header, which already carries these destinations — a bottom bar there is a
