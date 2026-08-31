@@ -163,12 +163,6 @@
   .app.in-game .game-screen { flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .screen { flex: 1; display: flex; flex-direction: column; }
   .is-muted { opacity: .55; }
-  .topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-  .brand-word { font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: .06em; text-transform: uppercase; }
-  /* character/skills guide — a clearly-labelled accent button, not a cryptic icon */
-  .guide-btn { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); color: var(--accent); font-weight: 700; gap: 5px; }
-  .guide-btn svg { color: var(--accent); }
-  .guide-btn:hover { background: var(--accent-soft); }
   /* connection warning: replaces the quiet lamp when the network is slow or gone */
   .net-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
   .net-pill svg { flex-shrink: 0; }
@@ -1417,7 +1411,9 @@
   @media (prefers-reduced-motion: reduce) { .cam-shake, .cam-shake-lg { animation: none; } }
 
   /* ─── lobby ─── */
-  .lobby-screen { align-items: center; padding: 20px 16px 96px; }
+  /* 52px of top padding, not 20: the lobby's own header row runs the full width, and the floating
+     language/sound pair sits in the top corner it would otherwise reach into. */
+  .lobby-screen { align-items: center; padding: 52px 16px 96px; }
   .lobby-shell { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 16px; padding: 22px; border-radius: var(--radius-3xl); background: var(--surface); border: none; box-shadow: var(--overlay-shadow); }
   .lobby-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .lobby-kicker { display: inline-block; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
@@ -1567,7 +1563,6 @@
   .rule-char b { font-size: 14px; }
 
   /* ── in-game emoji / sticker reactions ── */
-  .leave-btn { flex-shrink: 0; font-weight: 700; }
   /* launcher + tray, down on the trailing edge just above the control panel (thumb-reachable); tray opens upward */
   /* Bottom RIGHT in every language, like the hand drawer. This is a thumb position, not a piece of
      text: on an inline-end anchor the button jumped to the other corner the moment you switched to
@@ -1658,7 +1653,9 @@
   [dir="rtl"] .page-back svg { transform: scaleX(-1); }
   .page-title { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: .03em; text-transform: uppercase; color: var(--foreground); margin: 0; }
   .page-title svg { color: var(--gold); }
-  .page-head-sp { flex-shrink: 0; width: 40px; }
+  /* Balances the back button so the title sits in the middle — and now also keeps the corner clear
+     for the floating language/sound pair, which is fixed and knows nothing about this row. */
+  .page-head-sp { flex-shrink: 0; width: 82px; }
   .page-body { min-height: 40vh; }
   .sheet-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 32px 8px; }
   /* centred sheet modal (used by the invite-friends picker) */
@@ -1735,16 +1732,10 @@
     .game-grid, .game-grid.log-collapsed { grid-template-columns: minmax(0, 1fr); grid-template-areas: "table" "console"; min-height: 0; }
   }
   @media (max-width: 760px) {
-    .topbar { padding: 6px 8px; gap: 6px; }
-    .brand-word { display: none; }                     /* drop the wordmark text to make room for the labelled guide button */
-    .room-code, .leave-tx, .net-tx { display: none; }           /* code lives on the lobby screen; Leave becomes icon-only so the topbar fits */
-    .topbar-right { gap: 3px; }                         /* tighten so the labelled guide button fits without overflow */
-    .guide-btn { padding-inline: 8px; }
-    .app.in-game .guide-btn-tx { display: none; }       /* in game the bar also carries mute + leave: the cards button goes icon-only */
     /* ── ONE-SCREEN PHONE LAYOUT ───────────────────────────────────────────────
        The in-game app owns exactly the viewport and nothing scrolls vertically.
        Height budget (= 100dvh):
-         topbar ~51px + 8px screen padding
+         8px screen padding
          + TABLE row  (felt + exactly ONE row of opponents)   ← the flexible minmax(0,1fr)
          + 6px gap
          + CONSOLE row (status line + My-cards strip + action row) ← `auto`, never squeezed
@@ -1752,7 +1743,6 @@
        The console row is `auto`, so the action cards keep their size and the felt +
        seats absorb any slack. The only scroller left is the horizontal action row. */
     .app.in-game { height: 100vh; height: 100dvh; max-height: 100dvh; overflow: hidden; }
-    .topbar { flex-shrink: 0; }
     .app.in-game .game-screen { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 4px 6px calc(4px + var(--sab)); }
     .game-grid, .game-grid.log-collapsed { flex: 1 1 auto; min-height: 0; height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 6px; }
 
@@ -1961,7 +1951,6 @@
     .mc-label { font-size: 8.5px; }
 
     .hand .gcard { width: min(40vw, 100px) !important; }
-    .brand-word { display: none; }
   }
 
   /* ── landscape phones: very short but very wide — the felt moves BESIDE the seats so the
@@ -2013,8 +2002,6 @@
     .cm-btns .rx.with-card .rx-card { width: 22px !important; }
     .cm-vs, .cm-guess { display: none; }
 
-    .topbar { padding: 3px 8px; flex-shrink: 0; }
-    .brand-word { display: none; }
     .game-screen { height: auto; min-height: 0; overflow-y: auto; padding: 3px 8px calc(3px + var(--sab)); }
     /* felt on the lead edge, the single row of opponents filling the rest of the width */
     .table-area { min-height: 0; height: auto; padding: 2px 8px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; border-radius: var(--radius-2xl); overflow: visible; }
@@ -2131,7 +2118,6 @@
     .card-board:not([data-more]) .row-arrow { visibility: hidden; }
     .board-grid { padding-inline: 0; }
     .cm-call-sub { min-height: 44px; }               /* the secondary "call the bluff" link-button */
-    .topbar-right button { min-height: 40px; }       /* topbar chrome: taller tap area without widening the crowded bar */
     .log-head { min-height: 44px; }
     /* police slot-picking on an opponent seat: keep the card-backs tappable but small enough
        for the 3-across seat grid — and let them wrap instead of blowing the column open.
@@ -2160,21 +2146,19 @@
   [dir="rtl"] svg[data-icon="refresh-circle"] { transform: scaleX(-1); }
   [dir="rtl"] .fx-stamp { transform: translate(-50%, -50%) rotate(12deg); animation-name: stamp-rtl, stamp-out; }
   @keyframes stamp-rtl { from { transform: translate(-50%, -50%) rotate(12deg) scale(2.4); opacity: 0; } to { transform: translate(-50%, -50%) rotate(12deg) scale(1); opacity: 1; } }
-  html[lang="ar"] .wordmark h1, html[lang="ar"] .brand-word { letter-spacing: 0; }
-  html[lang="ar"] .brand-word, html[lang="ar"] .wordmark h1 { font-family: "Plus Jakarta Sans Variable", system-ui, sans-serif; }
+  html[lang="ar"] .wordmark h1 { letter-spacing: 0; }
+  html[lang="ar"] .wordmark h1 { font-family: "Plus Jakarta Sans Variable", system-ui, sans-serif; }
   html[lang="ar"] .invite-code, html[lang="ar"] .code-input { direction: ltr; }
 
-  /* ── in-game chrome on phones and tablets ───────────────────────────────────
-     The header is gone below 1024px: it spent a permanent ~50px strip of the scarcest thing a
+  /* ── in-game chrome ─────────────────────────────────────────────────────────
+     The header is gone from every screen: it spent a permanent ~50px strip of the scarcest thing a
      phone has (table height) on a wordmark and seven controls, none of them needed mid-turn.
-     One gear replaces the lot; the sheet opens from the bottom, where the thumb already is.
-     Placed at the END of the sheet so it beats the phone/tablet blocks above at equal specificity. */
+     One gear replaces the lot, on desktop too; the sheet opens from the bottom, where the thumb
+     already is. Placed at the END of the sheet so it beats the blocks above at equal specificity. */
   @media (max-width: 1023px) {
-    .app.in-game .topbar { display: none; }
     /* the strip goes back to the board; --sat keeps the notch clear (.app already pads for it) */
     .app.in-game .game-screen { padding-top: 4px; }
   }
-  @media (min-width: 1024px) { .gm-btn, .gm-scrim { display: none !important; } }
 
   .gm-btn { position: fixed; z-index: 60; top: calc(var(--sat) + 8px); inset-inline-end: 10px;
     width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center;
@@ -2228,6 +2212,11 @@
   .gm-badge { min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center;
     border-radius: 10px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 800; }
   .gm-item.danger { color: var(--danger); margin-top: 4px; border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); }
+  /* On a desktop the sheet is a menu, not a drawer for a thumb: it stops being 1280px of stretched
+     menu items and becomes a floating card, still at the bottom where the gesture put it. */
+  @media (min-width: 1024px) {
+    .gm-sheet { width: min(420px, 100%); margin: 0 auto 14px; border-radius: 20px; }
+  }
   /* Landscape phone: six 50px rows would push Leave under the fold. Tighten so the whole sheet fits. */
   @media (max-height: 480px) {
     .gm-sheet { max-height: 92dvh; padding-top: 6px; }
@@ -2379,17 +2368,29 @@
     .app.in-game .prompt:not(.prompt-end) .cm-btns > * { grid-column: auto; }
   }
 
-  /* ── no header on the front door ─────────────────────────────────────────────
-     Below 1024px the home screen drops the bar entirely. It carried a wordmark the hero already
-     shows twice over, and four controls — of which the rules have a link in the footer and the
-     other three moved into the tools row above. A trouble-only network pill still appears, as
-     .net-badge, which is rendered outside the bar. Other screens keep their header: the lobby
-     needs its room code and the way out. */
-  .only-sm { display: none !important; }
+  /* ── language and sound, with nothing around them ────────────────────────────
+     No screen has a header any more. It carried a wordmark the hero already shows twice over, a
+     room code the lobby shows itself, and controls that are set once: the rules have a link in the
+     footer, characters and the way out live behind the in-game gear, and a trouble-only network
+     warning appears on the board as .net-badge. These two are what is left, and they stand on
+     their own — no bar, no background, just the icons.
+
+     Inline-end, mirrored: every page that has a back button puts it at the inline-START, and these
+     have to stay out of its way in both directions. Physical left/right, never inset-inline-*,
+     which Safari 14 ignores (the box then falls back to its static position). */
+  .qc { position: fixed; z-index: 45; top: calc(var(--sat) + 8px); right: calc(8px + var(--sar)); left: auto;
+    display: inline-flex; align-items: center; gap: 2px; }
+  [dir="rtl"] .qc { right: auto; left: calc(8px + var(--sal)); }
+  .qc-btn { width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; background: transparent;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; transition: transform .15s var(--ease), background .15s; }
+  .qc-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.07); }
+  .qc-btn:active { transform: scale(.93); }
+  .qc .art { width: 24px; height: 24px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.65)); }
+  .qc .art[src*='flag-'] { border-radius: 50%; }
+
   @media (max-width: 1023px) {
-    .app.at-home .topbar { display: none; }
     .app.at-home .home-screen { padding-top: 10px; }
-    .only-sm { display: inline-flex !important; }
     /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
     .home-top-tools { gap: 5px; }
     .home-top-tools .acct-tool { width: 32px; height: 32px; }

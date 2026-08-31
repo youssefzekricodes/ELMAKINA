@@ -1,28 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Chip, Tooltip } from '@heroui/react';
-import { IMG } from '../theme';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { leaveRoom, setLanguage, toggleSound } from '../lib/net';
 import { Art, Icon } from './ui';
 
-function IconButton({ label, icon, onPress, className = '' }: { label: string; icon: string; onPress: () => void; className?: string }) {
-  return (
-    <Tooltip delay={400}>
-      <Button isIconOnly variant="tertiary" size="sm" aria-label={label} onPress={onPress} className={className}>
-        <Icon name={icon} className="size-5" />
-      </Button>
-      <Tooltip.Content>{label}</Tooltip.Content>
-    </Tooltip>
-  );
-}
-
 /**
- * In-game controls for phones and tablets, where the header is gone entirely.
+ * In-game controls, everywhere.
  *
- * The bar cost a permanent ~50px strip of the scarcest thing a phone has — table height — to show
- * a wordmark and seven controls, none of which are needed mid-turn except the log and the way out.
- * All of it now lives behind one gear, and the sheet opens from the bottom where a thumb already is.
+ * The header cost a permanent ~50px strip of the scarcest thing a phone has — table height — to
+ * show a wordmark and seven controls, none of which are needed mid-turn except the log and the way
+ * out. It is gone from every screen now, so this gear is the whole of it on desktop too: the sheet
+ * opens from the bottom, where a thumb already is.
  */
 export function GameMenu() {
   const s = useStore();
@@ -106,55 +94,5 @@ export function GameMenu() {
         </div>
       )}
     </>
-  );
-}
-
-export function TopBar() {
-  const s = useStore();
-  const inGame = s.screen === 'game';
-  const onLeave = async () => {
-    if (s.state && s.state.phase === 'playing' && !confirm(t('toast.leave'))) return;
-    await leaveRoom();
-  };
-  return (
-    <header className="topbar">
-      <div className="flex items-center gap-2.5">
-        <img className="size-8 object-contain drop-shadow" src={IMG.machineSmall} alt="" />
-        <span className="brand-word">ELMEKINA</span>
-      </div>
-      <div className="topbar-right flex items-center gap-1.5">
-        {s.room && s.screen !== 'home' && <Chip variant="secondary" className="room-code font-semibold tracking-[.2em] tabular-nums ltr" dir="ltr">{s.room.code}</Chip>}
-        {/* The header is desktop-only now (phones and tablets get the gear), and a desktop bar has
-            room for its controls. Nothing hides behind a ⋯: every action is one click, always. */}
-        <Tooltip delay={400}>
-          <Button isIconOnly variant="tertiary" size="sm" onPress={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} className="art-btn"><Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-5" /></Button>
-          <Tooltip.Content>{t('top.lang.title')}</Tooltip.Content>
-        </Tooltip>
-        <Tooltip delay={400}>
-          <Button variant="outline" size="sm" onPress={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} className="guide-btn">
-            <Art name="cards" className="size-5" /><span className="guide-btn-tx">{t('top.chars')}</span>
-          </Button>
-          <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
-        </Tooltip>
-        <IconButton label={t('top.rules')} icon="question-circle" onPress={() => store.set({ modal: 'guide' })} />
-        <Tooltip delay={400}>
-          <Button isIconOnly variant="tertiary" size="sm" aria-label={t('top.sound')} onPress={toggleSound} className="art-btn"><Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /></Button>
-          <Tooltip.Content>{t('top.sound')}</Tooltip.Content>
-        </Tooltip>
-        {/* Only trouble is worth a badge. A green "everything is fine" dot sat in the header for
-            the whole session saying nothing — the slow/offline pills are the states you need. */}
-        {s.net !== 'ok' && (
-          <span className={`net-pill ${s.net}`} role="status" title={t(s.net === 'off' ? 'net.off' : 'net.slow')}>
-            <Icon name={s.net === 'off' ? 'danger-triangle' : 'hourglass'} className="size-3.5" />
-            <span className="net-tx">{t(s.net === 'off' ? 'net.off' : 'net.slow')}</span>
-          </span>
-        )}
-        {inGame && (
-          <Button variant="danger" size="sm" onPress={onLeave} className="leave-btn">
-            <Icon name="logout-2" className="size-4" /><span className="leave-tx">{t('top.leave')}</span>
-          </Button>
-        )}
-      </div>
-    </header>
   );
 }

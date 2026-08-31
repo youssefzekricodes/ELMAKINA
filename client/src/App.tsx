@@ -11,7 +11,8 @@ import { initUpdateCheck } from './lib/update';
 import { i18n } from './i18n';
 import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
-import { GameMenu, TopBar } from './components/TopBar';
+import { GameMenu } from './components/GameMenu';
+import { QuickControls } from './components/QuickControls';
 import { Home } from './components/Home';
 import { Lobby } from './components/Lobby';
 import { Table } from './components/Table';
@@ -64,7 +65,6 @@ export default function App() {
     <>
       <Background inGame={inGame} screen={s.screen} />
       <div id="app" className={`app ${inGame ? 'in-game' : ''} at-${s.screen}`} dir={i18n.dir()}>
-        <TopBar />
         {s.screen === 'home' && <Home />}
         {s.screen === 'leaderboard' && <LeaderboardPage />}
         {s.screen === 'friends' && <FriendsPage />}
@@ -85,8 +85,10 @@ export default function App() {
       </div>
       {VOICE_ENABLED && s.room && <VoiceDock />}
       {inGame && <Reactions />}
-      {/* Phones and tablets have no in-game header at all: this gear is the whole of it. */}
+      {/* No screen has a header any more: in a game this gear is the whole of it, and everywhere
+          else the two settings worth keeping stand on their own in the corner. */}
       {inGame && <GameMenu />}
+      <QuickControls />
       {/* Out of the game but still in the room: say it plainly, for as long as it is true. */}
       {inGame && <Spectating />}
       {/* The briefing prefers the lobby, where no clock is running; Coach decides for itself. */}
