@@ -473,8 +473,11 @@
      steps back half a step. The arc is the marker AND the countdown — one element, two jobs. */
   .seat .av-wrap { transition: transform .3s var(--ease); }
   .seat.turn .av-wrap { transform: scale(1.08); }
-  .seat.turn .pavatar { box-shadow: 0 0 0 2px var(--background), 0 8px 20px rgba(26,25,24,.22); }
-  .seat-clock { position: absolute; inset: -6px; z-index: 3; transform: rotate(-90deg); pointer-events: none; }
+  /* No white halo under the ring: two concentric rims 2px apart read as a rendering fault. */
+  .seat.turn .pavatar { box-shadow: 0 8px 20px rgba(26,25,24,.22); }
+  /* -5px: the band lands just outside the avatar's edge, so it reads as that avatar's rim rather
+     than a hoop floating around it. Square box + square viewBox = a circle concentric at any size. */
+  .seat-clock { position: absolute; inset: -5px; z-index: 3; transform: rotate(-90deg); pointer-events: none; }
   .seat-clock circle { fill: none; stroke-width: 6; }
   .seat-clock .sc-track { stroke: color-mix(in srgb, var(--foreground) 15%, transparent); }
   .seat-clock .sc-arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray .12s linear; }
@@ -2081,4 +2084,57 @@
   html[lang="ar"] .wordmark h1, html[lang="ar"] .brand-word { letter-spacing: 0; }
   html[lang="ar"] .brand-word, html[lang="ar"] .wordmark h1 { font-family: "Plus Jakarta Sans Variable", system-ui, sans-serif; }
   html[lang="ar"] .invite-code, html[lang="ar"] .code-input { direction: ltr; }
+
+  /* ── in-game chrome on phones and tablets ───────────────────────────────────
+     The header is gone below 1024px: it spent a permanent ~50px strip of the scarcest thing a
+     phone has (table height) on a wordmark and seven controls, none of them needed mid-turn.
+     One gear replaces the lot; the sheet opens from the bottom, where the thumb already is.
+     Placed at the END of the sheet so it beats the phone/tablet blocks above at equal specificity. */
+  @media (max-width: 1023px) {
+    .app.in-game .topbar { display: none; }
+    /* the strip goes back to the board; --sat keeps the notch clear (.app already pads for it) */
+    .app.in-game .game-screen { padding-top: 4px; }
+  }
+  @media (min-width: 1024px) { .gm-btn, .gm-scrim { display: none !important; } }
+
+  .gm-btn { position: fixed; z-index: 60; top: calc(var(--sat) + 8px); inset-inline-end: 10px;
+    width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 1px solid var(--border); color: var(--foreground);
+    background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(10px);
+    box-shadow: 0 4px 14px rgba(0,0,0,.35); cursor: pointer; transition: transform .12s var(--ease); }
+  .gm-btn:active { transform: scale(.94); }
+  .gm-dot { position: absolute; top: -3px; inset-inline-end: -3px; min-width: 18px; height: 18px; padding: 0 4px;
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
+    background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; line-height: 1; }
+  /* 88 keeps the sheet under the cut-scene mask (.cine, 90) whatever the DOM order is. */
+  .gm-scrim { position: fixed; inset: 0; z-index: 88; display: flex; align-items: flex-end; justify-content: center;
+    background: rgba(12,9,6,.55); backdrop-filter: blur(2px); animation: gm-fade .18s var(--ease); }
+  @keyframes gm-fade { from { opacity: 0; } to { opacity: 1; } }
+  .gm-sheet { width: min(460px, 100%); max-height: 82dvh; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface); border-start-start-radius: var(--radius-3xl); border-start-end-radius: var(--radius-3xl);
+    padding: 10px 10px calc(14px + var(--sab)); display: flex; flex-direction: column; gap: 2px;
+    box-shadow: 0 -18px 50px rgba(0,0,0,.5); animation: gm-rise .22s var(--ease); }
+  @keyframes gm-rise { from { transform: translateY(14px); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
+  /* the grab handle: says "this sheet dismisses" without a close button competing with the items */
+  .gm-sheet::before { content: ''; width: 38px; height: 4px; border-radius: 2px; background: var(--border-secondary); margin: 2px auto 8px; flex-shrink: 0; }
+  .gm-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 8px 8px; }
+  .gm-brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .12em; font-size: 13px; color: var(--muted); }
+  .gm-code { font-weight: 700; letter-spacing: .2em; font-variant-numeric: tabular-nums; font-size: 14px; color: var(--foreground); }
+  .gm-net { align-self: flex-start; margin: 0 8px 6px; }
+  .gm-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 0 12px;
+    border: 0; border-radius: 12px; background: none; color: var(--foreground); font-size: 15px; font-weight: 600;
+    text-align: start; cursor: pointer; }
+  .gm-item:active { background: var(--surface-secondary); }
+  .gm-item svg { flex-shrink: 0; opacity: .85; }
+  .gm-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gm-badge { min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 10px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 800; }
+  .gm-item.danger { color: var(--danger); margin-top: 4px; border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); }
+  /* Landscape phone: six 50px rows would push Leave under the fold. Tighten so the whole sheet fits. */
+  @media (max-height: 480px) {
+    .gm-sheet { max-height: 92dvh; padding-top: 6px; }
+    .gm-sheet::before { margin-bottom: 4px; }
+    .gm-head { padding-bottom: 4px; }
+    .gm-item { min-height: 40px; font-size: 14px; }
+  }
 }

@@ -51,6 +51,63 @@ function MoreMenu() {
   );
 }
 
+/**
+ * In-game controls for phones and tablets, where the header is gone entirely.
+ *
+ * The bar cost a permanent ~50px strip of the scarcest thing a phone has — table height — to show
+ * a wordmark and seven controls, none of which are needed mid-turn except the log and the way out.
+ * All of it now lives behind one gear, and the sheet opens from the bottom where a thumb already is.
+ */
+export function GameMenu() {
+  const s = useStore();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [open]);
+  const onLeave = async () => {
+    if (s.state && s.state.phase === 'playing' && !confirm(t('toast.leave'))) return;
+    await leaveRoom();
+  };
+  const item = (icon: string, label: string, onPress: () => void, cls = '', tail?: React.ReactNode) => (
+    <button type="button" className={`gm-item ${cls}`} role="menuitem" onClick={() => { setOpen(false); onPress(); }}>
+      <Icon name={icon} className="size-5" /><span className="gm-tx">{label}</span>{tail}
+    </button>
+  );
+  return (
+    <>
+      <button type="button" className="gm-btn" aria-label={t('top.more')} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <Icon name="settings-minimalistic" className="size-5" />
+        {s.unread > 0 && <span className="gm-dot">{s.unread > 9 ? '9+' : s.unread}</span>}
+      </button>
+      {open && (
+        <div className="gm-scrim" onClick={() => setOpen(false)}>
+          <div className="gm-sheet" role="menu" aria-label={t('top.more')} onClick={(e) => e.stopPropagation()}>
+            <div className="gm-head">
+              <span className="gm-brand">ELMEKINA</span>
+              {s.room && <span className="gm-code ltr" dir="ltr">{s.room.code}</span>}
+            </div>
+            {s.net !== 'ok' && (
+              <span className={`net-pill ${s.net} gm-net`} role="status">
+                <Icon name={s.net === 'off' ? 'danger-triangle' : 'hourglass'} className="size-3.5" />
+                <span className="net-tx">{t(s.net === 'off' ? 'net.off' : 'net.slow')}</span>
+              </span>
+            )}
+            {item('document-text', t('top.log'), () => store.set({ logOpen: !s.logOpen, unread: 0 }), '', s.unread > 0 ? <span className="gm-badge">{s.unread > 9 ? '9+' : s.unread}</span> : null)}
+            {item('card-recive', t('top.chars'), () => store.set({ modal: 'chars' }))}
+            {item('question-circle', t('top.rules'), () => store.set({ modal: 'guide' }))}
+            {item(s.soundOn ? 'volume-loud' : 'volume-cross', t('top.sound'), toggleSound)}
+            {item('info-circle', t('top.lang.title'), () => setLanguage(s.lang === 'en' ? 'tn' : 'en'))}
+            {item('logout-2', t('top.leave'), onLeave, 'danger')}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function TopBar() {
   const s = useStore();
   const inGame = s.screen === 'game';

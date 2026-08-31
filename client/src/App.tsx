@@ -10,7 +10,7 @@ import { initAds } from './lib/ads';
 import { i18n } from './i18n';
 import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
-import { TopBar } from './components/TopBar';
+import { GameMenu, TopBar } from './components/TopBar';
 import { Home } from './components/Home';
 import { Lobby } from './components/Lobby';
 import { Table } from './components/Table';
@@ -80,6 +80,8 @@ export default function App() {
       </div>
       {VOICE_ENABLED && s.room && <VoiceDock />}
       {inGame && <Reactions />}
+      {/* Phones and tablets have no in-game header at all: this gear is the whole of it. */}
+      {inGame && <GameMenu />}
       {/* The briefing prefers the lobby, where no clock is running; Coach decides for itself. */}
       <Coach />
       {inGame && <Cinematic />}

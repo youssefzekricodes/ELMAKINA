@@ -64,15 +64,21 @@ export function CardBack({ className = '', onPress, label, style }: { className?
  * The turn clock, worn by the seat itself: an arc around the avatar that drains as the player's
  * time runs out. It replaces the old pulsing glow — the ring is both the "who's on" marker and
  * the countdown, the way a real game clock sits in front of the player it times.
+ *
+ * The dash lengths are in user units off the real circumference, NOT `pathLength`: WebKit ignores
+ * `pathLength` on a <circle>, so a "75 100" dash was measured against the true 289-unit perimeter
+ * and drew a quarter-arc plus a stray second dash instead of three quarters of a ring.
  */
+const CLOCK_R = 46;
+const CLOCK_C = 2 * Math.PI * CLOCK_R;
 export function SeatClock({ deadline, total }: { deadline?: number | null; total?: number }) {
   const rem = useCountdown(deadline);
   if (!deadline || !total) return null;
   const frac = Math.max(0, Math.min(1, rem / total));
   return (
     <svg className={`seat-clock ${rem < 5000 ? 'low' : ''}`} viewBox="0 0 100 100" aria-hidden="true">
-      <circle className="sc-track" cx="50" cy="50" r="46" pathLength={100} />
-      <circle className="sc-arc" cx="50" cy="50" r="46" pathLength={100} strokeDasharray={`${frac * 100} 100`} />
+      <circle className="sc-track" cx="50" cy="50" r={CLOCK_R} />
+      <circle className="sc-arc" cx="50" cy="50" r={CLOCK_R} strokeDasharray={`${(frac * CLOCK_C).toFixed(2)} ${CLOCK_C.toFixed(2)}`} />
     </svg>
   );
 }
