@@ -163,17 +163,6 @@
   .app.in-game .game-screen { flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .screen { flex: 1; display: flex; flex-direction: column; }
   .is-muted { opacity: .55; }
-  /* in-game overflow: the four set-once controls, out of the way until asked for */
-  .more-wrap { position: relative; display: inline-flex; }
-  .more-menu { position: absolute; top: calc(100% + 6px); inset-inline-end: 0; z-index: 70; min-width: 176px; padding: 6px;
-    display: flex; flex-direction: column; gap: 2px; border-radius: 12px; border: 1px solid var(--border);
-    background: rgba(24,17,11,.96); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 18px 44px rgba(0,0,0,.6); animation: more-in .14s var(--ease); }
-  @keyframes more-in { from { transform: translateY(-4px); opacity: 0; } to { transform: none; opacity: 1; } }
-  .more-item { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 40px; padding: 0 10px; border: 0; border-radius: 8px;
-    background: none; color: var(--foreground); font-size: 13px; font-weight: 600; text-align: start; cursor: pointer; }
-  .more-item:hover { background: var(--surface-secondary); color: var(--gold); }
-  .more-item svg { flex-shrink: 0; opacity: .8; }                          /* the speaker button reads "off" at a glance */
   .topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
   .brand-word { font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: .06em; text-transform: uppercase; }
   /* character/skills guide — a clearly-labelled accent button, not a cryptic icon */
@@ -1331,12 +1320,9 @@
      hover-lift here became a permanent one — and a card lifted inside a row that clips its
      overflow gets its top shaved. Pointer-less devices get no hover transforms at all; they have
      :active for feedback, which ends when the finger does. */
-  @media (hover: none) {
-    .board-card:not(.off):hover, .board-card.owned:not(.off):hover,
-    .hand-row .hand .gcard:hover, .seat.picking .hand .cardback:hover { transform: var(--fan, none); }
-    .board-card.owned:not(.off):hover { transform: var(--fan, none) translateY(-7px); }
-    .board-card:not(.off):not(.owned):hover .bc-art, .board-card.owned:not(.off):hover .bc-art { box-shadow: none; }
-  }
+  /* Touch devices get no hover transforms at all — see the (hover: none) block at the very end
+     of this sheet. It has to live there: the phone block below re-declares :hover lifts, and at
+     equal specificity the LAST rule wins, so suppressing them from up here did nothing. */
 
   /* fx */
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
@@ -1790,7 +1776,10 @@
     .mc-label { font-size: 10px; letter-spacing: .08em; opacity: 1; }
     .mc-label svg { display: none; }
     .mc-chars { font-size: 9px; padding: 1px 6px; }
-    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 8px; padding: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    /* padding-top + equal negative margin: a strip that scrolls sideways must clip the y axis
+       (overflow-x:auto forces it), and with zero headroom that clip shaved the top of every
+       card's coloured ring. The box now starts 6px higher without moving anything. */
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 8px; padding: 6px 0 0; margin-top: -6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
     .mc-hand .hand-card { gap: 2px; flex-shrink: 0; }
     .mc-hand .hc-name { display: block; max-width: 52px; font-size: 8px; letter-spacing: 0; line-height: 1.05; }
@@ -1798,7 +1787,7 @@
     .mc-head { flex-direction: column; align-items: flex-start; gap: 3px; flex-shrink: 0; }
     .mc-label { font-size: 9px; letter-spacing: .08em; }
     .mc-chars { font-size: 9.5px; padding: 1px 7px; }
-    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 7px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 7px; padding: 6px 0 0; margin-top: -6px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
     .my-cards .hand .gcard { width: 42px !important; }
     .mc-hand .hand-card { gap: 3px; flex-shrink: 0; }
@@ -1996,7 +1985,7 @@
     .mc-hand .hc-name { display: none; }
     .mc-label { font-size: 8.5px; }
     .mc-chars { font-size: 9px; padding: 1px 6px; }
-    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 6px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 6px; padding: 5px 0 0; margin-top: -5px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .my-cards .hand .gcard { width: 38px !important; }
     .mc-hand .hand-card { gap: 2px; flex-shrink: 0; }
     .mc-hand .hc-name { max-width: 52px; font-size: 8px; }
@@ -2110,8 +2099,8 @@
   .gm-scrim { position: fixed; inset: 0; z-index: 88; display: flex; align-items: flex-end; justify-content: center;
     background: rgba(12,9,6,.55); backdrop-filter: blur(2px); animation: gm-fade .18s var(--ease); }
   @keyframes gm-fade { from { opacity: 0; } to { opacity: 1; } }
-  .gm-sheet { width: min(460px, 100%); max-height: 82dvh; overflow-y: auto; overscroll-behavior: contain;
-    background: var(--surface); border-start-start-radius: var(--radius-3xl); border-start-end-radius: var(--radius-3xl);
+  .gm-sheet { width: 100%; max-height: 82dvh; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface); border-start-start-radius: 28px; border-start-end-radius: 28px;
     padding: 10px 10px calc(14px + var(--sab)); display: flex; flex-direction: column; gap: 2px;
     box-shadow: 0 -18px 50px rgba(0,0,0,.5); animation: gm-rise .22s var(--ease); }
   @keyframes gm-rise { from { transform: translateY(14px); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
@@ -2136,5 +2125,20 @@
     .gm-sheet::before { margin-bottom: 4px; }
     .gm-head { padding-bottom: 4px; }
     .gm-item { min-height: 40px; font-size: 14px; }
+  }
+
+  /* ── touch: no hover state, ever ─────────────────────────────────────────────
+     A tap leaves :hover stuck on the element until you tap elsewhere, so every hover-lift became
+     permanent — and a lifted card inside a strip that clips its overflow gets its top shaved.
+     LAST in the sheet on purpose: the phone/tablet blocks above re-declare these same :hover
+     selectors, and at equal specificity source order decides. :active still gives tap feedback. */
+  @media (hover: none) {
+    .board-card:not(.off):hover, .board-card.owned:not(.off):hover,
+    .hand-row .hand .gcard:hover, .gcard.pick:hover,
+    .seat.picking .hand .cardback:hover { transform: var(--fan, none); }
+    .board-card.owned:not(.off):hover { transform: var(--fan, none) translateY(-6px); }
+    .board-card.off.owned:hover { transform: var(--fan, none) translateY(-8px); }
+    .board-card:not(.off):not(.owned):hover .bc-art, .board-card.owned:not(.off):hover .bc-art { box-shadow: none; }
+    .hand-row .hand .gcard:hover { filter: none; }
   }
 }
