@@ -59,7 +59,7 @@ export default function App() {
   return (
     <>
       <Background inGame={inGame} screen={s.screen} />
-      <div id="app" className={`app ${inGame ? 'in-game' : ''}`} dir={i18n.dir()}>
+      <div id="app" className={`app ${inGame ? 'in-game' : ''} at-${s.screen}`} dir={i18n.dir()}>
         <TopBar />
         {s.screen === 'home' && <Home />}
         {s.screen === 'leaderboard' && <LeaderboardPage />}

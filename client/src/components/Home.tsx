@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { createRoom, joinRoom, playSolo, quickMatch, notify, isConfigured } from '../lib/net';
+import { createRoom, joinRoom, playSolo, quickMatch, notify, setLanguage, toggleSound, isConfigured } from '../lib/net';
 import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
@@ -68,6 +68,12 @@ export function Home() {
               <Icon name="users-group-rounded" className="size-4" />
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
             </button>
+            {/* Below 1024px there is no header on this screen, so the three controls it carried that
+                live nowhere else — the card reference, sound and language — sit here instead. The
+                rules already have their own link in the footer. */}
+            <button type="button" className="acct-tool only-sm" onClick={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} title={t('top.chars')}><Icon name="card-recive" className="size-4" /></button>
+            <button type="button" className={`acct-tool only-sm ${s.soundOn ? '' : 'is-muted'}`} onClick={toggleSound} aria-label={t('top.sound')} title={t('top.sound')}><Icon name={s.soundOn ? 'volume-loud' : 'volume-cross'} className="size-4" /></button>
+            <button type="button" className="acct-tool only-sm acct-lang" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} title={t('top.lang.title')}>{t('top.lang')}</button>
           </div>
         </div>
 

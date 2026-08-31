@@ -2297,4 +2297,22 @@
       grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; padding-top: 4px; }
     .app.in-game .prompt:not(.prompt-end) .cm-btns > * { grid-column: auto; }
   }
+
+  /* ── no header on the front door ─────────────────────────────────────────────
+     Below 1024px the home screen drops the bar entirely. It carried a wordmark the hero already
+     shows twice over, and four controls — of which the rules have a link in the footer and the
+     other three moved into the tools row above. A trouble-only network pill still appears, as
+     .net-badge, which is rendered outside the bar. Other screens keep their header: the lobby
+     needs its room code and the way out. */
+  .only-sm { display: none !important; }
+  @media (max-width: 1023px) {
+    .app.at-home .topbar { display: none; }
+    .app.at-home .home-screen { padding-top: 10px; }
+    .only-sm { display: inline-flex !important; }
+    /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
+    .home-top-tools { gap: 5px; }
+    .home-top-tools .acct-tool { width: 32px; height: 32px; }
+  }
+  .acct-lang { font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+  .acct-tool.is-muted { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
 }
