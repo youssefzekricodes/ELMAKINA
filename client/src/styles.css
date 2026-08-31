@@ -337,6 +337,11 @@
   .game-screen { padding: 10px 12px calc(10px + var(--sab)); }
   .game-grid { display: grid; grid-template-columns: 1fr 330px; grid-template-rows: 1fr auto; grid-template-areas: "table log" "console log"; gap: 12px; flex: 1; min-height: calc(100dvh - 70px - var(--sat)); }
   /* dim back-room table lit by a single overhead lamp */
+  /* Wide screens keep an ellipse on purpose. The table area is about 1074x388 there, and a seat is
+     ~150 tall, so the vertical radius can never exceed ~119 — at which point a circle would have to
+     pull the side seats in to 119 as well and six of them would sit on top of each other. Raising
+     --ring-ry alone changes nothing either: the top seat is held by --seat-vinset, not the radius.
+     The circle is scoped to phones and tablets, where the table area is near-square. */
   .table-area { grid-area: table; position: relative; min-height: 380px; border-radius: var(--radius-3xl); overflow: hidden; background: transparent; }
   .table-area::before { content: none; }
   /* faint concentric rings for depth/creativity */
@@ -381,6 +386,10 @@
   .seat .hand.fan { gap: 0; }
   .seat .hand.fan .cardback { transform: rotate(calc(var(--k) * 9deg)) translateY(calc(abs(var(--k)) * 2px)); transform-origin: 50% 120%; margin-inline: -5px;
     transition: transform .18s var(--ease); box-shadow: 0 3px 8px rgba(0,0,0,.5); }
+  /* RTL lays the fan's children right-to-left, so the card with the most negative --k ends up on
+     the RIGHT — and with the same rotation it tilts inward, closing the fan instead of opening it.
+     Mirroring the angle opens it the right way round again. */
+  [dir="rtl"] .seat .hand.fan .cardback { transform: rotate(calc(var(--k) * -9deg)) translateY(calc(abs(var(--k)) * 2px)); }
   .seat .hand.fan .cardback.pick { margin-inline: -2px; }
   .seat .hand .cardback { width: 34px; position: relative; display: flex; align-items: center; justify-content: center; transition: transform .15s var(--ease), box-shadow .15s; }
   .seat .hand .cardback .slot-n { display: none; font-weight: 800; font-size: 12px; color: #fff; text-shadow: 0 1px 2px #000; }
@@ -781,15 +790,28 @@
   /* What happens if nobody reacts. This is the single most useful sentence on the screen for anyone
      who has not memorised seven characters, so it reads as a callout rather than as fine print —
      and it is never hidden, least of all on a phone, which is where beginners actually are. */
-  .cm-effect { display: flex; align-items: flex-start; gap: 8px; max-width: 42ch; padding: 8px 11px;
+  /* Full panel width, balanced lines, and no token can push a line past the edge. It was capped at
+     42ch inside a wider panel, so it wrapped earlier than it had to and left ragged orphan lines. */
+  .cm-effect { display: flex; align-items: flex-start; gap: 8px; width: 100%; max-width: 46ch; padding: 8px 11px;
+    overflow-wrap: anywhere; text-wrap: pretty;
     border-radius: 10px; border: 1px solid color-mix(in srgb, var(--c, var(--gold)) 30%, transparent);
     background: color-mix(in srgb, var(--c, var(--gold)) 9%, transparent);
     font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--foreground); text-align: start; }
   .cm-effect::before { content: ''; flex: 0 0 3px; align-self: stretch; border-radius: 2px;
     background: color-mix(in srgb, var(--c, var(--gold)) 65%, transparent); }
   .cm-effect b { color: var(--foreground); font-weight: 800; }
+  /* The counter's own explanation reads as the answer to the one above it, so it is tinted with
+     the countering card rather than the claimed one. */
+  .cm-effect.counter { border-color: color-mix(in srgb, var(--warning) 34%, transparent);
+    background: color-mix(in srgb, var(--warning) 8%, transparent); }
+  .cm-effect.counter::before { background: color-mix(in srgb, var(--warning) 70%, transparent); }
   /* one column of identical buttons — icon and label always line up */
-  .cm-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  /* Pinned to the bottom of the panel. The explanations earn their length, but on a short phone
+     they push the verdicts below the fold INSIDE the panel — buttons that exist and cannot be
+     reached, which is worse than no explanation at all. The text scrolls; the choice never moves. */
+  .cm-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;
+    position: sticky; bottom: -1px; z-index: 2; padding-top: 10px;
+    background: linear-gradient(180deg, rgba(24,17,11,0), rgba(24,17,11,.97) 26%); }
   .cm-btns .rx { display: grid; grid-template-columns: 30px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 16px; width: 100%; }
   /* One 30px leading column for all three verdicts — the counter's card and the other two icons sit
      in the same slot, so every label starts on the same x instead of stepping in and out. */
@@ -1051,9 +1073,14 @@
      @supports because an unsupported unit inside calc() invalidates the whole declaration, and a
      seat with no inset falls back to its static position: every seat stacked in one corner. Without
      support the percentages above still apply, which is exactly today's behaviour. */
-  @supports (container-type: size) {
-    .table-area { container-type: size; }
-    .app.in-game .table-area { --ring-rx: min(40cqw, 40cqh); --ring-ry: min(40cqw, 40cqh); }
+  @supports (container-type: size) { .table-area { container-type: size; } }
+  /* Phones and tablets only. On a wide desktop the table area is far wider than it is tall, and a
+     radius capped by the height packs every seat into the middle — which is what made them
+     overlap. Wide screens keep the ellipse they always had; it is the shape that actually fits. */
+  @media (max-width: 1023px) {
+    @supports (container-type: size) {
+      .app.in-game .table-area { --ring-rx: min(40cqw, 40cqh); --ring-ry: min(40cqw, 40cqh); }
+    }
   }
 
   /* ── cut-scenes: one beat of the game, told across the whole screen ──────────
@@ -1538,8 +1565,9 @@
        it pushed your own seat off the edge, stacked the hands under the deck, and gave no sense of
        who plays after whom. Ring + clockwise seating is the turn order. */
     .table-area { min-height: 0; position: relative; padding: 0; border-radius: var(--radius-2xl); overflow: visible;
-      --seat-inset: 48px; --seat-vinset: 46px;
+      --seat-inset: 36px; --seat-vinset: 46px;   /* 48 pushed the outermost seats inward, closing the gap the ring had just opened */
       --ring-cx: 50%; --ring-rx: 40%; --ring-cy: 50%; --ring-ry: 34%; }
+
     .table-area::after { display: none; }
     /* Deck and bank move OUT of the middle and sit together in the bottom inline-start corner —
        the one part of the table no seat ever reaches. In the centre they were squeezed between the
@@ -1561,6 +1589,10 @@
     .seat .av-wrap { margin-bottom: 7px; }
     .seat .pavatar { width: 40px !important; height: 40px !important; }
     .seats[data-n="5"] .seat .pavatar { width: 36px !important; height: 36px !important; }
+    /* A full table is five opponents across ~380px of ring: the seat box has to come in or the
+       boxes touch, whatever the angles do. The avatar and hand keep their size; only the box
+       around the name narrows, and the name ellipsises. */
+    .seats[data-n="5"] .seat, .seats[data-n="6"] .seat { width: 64px; }
     .seat .nm { font-size: 9.5px; line-height: 1.25; max-width: 100%; padding: 0; }
     .seat .coins { font-size: 12px; font-weight: 800; padding: 1px 7px 1px 4px; }
     .seat .coins img { width: 15px; height: 15px; }
@@ -1739,11 +1771,14 @@
     .seat .av-wrap { margin-bottom: 5px; }
     .seat .nm { font-size: 9px; }
     .seat .hand .cardback { width: 26px; }
+    /* A full table on the shortest phone is the one place the ring cannot hold everyone at full
+       size: five hands at 26px touch. Only that configuration pays for it. */
+    .seats[data-n="5"] .seat .hand .cardback, .seats[data-n="6"] .seat .hand .cardback { width: 21px; }
     .deck { width: 30px; height: 44px; } .deck .cardback { width: 30px; }
     .bank .pile { width: 36px; height: 26px; } .bank .pile img { width: 17px; height: 17px; }
     .prompt { max-height: 84dvh; }
     .claim-min { padding: 12px 12px 12px; gap: 8px; }
-    .claim-min .cm-effect { font-size: 12px; padding: 6px 9px; gap: 7px; }
+    .claim-min .cm-effect { font-size: 12px; padding: 6px 9px; gap: 7px; max-width: none; line-height: 1.35; }
     .cm-card .gcard { width: 58px !important; }
     .cm-btns { gap: 6px; }
     .cm-btns .rx { min-height: 46px; }
@@ -1755,7 +1790,7 @@
        across instead and tighten the explanatory line rather than dropping it. */
     .prompt { max-height: min(92dvh, 100dvh - 24px); width: min(600px, calc(100vw - 20px)); }
     .claim-min { padding: 10px 12px 11px; gap: 7px; }
-    .claim-min .cm-effect { font-size: 11.5px; padding: 5px 9px; gap: 6px; max-width: none; }
+    .claim-min .cm-effect { font-size: 11.5px; padding: 5px 9px; gap: 6px; max-width: none; line-height: 1.3; }
     .cm-card .gcard { width: 54px !important; }
     .cm-btns { flex-direction: row; gap: 6px; margin-top: 0; }
     .cm-btns .rx { min-height: 44px; grid-template-columns: 26px 1fr; padding-inline: 9px; gap: 8px; }

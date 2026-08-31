@@ -282,6 +282,15 @@ export function Prompt() {
           </div>
         )}
         {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
+        {/* …and, when a counter is on offer, what taking it actually does. "Block as Colonel" means
+            nothing to somebody who has not learnt the seven characters, and the button's title
+            attribute is invisible on a phone, which is where they are. */}
+        {canBlock && w.block && (
+          <Html as="div" className="cm-effect counter" html={boldNames(
+            w.block.kind === 'veto' ? t('counter.why.veto', { name: actor })
+            : w.block.kind === 'tax' ? t('counter.why.tax')
+            : t('counter.why.block', { character: cname(w.block.character) }), [actor, tgt])} />
+        )}
         {canPass || canBlock || canChallenge ? (
           isCounter ? (
             // Counter layout: calling the bluff comes FIRST as a solid red button; letting it pass follows.

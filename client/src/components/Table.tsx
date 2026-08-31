@@ -7,7 +7,20 @@ import { CardBack, Coins, Icon, PlayerAvatar, SoundWaves } from './ui';
 import { validTargets } from '../lib/rules';
 import { useVoice, speakingOf, inCall } from '../lib/voice';
 
-const SEAT_ANGLES: Record<number, number[]> = { 1: [-90], 2: [-142, -38], 3: [-158, -90, -22], 4: [-164, -118, -62, -16], 5: [-168, -128, -90, -52, -12] };
+/**
+ * Where each opponent sits on the ring, by how many there are.
+ *
+ * The angles are chosen so the COSINES are evenly spaced, not the angles: cosine barely changes
+ * near 180 degrees, so evenly-spaced angles bunch the outermost seats together horizontally and
+ * their boxes collide on a phone. Even cosines put the same gap between every pair.
+ */
+const SEAT_ANGLES: Record<number, number[]> = {
+  1: [-90],
+  2: [-145, -35],
+  3: [-160, -90, -20],
+  4: [-162, -119, -61, -18],
+  5: [-162, -118, -90, -62, -18],
+};
 
 /** The character card a player is currently claiming/using (shown over their avatar), or null. */
 function claimedChar(p: GPlayer, st: any): CharacterId | null {
