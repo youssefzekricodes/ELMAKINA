@@ -239,7 +239,12 @@ await test('business woman with reactive tax man; thief steal; tax man wealth ta
 await test('business woman: the BW claim can still be called after someone taxed; not after it was proven', () => {
   let g = newGame(3); g.start();
   const a = g.active; const [b, c] = g.players.filter((p) => p.id !== a.id);
-  withoutCard(g, a.id, 'businesswoman'); giveCard(g, b.id, 'taxman');
+  // giveCard LAST would undo this: with no taxman left in the deck it steals one from another
+  // player and hands them the deck's front card — which is exactly where withoutCard just
+  // parked the businesswoman, so `a` got it straight back and the bluff became a true claim
+  // (~1 run in 200). Take the card away last, and assert the bluff really is a bluff.
+  giveCard(g, b.id, 'taxman'); withoutCard(g, a.id, 'businesswoman');
+  assert.ok(!a.cards.includes('businesswoman'), 'setup: the BW claim must be a bluff');
   g.declareAction(a.id, { type: 'businesswoman' });
   g.block(b.id);                       // b skims — the collection window stays open, BW still callable
   const w = g.pending.window;
@@ -299,8 +304,15 @@ await test('police: look and swap; politician swaps all', () => {
   assert.equal(b.cards[1], front);
   giveCard(g, b.id, 'politician');
   const old = b.cards.slice();
+  // The swap is deterministic: the whole hand goes to the BACK of the deck and the top three come
+  // off the front. Assert that, not "the hand looks different" — the deck can legitimately deal the
+  // same three characters back in the same order, which failed the old check about 1 run in 200.
+  const top3 = g.deck.toArray().slice(0, 3);
   g.declareAction(b.id, { type: 'politician' }); g.pass(a.id);
-  assert.equal(b.cards.length, 3); assert.notDeepEqual(b.cards, old); assert.equal(g.deck.length + 6, 21);
+  assert.equal(b.cards.length, 3);
+  assert.deepEqual(b.cards, top3, 'the new hand is the top of the deck');
+  assert.deepEqual(g.deck.toArray().slice(-3), old, 'the old hand went to the back');
+  assert.equal(g.deck.length + 6, 21);
 });
 
 await test('elimination & win; disconnected player auto-skips', () => {
