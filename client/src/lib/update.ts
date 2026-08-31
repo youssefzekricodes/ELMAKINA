@@ -14,7 +14,9 @@ import { store } from './store';
 declare const __BUILD_ID__: string;
 export const BUILD_ID: string = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev';
 
-const EVERY_MS = 5 * 60 * 1000;
+// A minute, not five. The file is ~50 bytes and deploys land often; waiting five minutes to be
+// told the client is stale reads as the check being broken.
+const EVERY_MS = 60 * 1000;
 
 async function liveBuild(): Promise<string | null> {
   try {

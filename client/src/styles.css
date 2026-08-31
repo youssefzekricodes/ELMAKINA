@@ -2232,11 +2232,15 @@
     /* Everything else in the panel is either the decision itself or the words explaining it. The
        card is the only part that can shrink and still do its job, so it absorbs the whole squeeze —
        down to a floor where it is still recognisable. */
-    .app.in-game .prompt:not(.prompt-end) .cm-card { flex: 0 1 130px; min-height: 46px; align-self: center;
+    .app.in-game .prompt:not(.prompt-end) .cm-card { flex: 0 0 auto; min-height: 0; align-self: center;
       display: flex; align-items: center; justify-content: center; }
-    /* A definite flex-basis is what makes this work: it gives the card a real height to shrink FROM,
-       which in turn lets the art resolve its own height against it and take the width from there. */
-    .app.in-game .prompt:not(.prompt-end) .cm-card .gcard { width: auto !important; height: 100%; }
+    /* Sized by WIDTH, from the viewport height. The previous version gave the card a flex-basis and
+       sized the art with height:100% — a percentage height against a flex item, which Chrome
+       resolves and Safari does not. On iOS the height fell back to auto, the aspect-ratio then took
+       its width from the artwork's intrinsic size, and the card came out several times too big and
+       spilled over the panel. A definite width needs nothing resolved: aspect-ratio does the rest,
+       and vh keeps it tied to the one dimension the panel is actually short of. */
+    .app.in-game .prompt:not(.prompt-end) .cm-card .gcard { width: clamp(44px, 8.5vh, 88px) !important; height: auto; }
     .app.in-game .prompt:not(.prompt-end) .cm-btns,
     .app.in-game .prompt:not(.prompt-end) .cm-who,
     .app.in-game .prompt:not(.prompt-end) .cm-effect { flex-shrink: 0; }
@@ -2289,7 +2293,8 @@
     /* 2 / -2 = from under the timerbar to just above the buttons, however many text rows there are.
        Without the span the card sat in its own row and the wide column beside it stayed empty. */
     .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-card { grid-column: 1; grid-row: 2 / -2;
-      height: 58px; min-height: 0; align-self: center; }
+      height: auto; min-height: 0; align-self: center; }
+    .app.in-game .prompt:not(.prompt-end) .cm-card .gcard { width: 38px !important; }
     .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-who,
     .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-effect { grid-column: 2; }
     .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-effect ~ .cm-effect { display: none; }
