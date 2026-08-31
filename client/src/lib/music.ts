@@ -48,6 +48,8 @@ let next = 0;
 let el: HTMLAudioElement | null = null;
 let fade: any = null;
 let playing = false;
+let wanted = false;                     // the lobby is up and wants music, whatever the browser says
+let armed: (() => void) | null = null;  // removes the waiting-for-a-tap listeners
 
 /** Ramp the element's volume — cutting a track in or out at full level is a slap. */
 function fadeTo(target: number, done?: () => void) {
@@ -138,6 +140,29 @@ function schedule() {
   }
 }
 
+/**
+ * Try to play, and if the browser says no, wait for a tap and try again.
+ *
+ * Getting into a lobby IS a tap — but creating or joining a room is a network round-trip, so by the
+ * time this runs the gesture is hundreds of milliseconds old and iOS Safari no longer counts it.
+ * The promise rejects, and without this the track would simply never start: nothing retries, and
+ * `playing` would sit there claiming it had. So the next touch anywhere starts it instead.
+ */
+function attempt() {
+  if (!el) return;
+  const p = el.play();
+  if (!p || !p.catch) return;
+  p.catch(() => {
+    if (!wanted) return;
+    const go = () => { off(); if (wanted && el) attempt(); };
+    const off = () => { for (const ev of GESTURES) document.removeEventListener(ev, go); };
+    off();
+    for (const ev of GESTURES) document.addEventListener(ev, go, { once: true, passive: true });
+    armed = off;
+  });
+}
+const GESTURES = ['pointerdown', 'touchend', 'keydown'] as const;
+
 export const music = {
   get playing() { return playing; },
 
@@ -147,8 +172,10 @@ export const music = {
     if (TRACK) {
       el = el || new Audio(TRACK);
       el.loop = true;
+      el.preload = 'auto';
       el.volume = 0;                       // faded up by hand: HTMLAudioElement has no gain ramp
-      el.play().catch(() => { /* no gesture yet: the lobby is a click away, we try again next time */ });
+      wanted = true;
+      attempt();
       fadeTo(TRACK_VOL);
       playing = true;
       return;
@@ -169,6 +196,8 @@ export const music = {
   stop() {
     if (!playing) return;
     playing = false;
+    wanted = false;
+    if (armed) { armed(); armed = null; }   // a lobby left before the first tap wants no music later
     if (el) { fadeTo(0, () => { if (el) { el.pause(); el.currentTime = 0; } }); return; }
     clearInterval(timer); timer = null;
     if (ctx && out) {
