@@ -378,7 +378,7 @@
   .seat .lamp { position: absolute; right: 2px; bottom: 4px; width: 12px; height: 12px; border: 2px solid #0e0c09; margin: 0; }
   .seat .turn-tag { position: absolute; left: -6px; top: -4px; background: var(--accent); color: var(--accent-foreground); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 40%, transparent); animation: pulse 1.2s infinite; }
   .seat .pavatar { box-shadow: 0 0 0 1px var(--border), 0 4px 14px rgba(26,25,24,.10); }
-  .seat .nm { font-weight: 600; font-size: 12px; letter-spacing: .01em; color: var(--foreground); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 2px; }
+  .seat .nm { font-weight: 600; font-size: 12px; letter-spacing: .01em; color: var(--foreground); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 2px; }
   .seat .coins { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px 1px 5px; font-size: 12px; font-weight: 700; color: var(--warning-soft-foreground); }
   .seat .hand { display: flex; gap: 5px; min-height: 48px; justify-content: center; }
   /* a fan reads as "a hand of cards" instantly; --k is each card's offset from the centre of the
@@ -943,7 +943,11 @@
   .standings li { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: var(--radius-md); }
   .standings li.is-win { background: color-mix(in srgb, var(--gold) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent); }
   .standings li.is-out { opacity: .72; }
-  .standings .st-name { flex: 1; text-align: start; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  /* NOT display:flex — text-overflow does nothing on a flex container, so an ellipsis declared
+     here would be inert and a long name would simply push the trophy count off the row. */
+  .standings .st-name { flex: 1 1 auto; min-width: 0; text-align: start; font-weight: 700; font-size: 13px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .standings .st-name .st-you { margin-inline-start: 6px; }
   .standings .st-you { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--accent-soft-foreground); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
   .standings .st-tag { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   .standings li.is-win .st-tag { color: var(--gold); }
@@ -1077,10 +1081,33 @@
   /* Phones and tablets only. On a wide desktop the table area is far wider than it is tall, and a
      radius capped by the height packs every seat into the middle — which is what made them
      overlap. Wide screens keep the ellipse they always had; it is the shape that actually fits. */
-  @media (max-width: 1023px) {
+  @media (max-width: 760px) {
     @supports (container-type: size) {
       .app.in-game .table-area { --ring-rx: min(40cqw, 40cqh); --ring-ry: min(40cqw, 40cqh); }
     }
+  }
+
+  /* ── tablets ──────────────────────────────────────────────────────────────────
+     A tablet was falling between the two treatments: it got the circular ring (scoped to 1023px)
+     but kept the desktop's 150px seats, its 80px insets and its deck in the MIDDLE of the table —
+     so the seats came in to a circle and landed on top of the deck and each other. It needs the
+     phone's arrangement at the tablet's size: deck to the corner, tighter insets, and a radius the
+     table's height can actually hold. */
+  @media (min-width: 761px) and (max-width: 1023px) {
+    /* Plain percentages here, not the container-query circle the phones use: at 768px the table
+       area is 744x380 and the cq radius resolved to zero, stacking every seat on the centre point.
+       16% of a ~750px width and 28% of a ~380-500px height land close enough to equal in pixels
+       across the whole tablet range, which is what "round" actually needs. */
+    /* The desktop min-height of 380px leaves a 1024-tall tablet with a short, flat table, and a
+       ring that short cannot separate six seats however round it is. Give it the room the screen
+       already has. */
+    .table-area { min-height: 54dvh; --seat-inset: 38px; --seat-vinset: 86px; --ring-rx: 20%; --ring-ry: 30%; }
+    .arena { position: absolute; left: auto; top: auto; transform: none; inset-inline-start: 6px; bottom: 2px;
+      width: auto; height: auto; margin: 0; gap: 14px; align-items: flex-end; }
+    .seat { width: 104px; }
+    .seats[data-n="5"] .seat, .seats[data-n="6"] .seat { width: 66px; }   /* a full table is the tight case: the box narrows, the avatar and hand do not */
+    .seat .pavatar { width: 50px !important; height: 50px !important; }
+    .seats[data-n="5"] .seat .hand .cardback, .seats[data-n="6"] .seat .hand .cardback { width: 28px; }
   }
 
   /* ── cut-scenes: one beat of the game, told across the whole screen ──────────
@@ -1429,7 +1456,7 @@
   .react-bubble { position: absolute; bottom: 84px; display: flex; flex-direction: column; align-items: center; gap: 3px; animation: react-rise 4.2s var(--ease) forwards; will-change: transform, opacity; }
   .react-emoji { font-size: 46px; line-height: 1; filter: drop-shadow(0 6px 14px rgba(0,0,0,.5)); }
   .react-emoji img, .react-emoji.gif { width: 96px; height: 96px; object-fit: contain; border-radius: 14px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.55)); }
-  .react-name { font-size: 11px; font-weight: 700; color: #fff; background: rgba(0,0,0,.55); padding: 2px 8px; border-radius: 999px; white-space: nowrap; backdrop-filter: blur(4px); }
+  .react-name { font-size: 11px; font-weight: 700; color: #fff; background: rgba(0,0,0,.55); padding: 2px 8px; border-radius: 999px; white-space: nowrap; backdrop-filter: blur(4px); max-width: 22ch; overflow: hidden; text-overflow: ellipsis; }
   @keyframes react-rise { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.06); } 22% { transform: translateY(-8px) scale(1); } 100% { opacity: 0; transform: translateY(-190px) scale(.92); } }
   @media (prefers-reduced-motion: reduce) { .react-bubble { animation-duration: 3s; } }
 
@@ -1498,7 +1525,9 @@
   .lb-row.me { background: var(--accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
   .lb-rank { flex-shrink: 0; width: 24px; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--muted); }
   .lb-rank.r1 { color: var(--gold); } .lb-rank.r2 { color: #b9c2cc; } .lb-rank.r3 { color: #c8894e; }
-  .lb-name { flex: 1; min-width: 0; font-weight: 700; font-size: 14px; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  /* Same trap as .st-name: it was display:flex, so its ellipsis never fired. */
+  .lb-name { flex: 1 1 auto; min-width: 0; font-weight: 700; font-size: 14px; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb-name .lb-you { margin-inline-start: 6px; }
   .lb-you { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--accent-soft-foreground); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
   .lb-stat { font-size: 11.5px; color: var(--muted); flex-shrink: 0; }
   .lb-trophies { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-size: 14px; color: var(--gold); flex-shrink: 0; }
