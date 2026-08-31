@@ -2199,7 +2199,39 @@
       transform: translateX(-50%); animation-name: rise;
       max-height: calc(100dvh - var(--hand-h, 210px) - var(--sat) - 28px);
       width: min(480px, calc(100vw - 24px - var(--sal) - var(--sar)));
+      /* A claim is a 12-second decision, so the panel must never ask you to scroll to reach a button:
+         the card gives up height instead (see .cm-card below) and three buttons become two rows.
+         overflow stays AUTO rather than hidden — if some future combination still will not fit,
+         degrading to a scrollbar keeps every button reachable, where clipping would bury one. */
+      overflow-y: auto; display: flex; flex-direction: column;
     }
+    .app.in-game .prompt:not(.prompt-end) .p-body,
+    .app.in-game .prompt:not(.prompt-end) .claim-min { flex: 1 1 auto; min-height: 0; }
+    /* Everything else in the panel is either the decision itself or the words explaining it. The
+       card is the only part that can shrink and still do its job, so it absorbs the whole squeeze —
+       down to a floor where it is still recognisable. */
+    .app.in-game .prompt:not(.prompt-end) .cm-card { flex: 0 1 130px; min-height: 46px; align-self: center;
+      display: flex; align-items: center; justify-content: center; }
+    /* A definite flex-basis is what makes this work: it gives the card a real height to shrink FROM,
+       which in turn lets the art resolve its own height against it and take the width from there. */
+    .app.in-game .prompt:not(.prompt-end) .cm-card .gcard { width: auto !important; height: 100%; }
+    .app.in-game .prompt:not(.prompt-end) .cm-btns,
+    .app.in-game .prompt:not(.prompt-end) .cm-who,
+    .app.in-game .prompt:not(.prompt-end) .cm-effect { flex-shrink: 0; }
+    /* and a few pixels back from the chrome, so the card is not the only thing paying */
+    .app.in-game .prompt:not(.prompt-end) .claim-min { gap: 6px; padding: 10px 12px 12px; }
+    .app.in-game .prompt:not(.prompt-end) .p-strip { padding-block: 5px; }
+    .app.in-game .prompt:not(.prompt-end) .cm-effect { padding: 5px 9px; line-height: 1.3; }
+  }
+  /* Three stacked buttons cost 170px of a 412px panel. Where height is short, the last two — always
+     the brief ones, "call the bluff" and "pass" — share a row and give a whole row back. A tablet
+     has the height to spare, so it keeps them full width. nth-child/nth-last-child pairs match
+     "exactly three" without :has(), which Safari 14 does not have. */
+  @media (max-width: 1023px) and (max-height: 900px) {
+    .app.in-game .prompt:not(.prompt-end) .cm-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .app.in-game .prompt:not(.prompt-end) .cm-btns > * { grid-column: span 2; }
+    .app.in-game .prompt:not(.prompt-end) .cm-btns > :nth-child(2):nth-last-child(2),
+    .app.in-game .prompt:not(.prompt-end) .cm-btns > :nth-child(3):nth-last-child(1) { grid-column: span 1; }
   }
 
   /* ── the status bar and the hand get a width ─────────────────────────────────
@@ -2217,4 +2249,31 @@
   .gm-sheet { padding-inline: calc(10px + var(--sal)) calc(10px + var(--sar)); }
   .cine { padding-inline: calc(16px + var(--sal)) calc(16px + var(--sar)); }
   .react-dock { inset-inline-end: calc(10px + var(--sar)); }
+
+  /* ── the claim panel, lying down ─────────────────────────────────────────────
+     A landscape phone gives the panel ~134px of height and 844px of width, and the portrait column
+     needs 304px. So it turns on its side: card on the lead edge, the words beside it, the buttons
+     in one row underneath. The second explanation (the counter) is the one thing dropped — the
+     primary one stays, and the full rules are a tap away in the menu. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .app.in-game .prompt:not(.prompt-end) { width: min(720px, calc(100vw - 24px - var(--sal) - var(--sar))); }
+    .app.in-game .prompt:not(.prompt-end) .claim-min {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
+      column-gap: 12px; row-gap: 4px; text-align: start; padding: 6px 12px 8px; }
+    /* The strip only carried the seconds, and the timerbar under it says the same thing in the one
+       row the panel can spare here. */
+    .app.in-game .prompt:not(.prompt-end) .p-strip { display: none; }
+    .app.in-game .prompt:not(.prompt-end) .claim-min > .timerbar { grid-column: 1 / -1; }
+    /* 2 / -2 = from under the timerbar to just above the buttons, however many text rows there are.
+       Without the span the card sat in its own row and the wide column beside it stayed empty. */
+    .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-card { grid-column: 1; grid-row: 2 / -2;
+      height: 58px; min-height: 0; align-self: center; }
+    .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-who,
+    .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-effect { grid-column: 2; }
+    .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-effect ~ .cm-effect { display: none; }
+    /* buttons: one row, one column each, however many there are */
+    .app.in-game .prompt:not(.prompt-end) .cm-btns { grid-column: 1 / -1; grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; padding-top: 4px; }
+    .app.in-game .prompt:not(.prompt-end) .cm-btns > * { grid-column: auto; }
+  }
 }
