@@ -272,17 +272,35 @@
   .home-more { width: 100%; display: flex; align-items: stretch; gap: 6px; }
   /* Quiet next to Play, but still plainly buttons — they sit on busy background art, so they need
      a surface of their own rather than a hairline outline. */
-  .hm-opt { flex: 1 1 0; min-width: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-    padding: 13px 7px; border-radius: 13px; cursor: pointer; border: 1px solid rgba(255,240,214,.2);
-    background: rgba(28,20,14,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    box-shadow: inset 0 1px 0 rgba(255,240,214,.06), 0 6px 18px rgba(0,0,0,.4);
+  /* Cut from the same workshop as Play: a solid block sitting on a dark edge, which compresses when
+     pressed. The edge is a box-shadow rather than a border, so sinking costs no layout height and
+     three tiles in a row never jitter against each other. */
+  .hm-opt { flex: 1 1 0; min-width: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+    padding: 12px 7px; border-radius: 14px; cursor: pointer; border: 1px solid rgba(255,240,214,.22);
+    background: linear-gradient(180deg, rgba(62,46,30,.92), rgba(32,23,15,.92));
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 3px 0 #150f0a, 0 8px 18px rgba(0,0,0,.45);
     color: #F3E9D6; font-size: 13px; font-weight: 700; line-height: 1.2; text-align: center;
-    transition: color .12s, border-color .12s, background .12s, transform .12s; }
-  .hm-opt:hover { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: rgba(38,28,18,.85); transform: translateY(-1px); }
-  .hm-opt.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 16%, rgba(28,20,14,.8)); }
-  .hm-opt:disabled { opacity: .45; cursor: default; }
+    transition: color .12s, border-color .12s, background .12s, transform .1s var(--ease), box-shadow .1s var(--ease); }
+  .hm-opt:hover { border-color: color-mix(in srgb, var(--gold) 50%, transparent); background: linear-gradient(180deg, rgba(58,43,28,.9), rgba(32,23,15,.9)); }
+  .hm-opt:active { transform: translateY(3px);
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.06), 0 0 0 #150f0a, 0 3px 8px rgba(0,0,0,.36); }
+  .hm-opt:focus-visible { outline: none; border-color: var(--gold); box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 3px 0 #150f0a, 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent); }
+  .hm-opt.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, rgba(38,27,18,.88)), color-mix(in srgb, var(--accent) 12%, rgba(26,19,13,.88))); }
+  .hm-opt:disabled { opacity: .45; cursor: default; box-shadow: inset 0 1px 0 rgba(255,240,214,.06), 0 2px 0 rgba(0,0,0,.4); }
+  /* the icon gets a seat of its own: three marks on a shelf, not three glyphs adrift over labels */
+  .hm-ic { width: 32px; height: 32px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--gold) 13%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 26%, transparent);
+    transition: background .12s, box-shadow .12s; }
+  .hm-opt:hover .hm-ic { background: color-mix(in srgb, var(--gold) 22%, transparent); }
+  .hm-opt.on .hm-ic { background: color-mix(in srgb, var(--accent) 26%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+  /* wraps rather than truncates: a third of a phone is narrower than "Create a room" */
+  .hm-tx { max-width: 100%; }
   .hm-opt svg { flex-shrink: 0; color: var(--gold); }
   .hm-opt.on svg { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { .hm-opt { transition: none; } .hm-opt:active { transform: none; } }
   .home-join { width: 100%; display: flex; gap: 8px; }
   .home-code { flex: 1; min-width: 0; height: 48px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: .3em; padding-inline-start: .3em; text-transform: uppercase; color: #F3E9D6; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,240,214,.14); }
   .home-code::placeholder { color: rgba(245,236,221,.4); letter-spacing: .2em; font-weight: 600; }
@@ -1569,8 +1587,11 @@
   .home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
   .home-top-tools { display: inline-flex; align-items: center; gap: 6px; }
   /* Google sign-in: a clean, full-width pill directly under the player badge */
-  .acct-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 11px 16px; border-radius: 14px; background: #fff; color: #1f1f1f; font-weight: 700; font-size: 14.5px; border: 1px solid rgba(0,0,0,.14); box-shadow: 0 2px 10px rgba(0,0,0,.28); cursor: pointer; transition: transform .12s var(--ease), box-shadow .12s; }
-  .acct-google:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,.34); }
+  /* Google's dark-theme button, not the white one. Signing in is optional; as a white slab it was
+     the brightest thing on the screen after Play and pulled rank on the three real options. The
+     mark and the wording stay exactly as Google requires. */
+  .acct-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 11px 16px; border-radius: 14px; background: #131314; color: #E3E3E3; font-weight: 600; font-size: 14px; border: 1px solid #8E918F; box-shadow: 0 2px 10px rgba(0,0,0,.28); cursor: pointer; transition: transform .12s var(--ease), box-shadow .12s, background .12s; }
+  .acct-google:hover { transform: translateY(-1px); background: #1c1c1d; box-shadow: 0 8px 20px rgba(0,0,0,.34); }
   .acct-google:disabled { opacity: .5; cursor: not-allowed; }
   .acct-me { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
   .acct-photo { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }

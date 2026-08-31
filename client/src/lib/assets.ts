@@ -35,7 +35,7 @@ export function assetList(): string[] {
   const t = THEME.img;
   return [...new Set([
     t.poster, t.machine, t.machineSmall, t.cardBack, t.coin,
-    ...t.bg, ...t.bgSmall,
+    ...t.bg, ...t.bgSmall, ...t.bgTall, ...t.bgTallSmall,
     ...CHARACTERS.flatMap((c) => [THEME.characters[c].card, THEME.characters[c].cardSm]),
     ...Object.values(ACTION_CARDS),
     ...DEFAULT_AVATARS.map((a) => `/img/avatars/${a}.webp`),

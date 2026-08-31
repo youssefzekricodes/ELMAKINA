@@ -116,15 +116,15 @@ export function Home() {
         {/* Everything else, on one line and deliberately plain. */}
         <div className="home-more">
           <button type="button" className="hm-opt" onClick={() => go('create')} disabled={busy === 'create'}>
-            <Icon name="users-group-rounded" className="size-4" />{t('home.create')}
+            <span className="hm-ic"><Icon name="users-group-rounded" className="size-5" /></span><span className="hm-tx">{t('home.create')}</span>
           </button>
           {/* Short label: three tiles on one line have room for a word, not a sentence. The full
               "against the machine" wording still lives in the guide. */}
           <button type="button" className="hm-opt" onClick={() => go('solo')} disabled={busy === 'solo'} title={t('home.solo')}>
-            <Icon name="cpu-bolt" className="size-4" />{t('home.soloShort')}
+            <span className="hm-ic"><Icon name="cpu-bolt" className="size-5" /></span><span className="hm-tx">{t('home.soloShort')}</span>
           </button>
           <button type="button" className={`hm-opt ${joining ? 'on' : ''}`} aria-expanded={joining} onClick={() => setJoining((v) => !v)}>
-            <Icon name="login-2" className="size-4" />{t('home.joinCode')}
+            <span className="hm-ic"><Icon name="login-2" className="size-5" /></span><span className="hm-tx">{t('home.joinCode')}</span>
           </button>
         </div>
 

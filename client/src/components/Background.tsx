@@ -8,7 +8,10 @@ export function Background({ inGame, screen }: { inGame: boolean; screen?: strin
     const pick = () => {
       const el = layer.current; if (!el) return;
       const small = Math.max(window.innerWidth, window.innerHeight) < 1100;
-      const src = (small ? IMG.bgSmall : IMG.bg)[0];
+      // Portrait gets the upright framing — a phone held that way is 0.46 wide to tall, and the
+      // landscape art has to crop away most of the room to fill it.
+      const tall = window.innerHeight > window.innerWidth;
+      const src = (tall ? (small ? IMG.bgTallSmall : IMG.bgTall) : (small ? IMG.bgSmall : IMG.bg))[0];
       el.style.backgroundImage = `url('${src}')`;
       new Image().src = src;
     };

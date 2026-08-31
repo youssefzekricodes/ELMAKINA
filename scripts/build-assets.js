@@ -70,6 +70,12 @@ async function keyOutBackground(input, output, width) {
     await webp(src('background-game.png'), out('bg-game.webp'), 1600, 76);
     await webp(src('background-game.png'), out('bg-game-sm.webp'), 900, 72);
   } else console.log('  (background-game.png absent — skipping bg-game)');
+  // The same room framed upright. A phone held in portrait crops the landscape art to a sliver of
+  // its middle; this one is composed for that shape.
+  if (fs.existsSync(src('background-game-portrait.png'))) {
+    await webp(src('background-game-portrait.png'), out('bg-portrait.webp'), 940, 76);
+    await webp(src('background-game-portrait.png'), out('bg-portrait-sm.webp'), 620, 72);
+  } else console.log('  (background-game-portrait.png absent — skipping bg-portrait)');
   await webp(src('card-back.png'), out('poster.webp'), 900, 78);
 
   console.log('Machine (keyed)');

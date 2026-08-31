@@ -11,6 +11,10 @@ export const THEME = {
     // lobby PNG it replaces was 2 MB of unoptimised art on the very first paint.
     bg: ['/img/bg-game.webp'],
     bgSmall: ['/img/bg-game-sm.webp'],
+    // The same room framed upright, for a screen taller than it is wide. `cover` on the landscape
+    // art crops a phone down to a sliver of its middle; this one is composed for the shape.
+    bgTall: ['/img/bg-portrait.webp'],
+    bgTallSmall: ['/img/bg-portrait-sm.webp'],
     poster: '/img/poster.webp',
     machine: '/img/machine.webp',
     machineSmall: '/img/machine-sm.webp',
