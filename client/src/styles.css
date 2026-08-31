@@ -2089,23 +2089,42 @@
   .gm-btn { position: fixed; z-index: 60; top: calc(var(--sat) + 8px); inset-inline-end: 10px;
     width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center;
     border-radius: 50%; border: 1px solid var(--border); color: var(--foreground);
-    background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(10px);
-    box-shadow: 0 4px 14px rgba(0,0,0,.35); cursor: pointer; transition: transform .12s var(--ease); }
+    background: linear-gradient(180deg, rgba(58,44,30,.62), rgba(16,12,8,.72));
+    -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+    border-color: rgba(255,240,214,.18);
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 4px 14px rgba(0,0,0,.4); cursor: pointer; transition: transform .12s var(--ease); }
   .gm-btn:active { transform: scale(.94); }
   .gm-dot { position: absolute; top: -3px; inset-inline-end: -3px; min-width: 18px; height: 18px; padding: 0 4px;
     display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
     background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; line-height: 1; }
   /* 88 keeps the sheet under the cut-scene mask (.cine, 90) whatever the DOM order is. */
+  /* The scrim only tints — no blur of its own. A backdrop-filtered sheet nested inside a
+     backdrop-filtered scrim is exactly the case Safari has long got wrong (the inner element
+     ends up filtering an already-filtered layer and can come out flat), and the glass needs an
+     unfiltered board behind it to be worth anything. */
   .gm-scrim { position: fixed; inset: 0; z-index: 88; display: flex; align-items: flex-end; justify-content: center;
-    background: rgba(12,9,6,.55); backdrop-filter: blur(2px); animation: gm-fade .18s var(--ease); }
+    background: rgba(10,7,5,.4); animation: gm-fade .18s var(--ease); }
   @keyframes gm-fade { from { opacity: 0; } to { opacity: 1; } }
+  /* Dark liquid glass: the board blurs and enriches behind it, a bright hairline catches the light
+     along the top edge, and the fill deepens towards the bottom so the sheet has weight.
+     PHYSICAL corner radii on purpose — Safari 14 (this build's cssTarget) does not understand
+     border-start-start-radius and dropped it, which is why the top corners came up square there.
+     Both top corners take the same value, so there is nothing for RTL to mirror. */
   .gm-sheet { width: 100%; max-height: 82dvh; overflow-y: auto; overscroll-behavior: contain;
-    background: var(--surface); border-start-start-radius: 28px; border-start-end-radius: 28px;
+    border-top-left-radius: 28px; border-top-right-radius: 28px;
+    background: linear-gradient(180deg, rgba(58,44,30,.60), rgba(16,12,8,.80));
+    -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
+    border-top: 1px solid rgba(255,240,214,.18);
     padding: 10px 10px calc(14px + var(--sab)); display: flex; flex-direction: column; gap: 2px;
-    box-shadow: 0 -18px 50px rgba(0,0,0,.5); animation: gm-rise .22s var(--ease); }
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 0 -20px 60px rgba(0,0,0,.55); animation: gm-rise .22s var(--ease); }
+  /* No backdrop-filter (older Firefox, blur disabled): fall back to a near-opaque fill rather than
+     a see-through sheet with unreadable text over the board. */
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .gm-sheet { background: linear-gradient(180deg, rgba(40,31,21,.98), rgba(14,10,7,.99)); }
+  }
   @keyframes gm-rise { from { transform: translateY(14px); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
   /* the grab handle: says "this sheet dismisses" without a close button competing with the items */
-  .gm-sheet::before { content: ''; width: 38px; height: 4px; border-radius: 2px; background: var(--border-secondary); margin: 2px auto 8px; flex-shrink: 0; }
+  .gm-sheet::before { content: ''; width: 38px; height: 4px; border-radius: 2px; background: rgba(255,240,214,.3); margin: 2px auto 8px; flex-shrink: 0; }
   .gm-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 8px 8px; }
   .gm-brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .12em; font-size: 13px; color: var(--muted); }
   .gm-code { font-weight: 700; letter-spacing: .2em; font-variant-numeric: tabular-nums; font-size: 14px; color: var(--foreground); }
@@ -2113,7 +2132,7 @@
   .gm-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 0 12px;
     border: 0; border-radius: 12px; background: none; color: var(--foreground); font-size: 15px; font-weight: 600;
     text-align: start; cursor: pointer; }
-  .gm-item:active { background: var(--surface-secondary); }
+  .gm-item:active { background: rgba(255,240,214,.12); }
   .gm-item svg { flex-shrink: 0; opacity: .85; }
   .gm-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gm-badge { min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center;
