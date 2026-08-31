@@ -61,15 +61,16 @@ export function Home() {
         {/* Status and side rooms. Icon-only: none of it is why anyone opened the app. */}
         <div className="home-top">
           <span className="trophy-pill" title={t('lb.trophies')}><Art name="stars" className="size-4" />{s.trophies}</span>
-          {/* Above 1024px there is no nav bar, so the three destinations sit here. Below it the bar
-              carries them, and everything set-once lives behind the Settings tile. */}
+          {/* Every destination, one row, every size. Profile carries the set-once controls
+              (characters, rules, sound, language) so they need no buttons of their own here. */}
           <div className="home-top-tools">
-            <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')} title={t('lb.title')}><Art name="cupGold" className="size-5" /></button>
-            <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')} title={t('home.public')}><Art name="menu" className="size-5" /></button>
-            <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')} title={t('fr.title')}>
+            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')} title={t('lb.title')}><Art name="cupGold" className="size-5" /></button>
+            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')} title={t('home.public')}><Art name="menu" className="size-5" /></button>
+            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')} title={t('fr.title')}>
               <Art name="gamepad" className="size-5" />
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
             </button>
+            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'profile' })} aria-label={t('profile.title')} title={t('profile.title')}><Art name="profile" className="size-5" /></button>
           </div>
         </div>
 

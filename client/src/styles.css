@@ -2306,9 +2306,7 @@
      .net-badge, which is rendered outside the bar. Other screens keep their header: the lobby
      needs its room code and the way out. */
   .only-sm { display: none !important; }
-  .only-lg { display: inline-flex !important; }
   @media (max-width: 1023px) {
-    .only-lg { display: none !important; }
     .app.at-home .topbar { display: none; }
     .app.at-home .home-screen { padding-top: 10px; }
     .only-sm { display: inline-flex !important; }
@@ -2320,74 +2318,7 @@
   .acct-tool.art-tool .art[src*='flag-'], .art-btn .art[src*='flag-'] { width: 22px; height: 22px; border-radius: 50%; }
   .acct-tool.is-muted { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
 
-  /* ── the main nav ────────────────────────────────────────────────────────────
-     A hand of cards, because that is what this entire interface is already made of — the board is
-     cards, your hand is cards, the actions are cards. A bar, a rail, a pill: all of them are
-     shapes borrowed from outside this game, which is why they never belonged. These are five
-     small cards fanned along the bottom, and the one you are on is lifted and gold-framed —
-     exactly what the game already does to say "this one is yours" (.board-card.owned).
 
-     Nothing to attach to an edge, so it floats by construction. Phones and tablets only. */
-  .navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; pointer-events: none;
-    display: flex; justify-content: center; align-items: flex-end;
-    padding: 0 calc(10px + var(--sal)) calc(10px + var(--sab)) calc(10px + var(--sar)); }
-  .nav-shelf { pointer-events: auto; position: relative; width: auto; display: flex; align-items: flex-end;
-    justify-content: center; gap: 0; padding: 0; background: none; border: 0; box-shadow: none; }
-
-  .nav-stop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-    padding: 0 0 15px; margin-inline: -3px; border: 0; background: none; cursor: pointer; color: var(--gold);
-    font-size: 10.5px; font-weight: 800; line-height: 1.1;
-    transition: transform .16s var(--ease); }
-  /* the fan: outer cards lean away from the middle, exactly as a held hand does */
-  .nav-stop:nth-child(1) { --tilt: -7deg; --dip: 5px; }
-  .nav-stop:nth-child(2) { --tilt: -3.5deg; --dip: 1px; }
-  .nav-stop:nth-child(3) { --tilt: 0deg; --dip: 0px; }
-  .nav-stop:nth-child(4) { --tilt: 3.5deg; --dip: 1px; }
-  .nav-stop:nth-child(5) { --tilt: 7deg; --dip: 5px; }
-  [dir="rtl"] .nav-stop:nth-child(1) { --tilt: 7deg; }
-  [dir="rtl"] .nav-stop:nth-child(2) { --tilt: 3.5deg; }
-  [dir="rtl"] .nav-stop:nth-child(4) { --tilt: -3.5deg; }
-  [dir="rtl"] .nav-stop:nth-child(5) { --tilt: -7deg; }
-
-  /* the card face itself: the same white stock, border radius and drop shadow as every other card */
-  .nav-ic { position: relative; display: inline-flex; align-items: center; justify-content: center;
-    width: 50px; aspect-ratio: .66; border-radius: 9px; overflow: visible;
-    background: linear-gradient(180deg, #FFFDF8 0%, #EFE4CE 100%);
-    box-shadow: inset 0 0 0 1px rgba(70,48,22,.28), 0 8px 16px rgba(0,0,0,.5);
-    transform: rotate(var(--tilt, 0deg)) translateY(var(--dip, 0px));
-    transform-origin: 50% 115%;
-    transition: transform .18s var(--ease), box-shadow .18s var(--ease), filter .18s; }
-  .nav-art { width: 30px; height: 30px; object-fit: contain; display: block; transition: width .18s var(--ease), height .18s var(--ease); }
-  /* a card you are not holding sits flat and cool */
-  .nav-stop:not(.on) .nav-ic { filter: brightness(.82) saturate(.9); }
-  .nav-stop:not(.on):hover .nav-ic { filter: none; transform: rotate(var(--tilt, 0deg)) translateY(calc(var(--dip, 0px) - 4px)); }
-  .nav-label { position: absolute; left: -14px; right: -14px; bottom: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    opacity: 0; transform: translateY(-3px); transition: opacity .16s, transform .16s; pointer-events: none;
-    text-shadow: 0 2px 6px rgba(0,0,0,.75); }
-
-  /* the one you are on: straightened, lifted and gold-framed — the game's own "this is yours" */
-  .nav-stop.on { z-index: 2; }
-  .nav-stop.on .nav-ic { transform: rotate(0deg) translateY(-14px) scale(1.06);
-    box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px color-mix(in srgb, var(--gold) 30%, transparent),
-      0 0 22px color-mix(in srgb, var(--gold) 60%, transparent), 0 12px 24px rgba(0,0,0,.55); }
-  .nav-stop.on .nav-art { width: 34px; height: 34px; }
-  .nav-stop.on .nav-label { opacity: 1; transform: none; }
-  .nav-badge { position: absolute; top: -4px; inset-inline-end: -4px; min-width: 17px; height: 17px; padding: 0 4px;
-    display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
-    background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; line-height: 1;
-    box-shadow: 0 0 0 2px rgba(20,14,9,.9); z-index: 3; }
-  .nav-stop:focus-visible { outline: none; }
-  .nav-stop:focus-visible .nav-ic { box-shadow: 0 0 0 3px var(--gold), 0 8px 16px rgba(0,0,0,.5); }
-  @media (prefers-reduced-motion: reduce) { .nav-stop, .nav-ic, .nav-art, .nav-label { transition: none; } }
-
-  /* Desktop keeps its header, which already carries these destinations — a bottom bar there is a
-     phone control stranded on a big screen. */
-  @media (min-width: 1024px) { .navbar { display: none; } }
-
-  /* The screens the bar covers get their bottom padding back, so nothing hides under it. */
-  .app.at-home .home-screen, .app.at-leaderboard .page-screen,
-  .app.at-friends .page-screen, .app.at-public .page-screen,
-  .app.at-profile .page-screen { padding-bottom: calc(126px + var(--sab)); }
 
   /* Illustrated icons keep their own palette, so the containers that tint line-art must not tint
      these: no currentColor, no filters, just a box to sit in. */

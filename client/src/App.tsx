@@ -11,7 +11,6 @@ import { i18n } from './i18n';
 import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
 import { GameMenu, TopBar } from './components/TopBar';
-import { NAV_SCREENS, NavBar } from './components/NavBar';
 import { Home } from './components/Home';
 import { Lobby } from './components/Lobby';
 import { Table } from './components/Table';
@@ -80,7 +79,6 @@ export default function App() {
           </section>
         )}
       </div>
-      {NAV_SCREENS.includes(s.screen) && <NavBar />}
       {VOICE_ENABLED && s.room && <VoiceDock />}
       {inGame && <Reactions />}
       {/* Phones and tablets have no in-game header at all: this gear is the whole of it. */}
