@@ -2233,7 +2233,9 @@
       transform: none; animation-name: coach-fade; border: 0; border-radius: 0;
       padding: calc(var(--sat) + 8px) calc(12px + var(--sal)) calc(var(--sab) + 8px) calc(12px + var(--sar));
       background: rgba(16,11,7,.95);
-      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+      /* The header and the decision are two separate glass objects, not one panel with a rule
+         through it, so the space between them has to say so. */
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px;
       overflow-y: auto;   /* a floor, not a plan: every button stays reachable whatever the content */
     }
     /* The header becomes a floating glass bar — same material as the bottom sheet, rounded, sitting
@@ -2267,8 +2269,15 @@
     .app.in-game .prompt:not(.prompt-end) .cm-who,
     .app.in-game .prompt:not(.prompt-end) .cm-effect { flex-shrink: 0; }
     /* and a few pixels back from the chrome, so the card is not the only thing paying */
-    .app.in-game .prompt:not(.prompt-end) .claim-min { gap: 6px; padding: 10px 12px 12px; }
-    .app.in-game .prompt:not(.prompt-end) .p-strip { padding-block: 5px; }
+    .app.in-game .prompt:not(.prompt-end) .claim-min { gap: 9px; padding: 15px 14px 15px; }
+    .app.in-game .prompt:not(.prompt-end) .p-strip { padding: 8px 14px; }
+    /* A short phone has no 16px to give away: same rhythm, compressed, so the buttons stay on
+       screen without the panel having to scroll. */
+    @media (max-height: 700px) {
+      .app.in-game .prompt:not(.prompt-end) { gap: 11px; }
+      .app.in-game .prompt:not(.prompt-end) .claim-min { padding: 11px 12px 12px; gap: 7px; }
+      .app.in-game .prompt:not(.prompt-end) .p-strip { padding: 6px 12px; }
+    }
     .app.in-game .prompt:not(.prompt-end) .cm-effect { padding: 5px 9px; line-height: 1.3; }
   }
 
@@ -2442,13 +2451,18 @@
       box-shadow: inset 0 1px 0 rgba(255,240,214,.10), -8px 10px 28px rgba(0,0,0,.5);
       color: var(--gold); cursor: pointer; }
     [dir="rtl"] .mc-tab { left: auto; right: -40px; border-radius: 0 16px 16px 0; box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 8px 10px 28px rgba(0,0,0,.5); }
+    /* The count rides ON the cards, crowning them, the way a stack is counted everywhere else in
+       the game. Under the fan it read as a second, separate thing in a 38px column. */
+    .mc-tab-mark { position: relative; display: block; width: 26px; height: 38px; padding-top: 6px; }
     .mc-tab-fan { position: relative; display: block; width: 26px; height: 32px; }
     .mc-tab-fan .cardback { position: absolute; top: 0; left: 50%; width: 22px; border-radius: 4px;
       box-shadow: 0 2px 6px rgba(0,0,0,.5); }
     .mc-tab-fan .cardback:first-child { transform: translateX(-50%) rotate(-11deg); }
     .mc-tab-fan .cardback:last-child { transform: translateX(-50%) rotate(9deg); }
-    .mc-tab-n { min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 9px; background: var(--gold); color: #241505; font-size: 10.5px; font-weight: 800; line-height: 1; }
+    .mc-tab-n { position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 9px; background: var(--gold); color: #241505; font-size: 10.5px; font-weight: 800; line-height: 1;
+      box-shadow: 0 0 0 2px rgba(16,12,8,.85), 0 2px 6px rgba(0,0,0,.45); }
     .mc-tab-chev { opacity: .75; transition: transform .26s var(--ease); }
     .my-cards.open .mc-tab-chev { transform: scaleX(-1); }
     [dir="rtl"] .mc-tab-chev { transform: scaleX(-1); }

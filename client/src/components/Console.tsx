@@ -187,8 +187,10 @@ export function Console() {
               goes next. The cards themselves stay hidden until you pull. */}
           <button type="button" className="mc-tab" aria-expanded={handOpen} aria-controls="my-hand"
             onClick={() => setHandOpen((v) => !v)} aria-label={t('board.mycards')}>
-            <span className="mc-tab-fan" aria-hidden="true"><i className="cardback" /><i className="cardback" /></span>
-            <span className="mc-tab-n">{you.cards.length}</span>
+            <span className="mc-tab-mark">
+              <span className="mc-tab-fan" aria-hidden="true"><i className="cardback" /><i className="cardback" /></span>
+              <span className="mc-tab-n">{you.cards.length}</span>
+            </span>
             <Icon name="alt-arrow-left" className="mc-tab-chev size-3.5" />
           </button>
           <div className="mc-head">
