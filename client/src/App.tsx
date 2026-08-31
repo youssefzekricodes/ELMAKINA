@@ -20,6 +20,7 @@ import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
 import { Onboarding } from './components/Onboarding';
+import { SettingsSheet } from './components/Settings';
 import { LeaderboardPage, FriendsPage, ProfilePage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
@@ -91,6 +92,7 @@ export default function App() {
       <NetBadge />
       {/* The gate goes on top of everything: no header, no modals, no way to play nameless. */}
       {s.onboarding && <Onboarding />}
+      <SettingsSheet />
       <RulesModal />
       <CharactersModal />
       <Guide />

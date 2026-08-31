@@ -61,9 +61,8 @@ export function Home() {
         {/* Status and side rooms. Icon-only: none of it is why anyone opened the app. */}
         <div className="home-top">
           <span className="trophy-pill" title={t('lb.trophies')}><Art name="stars" className="size-4" />{s.trophies}</span>
-          {/* Split by where each control already lives. Below 1024px the nav bar carries the three
-              destinations and there is no header, so the set-once controls sit here; above it the
-              header holds those and the nav bar is gone, so the destinations sit here instead. */}
+          {/* Above 1024px there is no nav bar, so the three destinations sit here. Below it the bar
+              carries them, and everything set-once lives behind the Settings tile. */}
           <div className="home-top-tools">
             <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')} title={t('lb.title')}><Art name="cupGold" className="size-5" /></button>
             <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')} title={t('home.public')}><Art name="menu" className="size-5" /></button>
@@ -71,9 +70,6 @@ export function Home() {
               <Art name="gamepad" className="size-5" />
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
             </button>
-            <button type="button" className="acct-tool only-sm art-tool" onClick={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} title={t('top.chars')}><Art name="cards" className="size-5" /></button>
-            <button type="button" className="acct-tool only-sm art-tool" onClick={toggleSound} aria-label={t('top.sound')} title={t('top.sound')}><Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /></button>
-            <button type="button" className="acct-tool only-sm art-tool" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} title={t('top.lang.title')}><Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-5" /></button>
           </div>
         </div>
 
@@ -119,18 +115,20 @@ export function Home() {
           <span className="hp-tx"><b>{t('home.playNow')}</b><i>{t('home.randomSub')}</i></span>
         </Button>
 
-        {/* Everything else, on one line and deliberately plain. */}
+        {/* Four ways in, each with the thing it opens: a door, a pad, a key, a bolt. Two by two on a
+            phone — four across a 390px screen leaves no room for a label under an illustration. */}
         <div className="home-more">
           <button type="button" className="hm-opt" onClick={() => go('create')} disabled={busy === 'create'}>
-            <span className="hm-ic"><Icon name="users-group-rounded" className="size-5" /></span><span className="hm-tx">{t('home.create')}</span>
+            <span className="hm-ic"><Art name="dungeon" className="hm-art" /></span><span className="hm-tx">{t('home.create')}</span>
           </button>
-          {/* Short label: three tiles on one line have room for a word, not a sentence. The full
-              "against the machine" wording still lives in the guide. */}
           <button type="button" className="hm-opt" onClick={() => go('solo')} disabled={busy === 'solo'} title={t('home.solo')}>
-            <span className="hm-ic"><Icon name="cpu-bolt" className="size-5" /></span><span className="hm-tx">{t('home.soloShort')}</span>
+            <span className="hm-ic"><Art name="gamepadSolo" className="hm-art" /></span><span className="hm-tx">{t('home.soloShort')}</span>
           </button>
           <button type="button" className={`hm-opt ${joining ? 'on' : ''}`} aria-expanded={joining} onClick={() => setJoining((v) => !v)}>
-            <span className="hm-ic"><Icon name="login-2" className="size-5" /></span><span className="hm-tx">{t('home.joinCode')}</span>
+            <span className="hm-ic"><Art name="key" className="hm-art" /></span><span className="hm-tx">{t('home.joinCode')}</span>
+          </button>
+          <button type="button" className="hm-opt" onClick={() => store.set({ modal: 'settings' })}>
+            <span className="hm-ic"><Art name="screw" className="hm-art" /></span><span className="hm-tx">{t('set.title')}</span>
           </button>
         </div>
 

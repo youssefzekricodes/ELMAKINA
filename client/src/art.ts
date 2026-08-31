@@ -23,6 +23,11 @@ export const ART = {
   gamepad: '/img/icons/gamepad-c.svg',
   achievements: '/img/icons/achievements-c.svg',
   cards: '/img/icons/cards.svg',
+  // the front door's four ways in
+  dungeon: '/img/icons/dungeon.svg',
+  gamepadSolo: '/img/icons/gamepad-solo.svg',
+  key: '/img/icons/key.svg',
+  screw: '/img/icons/screw.svg',
   flagTn: '/img/icons/flag-tn.svg',
   flagEn: '/img/icons/flag-en.svg',
 } as const;
