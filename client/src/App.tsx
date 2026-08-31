@@ -18,6 +18,7 @@ import { Console } from './components/Console';
 import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
+import { Onboarding } from './components/Onboarding';
 import { LeaderboardPage, FriendsPage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
@@ -83,6 +84,8 @@ export default function App() {
       <Coach />
       {inGame && <Cinematic />}
       <NetBadge />
+      {/* The gate goes on top of everything: no header, no modals, no way to play nameless. */}
+      {s.onboarding && <Onboarding />}
       <RulesModal />
       <CharactersModal />
       <Guide />

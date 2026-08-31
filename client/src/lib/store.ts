@@ -54,6 +54,7 @@ export interface Snapshot {
   friendReqs: Friend[];      // incoming pending requests
   invite: RoomInvite | null; // a friend invited me to their room (live push)
   searching: boolean;        // quick match is running / we are sitting in a public room waiting for company
+  onboarding: boolean;       // full-screen first-run step: pick a face, type a name — no way around it
   tick: number; // bumps when language changes so every text re-renders
 }
 
@@ -100,7 +101,9 @@ let snap: Snapshot = {
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
   targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
-  account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false, tick: 0,
+  account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false,
+  // No saved name = a brand-new player: the full-screen onboarding runs until a name exists.
+  onboarding: !(localStorage.getItem('mekina.name') || '').trim(), tick: 0,
 };
 const listeners = new Set<() => void>();
 

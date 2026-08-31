@@ -72,7 +72,7 @@ export function CharactersModal() {
 }
 
 /** Opening hand of drawn faces (Multiavatar seeds) — stable so the picker looks the same each visit. */
-const MV_SET = ['sahara', 'sirocco', 'medina', 'harissa', 'jasmine', 'carthage', 'bousaadia', 'sidi bou'];
+export const MV_SET = ['sahara', 'sirocco', 'medina', 'harissa', 'jasmine', 'carthage', 'bousaadia', 'sidi bou'];
 export const randSeed = () => Math.random().toString(36).slice(2, 9);
 
 /** Name + avatar + colour — the one place you edit who you are, from home OR from inside a room. */

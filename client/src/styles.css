@@ -253,8 +253,10 @@
   .badge-photo:hover { transform: translateY(-1px); }
   .badge-photo .pavatar { box-shadow: 0 0 0 2px rgba(255,240,214,.16), 0 6px 16px rgba(0,0,0,.4); }
   .badge-photo-edit { position: absolute; inset-inline-end: -4px; bottom: -4px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent); color: var(--accent-foreground); box-shadow: 0 0 0 3px rgba(20,14,9,.92); }
-  .home-badge .home-name { flex: 1; min-width: 0; height: 50px; text-align: start; padding: 0 12px; font-weight: 600; font-size: 16px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,240,214,.14); color: #F3E9D6; transition: border-color .15s, box-shadow .15s; }
-  .home-badge .home-name::placeholder { color: rgba(245,236,221,.4); font-weight: 500; }
+  .home-name-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .home-name-lbl { font-size: 11px; font-weight: 700; letter-spacing: .03em; color: rgba(245,236,221,.72); text-align: start; padding-inline-start: 2px; }
+  .home-badge .home-name { width: 100%; min-width: 0; height: 46px; text-align: start; padding: 0 12px; font-weight: 600; font-size: 16px; border-radius: 12px; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,240,214,.32); color: #F3E9D6; transition: border-color .15s, box-shadow .15s; }
+  .home-badge .home-name::placeholder { color: rgba(245,236,221,.55); font-weight: 500; }
   .home-badge .home-name:focus { outline: none; border-color: color-mix(in srgb, var(--accent) 60%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
 
   /* The one thing to press: taller than anything else on the screen, and the only saturated
@@ -345,6 +347,20 @@
   .mv-gen:active { transform: translateY(0); }
   .mv-credit { font-size: 10.5px; color: var(--muted); }
   .mv-credit a { color: inherit; text-decoration: underline; }
+  /* ── the front gate ─────────────────────────────────────────────────────────
+     First run only: a full-screen step over everything. No close button, no backdrop dismiss —
+     the only way through is a face and a name, which is also all it asks for. */
+  .ob-screen { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 18px; background: rgba(20,14,9,.9); backdrop-filter: blur(6px); overflow-y: auto; }
+  .ob-card { width: min(560px, 100%); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--surface); border-radius: var(--radius-3xl); padding: clamp(20px, 4vw, 34px); display: flex; flex-direction: column; gap: 16px; box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+  .ob-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(22px, 5vw, 30px); color: var(--foreground); }
+  .ob-sub { color: var(--muted); font-size: 14px; margin-top: -8px; }
+  .ob-face { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .ob-start { width: 100%; }
+  /* On a phone the gate IS the screen: edge to edge, no card floating in a void. */
+  @media (max-width: 560px) {
+    .ob-screen { padding: 0; }
+    .ob-card { min-height: 100dvh; border-radius: 0; padding: 24px 18px calc(24px + var(--sab)); justify-content: center; }
+  }
 
   /* game layout */
   .game-screen { padding: 10px 12px calc(10px + var(--sab)); }

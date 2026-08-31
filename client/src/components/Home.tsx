@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { createRoom, joinRoom, playSolo, quickMatch, notify, commitProfile, isConfigured } from '../lib/net';
-import { randSeed } from './Modals';
+import { createRoom, joinRoom, playSolo, quickMatch, notify, isConfigured } from '../lib/net';
 import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
@@ -24,17 +23,6 @@ export function Home() {
   const [code, setCode] = useState(s.autoJoinCode || '');
   const [joining, setJoining] = useState(!!s.autoJoinCode);
   const [busy, setBusy] = useState<string | null>(null);
-  // First visit ever (no saved name): the profile sheet IS the onboarding. A face is already
-  // generated and worn before it opens, so the new player only has to type a name — or press
-  // "generate a new look" until one fits. Opens once; returning players never see it.
-  useEffect(() => {
-    if (localStorage.getItem('mekina.onboarded')) return;
-    localStorage.setItem('mekina.onboarded', '1');
-    const cur = store.get();
-    if (cur.name.trim()) return; // an old hand from before this existed — nothing to onboard
-    if (!cur.profile.avatar.startsWith('mv:') && cur.profile.avatar !== 'custom') commitProfile({ ...cur.profile, avatar: 'mv:' + randSeed(), avatarData: null });
-    store.set({ modal: 'avatar' });
-  }, []);
   const name = s.name.trim();
   const setName = (v: string) => { store.set({ name: v }); localStorage.setItem('mekina.name', v); };
   const need = () => { if (!name) { notify(t('toast.name')); return false; } return true; };
@@ -107,12 +95,17 @@ export function Home() {
             <PlayerAvatar p={mePreview} size="md" />
             <span className="badge-photo-edit"><Icon name="pen" className="size-3" /></span>
           </button>
-          <input
-            className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
-            placeholder={t('home.name.ph')} maxLength={16} autoComplete="off" aria-label={t('home.name')}
-            autoFocus={!!s.autoJoinCode}
-            onKeyDown={(e) => { if (e.key === 'Enter') go(joining ? 'join' : 'random'); }}
-          />
+          {/* An unmistakable field: a small standing label, because once a name is typed the
+              placeholder is gone and a quiet box full of text reads as decoration, not an input. */}
+          <label className="home-name-wrap">
+            <span className="home-name-lbl">{t('home.name')}</span>
+            <input
+              className="home-name" value={s.name} onChange={(e) => setName(e.target.value)}
+              placeholder={t('home.name.ph')} maxLength={16} autoComplete="off"
+              autoFocus={!!s.autoJoinCode}
+              onKeyDown={(e) => { if (e.key === 'Enter') go(joining ? 'join' : 'random'); }}
+            />
+          </label>
         </div>
 
         {/* The one thing to press. */}
