@@ -792,19 +792,26 @@
      and it is never hidden, least of all on a phone, which is where beginners actually are. */
   /* Full panel width, balanced lines, and no token can push a line past the edge. It was capped at
      42ch inside a wider panel, so it wrapped earlier than it had to and left ragged orphan lines. */
-  .cm-effect { display: flex; align-items: flex-start; gap: 8px; width: 100%; max-width: 46ch; padding: 8px 11px;
-    overflow-wrap: anywhere; text-wrap: pretty;
+  /* A BLOCK, not a flex container. As flex, every <b> in the sentence became its own flex item and
+     the line broke around each player's name — which is what "the explanation breaks lines with
+     long names" was. The accent bar is a border now, so the text is just text and wraps normally. */
+  .cm-effect { display: block; width: 100%; max-width: 46ch; padding: 8px 11px;
+    overflow-wrap: break-word; text-wrap: pretty;
     border-radius: 10px; border: 1px solid color-mix(in srgb, var(--c, var(--gold)) 30%, transparent);
+    border-inline-start: 3px solid color-mix(in srgb, var(--c, var(--gold)) 65%, transparent);
     background: color-mix(in srgb, var(--c, var(--gold)) 9%, transparent);
     font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--foreground); text-align: start; }
-  .cm-effect::before { content: ''; flex: 0 0 3px; align-self: stretch; border-radius: 2px;
-    background: color-mix(in srgb, var(--c, var(--gold)) 65%, transparent); }
-  .cm-effect b { color: var(--foreground); font-weight: 800; }
+  /* A player's name is one word. `overflow-wrap: anywhere` would happily snap it in half mid-name,
+     which reads as a typo; keeping it whole and letting the sentence wrap around it is right. A
+     name longer than the line ellipsises rather than pushing the callout wider. */
+  /* A player's name is one word: keep it whole and let the sentence wrap around it, rather than
+     snapping it in half mid-name, which reads as a typo. */
+  .cm-effect b { color: var(--foreground); font-weight: 800; white-space: nowrap; }
   /* The counter's own explanation reads as the answer to the one above it, so it is tinted with
      the countering card rather than the claimed one. */
   .cm-effect.counter { border-color: color-mix(in srgb, var(--warning) 34%, transparent);
+    border-inline-start-color: color-mix(in srgb, var(--warning) 70%, transparent);
     background: color-mix(in srgb, var(--warning) 8%, transparent); }
-  .cm-effect.counter::before { background: color-mix(in srgb, var(--warning) 70%, transparent); }
   /* one column of identical buttons — icon and label always line up */
   /* Pinned to the bottom of the panel. The explanations earn their length, but on a short phone
      they push the verdicts below the fold INSIDE the panel — buttons that exist and cannot be
@@ -1654,8 +1661,13 @@
     .console-top { align-self: stretch; width: 100%; flex-wrap: nowrap; gap: 8px; padding: 3px 10px; margin-bottom: 0; }
     .ct-title, .ct-deck { display: none; }
     .ct-meta { gap: 8px; flex-shrink: 0; min-width: 0; }
-    .me-coins { transform: none; font-size: 16px; }
-    .me-coins img { width: 19px; height: 19px; }
+    /* Your coins decide every move you can make, so on a phone they are the loudest thing in the
+       status bar rather than one more grey number in it. */
+    .me-coins { transform: none; font-size: 21px; font-weight: 800; color: var(--gold);
+      background: color-mix(in srgb, var(--gold) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--gold) 38%, transparent);
+      border-radius: 999px; padding: 2px 11px 2px 6px; gap: 5px; }
+    .me-coins img { width: 21px; height: 21px; }
     .status-line { flex-wrap: nowrap; min-width: 0; overflow: hidden; gap: 7px; font-size: 12px; }
     .status-line > span:not([class]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .countdown { flex-shrink: 0; padding: 2px 8px 2px 2px; gap: 5px; }
@@ -1667,23 +1679,28 @@
        (duplicates still show twice). Sized off the viewport height so it shrinks on short phones. */
     /* Your hand, in its own strip ABOVE the row. Deliberately the small thing on screen: it is a
        reminder of what you hold, not the thing you tap — you play from the row below. */
-    .my-cards { display: flex; align-self: stretch; flex-direction: row; align-items: center; gap: 7px;
-      padding: 2px 8px; border-radius: 10px; background: none; border: 0; box-shadow: none; }
+    /* Compact, but not so compact it stops saying anything: a 30px portrait is not a character you
+       can recognise, and an 8.5px caption at 75% opacity is not a caption. The strip keeps its one
+       row; the cards get big enough to read and their names come back under them, which is the
+       fastest identifier of the two. */
+    .my-cards { display: flex; align-self: stretch; flex-direction: row; align-items: center; gap: 8px;
+      padding: 3px 8px 4px; border-radius: 12px; border: 0; box-shadow: none;
+      background: linear-gradient(180deg, rgba(255,240,214,.05), transparent); }
     .mc-head { flex-direction: row; align-items: center; gap: 5px; flex-shrink: 0; }
-    .mc-label { font-size: 8.5px; letter-spacing: .06em; opacity: .75; }
+    .mc-label { font-size: 10px; letter-spacing: .08em; opacity: 1; }
     .mc-label svg { display: none; }
-    .mc-chars { font-size: 8.5px; padding: 0 5px; }
-    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 5px; padding: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .mc-chars { font-size: 9px; padding: 1px 6px; }
+    .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 8px; padding: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
-    .mc-hand .hand-card { gap: 0; flex-shrink: 0; }
-    .mc-hand .hc-name { display: none; }
-    .my-cards .hand .gcard { width: 30px !important; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+    .mc-hand .hand-card { gap: 2px; flex-shrink: 0; }
+    .mc-hand .hc-name { display: block; max-width: 52px; font-size: 8px; letter-spacing: 0; line-height: 1.05; }
+    .my-cards .hand .gcard { width: 46px !important; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c, var(--gold)) 70%, transparent), 0 3px 8px rgba(0,0,0,.5); }
     .mc-head { flex-direction: column; align-items: flex-start; gap: 3px; flex-shrink: 0; }
     .mc-label { font-size: 9px; letter-spacing: .08em; }
     .mc-chars { font-size: 9.5px; padding: 1px 7px; }
     .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 7px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .mc-hand::-webkit-scrollbar { display: none; }
-    .my-cards .hand .gcard { width: 30px !important; }
+    .my-cards .hand .gcard { width: 42px !important; }
     .mc-hand .hand-card { gap: 3px; flex-shrink: 0; }
     .mc-hand .hc-name { max-width: 60px; font-size: 8px; }
     /* phone card hand: one swipeable row — upright cards on a subtle arc (no tilt), horizontal
@@ -1759,7 +1776,7 @@
        same-property fallbacks — pre-dvh webviews keep the plain px sizes declared above. */
     @supports (height: 1dvh) {
 
-      .my-cards .hand .gcard { width: clamp(26px, 4dvh, 34px) !important; }
+      .my-cards .hand .gcard { width: clamp(36px, 5.4dvh, 46px) !important; }
       .board-card { width: clamp(80px, 16dvh, 116px); }
     }
   }
@@ -1807,7 +1824,7 @@
     .bank .pile { width: 36px; height: 26px; } .bank .pile img { width: 17px; height: 17px; }
     .prompt { max-height: 84dvh; }
     .claim-min { padding: 12px 12px 12px; gap: 8px; }
-    .claim-min .cm-effect { font-size: 12px; padding: 6px 9px; gap: 7px; max-width: none; line-height: 1.35; }
+    .claim-min .cm-effect { font-size: 12px; padding: 6px 9px; max-width: none; line-height: 1.35; }
     .cm-card .gcard { width: 58px !important; }
     .cm-btns { gap: 6px; }
     .cm-btns .rx { min-height: 46px; }
@@ -1819,7 +1836,7 @@
        across instead and tighten the explanatory line rather than dropping it. */
     .prompt { max-height: min(92dvh, 100dvh - 24px); width: min(600px, calc(100vw - 20px)); }
     .claim-min { padding: 10px 12px 11px; gap: 7px; }
-    .claim-min .cm-effect { font-size: 11.5px; padding: 5px 9px; gap: 6px; max-width: none; line-height: 1.3; }
+    .claim-min .cm-effect { font-size: 11.5px; padding: 5px 9px; max-width: none; line-height: 1.3; }
     .cm-card .gcard { width: 54px !important; }
     .cm-btns { flex-direction: row; gap: 6px; margin-top: 0; }
     .cm-btns .rx { min-height: 44px; grid-template-columns: 26px 1fr; padding-inline: 9px; gap: 8px; }
@@ -1880,7 +1897,7 @@
     .mc-label { font-size: 8.5px; }
     .mc-chars { font-size: 9px; padding: 1px 6px; }
     .mc-hand { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 6px; padding: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
-    .my-cards .hand .gcard { width: 28px !important; }
+    .my-cards .hand .gcard { width: 38px !important; }
     .mc-hand .hand-card { gap: 2px; flex-shrink: 0; }
     .mc-hand .hc-name { max-width: 52px; font-size: 8px; }
     .board-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 14px 12px 5px; padding-inline-end: 56px; scrollbar-width: none; }
@@ -1896,7 +1913,7 @@
     .react-dock { bottom: calc(8px + var(--sab)); }
     @supports (height: 1dvh) {
 
-      .my-cards .hand .gcard { width: clamp(24px, 5dvh, 32px) !important; }
+      .my-cards .hand .gcard { width: clamp(32px, 6.4dvh, 42px) !important; }
       .board-card { width: clamp(58px, 22dvh, 96px); }
     }
   }
