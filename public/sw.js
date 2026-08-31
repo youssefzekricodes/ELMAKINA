@@ -26,6 +26,16 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;                   // never touch supabase.co / TURN / any cross-origin
 
+  // Media goes straight to the network, always.
+  //
+  // An <audio> element does not fetch a file, it asks for byte ranges, and a cache-first handler
+  // answers a range request with whatever whole response it has — which the element cannot use.
+  // Worse, the lobby track was requested once before the file existed, so the SPA fallback's HTML
+  // came back 200 and was cached under that URL; from then on the element was handed a web page to
+  // decode and played nothing, in the installed app only, because only the installed app has a
+  // service worker in front of it.
+  if (req.destination === 'audio' || req.destination === 'video' || req.headers.has('range')) return;
+
   // App shell: network-first so online players always get the latest build; cached index when offline.
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
@@ -38,7 +48,11 @@ self.addEventListener('fetch', (e) => {
     if (cached) return cached;
     try {
       const res = await fetch(req);
-      if (res && res.status === 200 && res.type === 'basic') {
+      // …and never store a page under an asset's URL. A single-page host answers anything it cannot
+      // find with index.html and a 200, so a missing asset does not fail — it poisons the cache with
+      // HTML until the next deploy. If it is not a document request, HTML is not the answer.
+      const html = (res.headers.get('content-type') || '').includes('text/html');
+      if (res && res.status === 200 && res.type === 'basic' && !(html && req.destination !== 'document')) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
       }
