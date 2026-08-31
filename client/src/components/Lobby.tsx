@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { copyInvite, kickPlayer, leaveRoom, setRoomPublic, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
-import { Icon, PlayerAvatar } from './ui';
+import { Art, Icon, PlayerAvatar } from './ui';
 import { AddFriendButton } from './Social';
 import { useVoice, speakingOf, inCall } from '../lib/voice';
 
@@ -135,7 +135,7 @@ export function Lobby() {
             <Tooltip.Content>{t('profile.editSeat')}</Tooltip.Content>
           </Tooltip>
           <Tooltip delay={400}>
-            <Button isIconOnly size="md" variant="tertiary" aria-label={t('top.chars')} onPress={() => store.set({ modal: 'chars' })}><Icon name="card-recive" className="size-5" /></Button>
+            <Button isIconOnly size="md" variant="tertiary" aria-label={t('top.chars')} onPress={() => store.set({ modal: 'chars' })} className="art-btn"><Art name="cards" className="size-5" /></Button>
             <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
           </Tooltip>
           <Tooltip delay={400}>

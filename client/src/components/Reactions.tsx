@@ -21,6 +21,13 @@ const REACTIONS: { token: string; key: string }[] = [
   { token: '/img/reactions/icon60.gif', key: 'icon60' },
   { token: '/img/reactions/hi.gif', key: 'hi' },
   { token: '/img/reactions/tung.gif', key: 'tung' },
+  // Animated WebP rather than GIF: the sources ran 14 MB between them, which is not something to
+  // put on a phone mid-hand. Same frames, a tenth of the weight.
+  { token: '/img/reactions/awkward.webp', key: 'awkward' },
+  { token: '/img/reactions/shook.webp', key: 'shook' },
+  { token: '/img/reactions/huh.webp', key: 'huh' },
+  { token: '/img/reactions/confused.webp', key: 'confused' },
+  { token: '/img/reactions/catdog.webp', key: 'catdog' },
 ];
 
 export function Reactions() {

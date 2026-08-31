@@ -91,7 +91,9 @@ export function GameMenu() {
               </span>
             )}
             {item('document-text', t('top.log'), () => store.set({ logOpen: !s.logOpen, unread: 0 }), '', s.unread > 0 ? <span className="gm-badge">{s.unread > 9 ? '9+' : s.unread}</span> : null)}
-            {item('card-recive', t('top.chars'), () => store.set({ modal: 'chars' }))}
+            <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); store.set({ modal: 'chars' }); }}>
+              <Art name="cards" className="size-5" /><span className="gm-tx">{t('top.chars')}</span>
+            </button>
             {item('question-circle', t('top.rules'), () => store.set({ modal: 'guide' }))}
             <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); toggleSound(); }}>
               <Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /><span className="gm-tx">{t('top.sound')}</span>
@@ -130,7 +132,7 @@ export function TopBar() {
         </Tooltip>
         <Tooltip delay={400}>
           <Button variant="outline" size="sm" onPress={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} className="guide-btn">
-            <Icon name="card-recive" className="size-4" /><span className="guide-btn-tx">{t('top.chars')}</span>
+            <Art name="cards" className="size-5" /><span className="guide-btn-tx">{t('top.chars')}</span>
           </Button>
           <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
         </Tooltip>

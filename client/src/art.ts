@@ -22,6 +22,7 @@ export const ART = {
   home: '/img/icons/home-c.svg',
   gamepad: '/img/icons/gamepad-c.svg',
   achievements: '/img/icons/achievements-c.svg',
+  cards: '/img/icons/cards.svg',
   flagTn: '/img/icons/flag-tn.svg',
   flagEn: '/img/icons/flag-en.svg',
 } as const;

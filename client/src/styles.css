@@ -2374,7 +2374,8 @@
 
   /* The screens the bar covers get their bottom padding back, so nothing hides under it. */
   .app.at-home .home-screen, .app.at-leaderboard .page-screen,
-  .app.at-friends .page-screen, .app.at-public .page-screen { padding-bottom: calc(126px + var(--sab)); }
+  .app.at-friends .page-screen, .app.at-public .page-screen,
+  .app.at-profile .page-screen { padding-bottom: calc(126px + var(--sab)); }
 
   /* Illustrated icons keep their own palette, so the containers that tint line-art must not tint
      these: no currentColor, no filters, just a box to sit in. */
@@ -2393,4 +2394,30 @@
   .res-cup { width: 26px; height: 26px; flex-shrink: 0; }
   .res-crown .art { width: 34px; height: 34px; }
   .page-title .page-art { width: 30px; height: 30px; flex-shrink: 0; }
+
+  /* ── your own page ─────────────────────────────────────────────────────────── */
+  .pf-page { display: flex; flex-direction: column; gap: 16px; }
+  .pf-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 18px 20px;
+    border-radius: var(--radius-2xl); border: 1px solid rgba(255,240,214,.14);
+    background: linear-gradient(180deg, rgba(58,44,30,.55), rgba(20,15,10,.72));
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 0 14px 34px rgba(0,0,0,.4); }
+  .pf-face { position: relative; border: 0; background: none; padding: 0; cursor: pointer; transition: transform .12s var(--ease); }
+  .pf-face:active { transform: scale(.97); }
+  .pf-name-lg { font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--foreground); }
+  .pf-trophies { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; color: var(--muted); }
+  .pf-trophies b { color: var(--gold); font-size: 16px; }
+  .pf-edit { margin-top: 4px; }
+  .pf-rows { display: flex; flex-direction: column; gap: 8px; }
+  .pf-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; padding: 0 14px;
+    border-radius: 14px; border: 1px solid rgba(255,240,214,.12); background: rgba(28,20,14,.6);
+    color: var(--foreground); font-size: 15px; font-weight: 600; text-align: start; cursor: pointer;
+    transition: border-color .12s, background .12s, transform .1s var(--ease); }
+  .pf-row:hover { border-color: color-mix(in srgb, var(--gold) 45%, transparent); background: rgba(40,29,19,.72); }
+  .pf-row:active { transform: translateY(1px); }
+  .pf-row > span:first-of-type { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pf-row .pf-val { flex: none; color: var(--gold); font-weight: 700; font-size: 13px; }
+  .pf-row .pf-chev { flex: none; opacity: .5; }
+  .pf-row .pf-flag { border-radius: 50%; }
+  .pf-acct { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 2px; }
 }

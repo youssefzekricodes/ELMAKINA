@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
-import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, type LeaderRow } from '../lib/social';
-import { joinRoom, leaveRoom, listPublicRooms, notify } from '../lib/net';
-import { Art, Icon, PlayerAvatar } from './ui';
+import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow } from '../lib/social';
+import { joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleSound } from '../lib/net';
+import { Art, GoogleG, Icon, PlayerAvatar } from './ui';
 import type { ArtName } from '../art';
 
 const asPlayer = (uid: string, avatar: string | null, avatarData: string | null) => ({ id: uid, avatar: avatar || 'boy-1', avatarData, color: null });
@@ -212,6 +212,59 @@ export function PublicRoomsPage() {
               </ul>}
           <div className="pub-actions">
             <Button size="md" variant="tertiary" onPress={load}><Icon name="restart" className="size-4" />{t('pub.refresh')}</Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Your own page: the face, the name, what you have won, and the account it is tied to.
+ *
+ * The nav's profile stop used to throw the avatar modal over whatever you were looking at, which
+ * is a strange thing for a destination to do — a tab should take you somewhere. Editing still
+ * happens in the picker; this is the room the picker is reached from.
+ */
+export function ProfilePage() {
+  const s = useStore();
+  const me = { id: 'me', avatar: s.profile.avatar, avatarData: s.profile.avatarData, color: s.profile.color };
+  return (
+    <section className="screen page-screen">
+      <div className="page-shell">
+        <PageHead art="profile" title={t('profile.title')} />
+        <div className="page-body pf-page">
+          <div className="pf-card">
+            <button type="button" className="pf-face" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')}>
+              <PlayerAvatar p={me} size="xl" />
+              <span className="badge-photo-edit"><Icon name="pen" className="size-3.5" /></span>
+            </button>
+            <h2 className="pf-name-lg">{s.name || t('home.name.ph')}</h2>
+            <span className="pf-trophies"><Art name="stars" className="size-5" />{t('lb.trophies')}: <b>{s.trophies}</b></span>
+            <Button size="md" variant="primary" onPress={() => store.set({ modal: 'avatar' })} className="pf-edit">{t('profile.change')}</Button>
+          </div>
+
+          <div className="pf-rows">
+            <button type="button" className="pf-row" onClick={() => store.set({ modal: 'chars' })}>
+              <Art name="cards" className="size-6" /><span>{t('top.chars')}</span><Icon name="alt-arrow-right" className="size-4 pf-chev" />
+            </button>
+            <button type="button" className="pf-row" onClick={() => store.set({ modal: 'guide' })}>
+              <Icon name="question-circle" className="size-6" /><span>{t('top.rules')}</span><Icon name="alt-arrow-right" className="size-4 pf-chev" />
+            </button>
+            <button type="button" className="pf-row" onClick={toggleSound}>
+              <Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-6" /><span>{t('top.sound')}</span>
+              <span className="pf-val">{t(s.soundOn ? 'profile.on' : 'profile.off')}</span>
+            </button>
+            <button type="button" className="pf-row" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')}>
+              <Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-6 pf-flag" /><span>{t('top.lang.title')}</span>
+              <Icon name="alt-arrow-right" className="size-4 pf-chev" />
+            </button>
+          </div>
+
+          <div className="pf-acct">
+            {s.account && !s.account.isGuest
+              ? <><span className="acct-name">{s.account.name}</span><button type="button" className="acct-link" onClick={signOutAccount}>{t('acct.signout')}</button></>
+              : <button type="button" className="home-acct acct-google" onClick={signInWithGoogle}><GoogleG className="size-4" />{t('acct.google')}</button>}
           </div>
         </div>
       </div>

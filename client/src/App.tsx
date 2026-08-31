@@ -20,7 +20,7 @@ import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
 import { Onboarding } from './components/Onboarding';
-import { LeaderboardPage, FriendsPage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
+import { LeaderboardPage, FriendsPage, ProfilePage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
 import { Cinematic } from './components/Cinematic';
@@ -66,6 +66,7 @@ export default function App() {
         {s.screen === 'leaderboard' && <LeaderboardPage />}
         {s.screen === 'friends' && <FriendsPage />}
         {s.screen === 'public' && <PublicRoomsPage />}
+        {s.screen === 'profile' && <ProfilePage />}
         {s.screen === 'lobby' && s.room && <Lobby />}
         {inGame && (
           <section className="screen game-screen">

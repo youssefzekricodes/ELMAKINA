@@ -71,7 +71,7 @@ export function Home() {
               <Art name="gamepad" className="size-5" />
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
             </button>
-            <button type="button" className="acct-tool only-sm" onClick={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} title={t('top.chars')}><Icon name="card-recive" className="size-4" /></button>
+            <button type="button" className="acct-tool only-sm art-tool" onClick={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} title={t('top.chars')}><Art name="cards" className="size-5" /></button>
             <button type="button" className="acct-tool only-sm art-tool" onClick={toggleSound} aria-label={t('top.sound')} title={t('top.sound')}><Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /></button>
             <button type="button" className="acct-tool only-sm art-tool" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} title={t('top.lang.title')}><Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-5" /></button>
           </div>

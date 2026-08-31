@@ -8,7 +8,7 @@ import { isCoaching, store, useStore } from '../lib/store';
 import { sendAction, startAction } from '../lib/net';
 import { validTargets } from '../lib/rules';
 import { sfx } from '../lib/sfx';
-import { Coins, GameCard, Icon, PickBanner, Ring } from './ui';
+import { Art, Coins, GameCard, Icon, PickBanner, Ring } from './ui';
 
 const pressAction = (type: string) => { sfx.play('lever'); startAction(type); };
 const actionName = (type: string) => (CH[type as keyof typeof CH] ? i18n.charName(type) : t(`action.${type}.name`));
@@ -181,7 +181,7 @@ export function Console() {
             <span className="mc-label"><Icon name="card-recive" className="size-3.5" />{t('board.mycards')}</span>
             {coaching && (
               <button type="button" className="mc-chars" onClick={() => store.set({ modal: 'chars' })}>
-                <Icon name="hand-stars" className="size-3.5" />{t('top.chars')}
+                <Art name="cards" className="size-4" />{t('top.chars')}
               </button>
             )}
           </div>

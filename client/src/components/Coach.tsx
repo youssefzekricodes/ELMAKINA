@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { isCoaching, needsMe, store, tableBusy, useStore } from '../lib/store';
-import { Icon } from './ui';
+import { Art, Icon } from './ui';
 
 const KEY = 'mekina.coachSeen';
 const seen = () => { try { return localStorage.getItem(KEY) === '1'; } catch { return true; } };
@@ -45,7 +45,7 @@ export function Coach() {
         {/* learning mode: the character reference is one tap away before you play a single card */}
         {isCoaching(s) && (
           <button type="button" className="coach-chars" onClick={() => { dismiss(); store.set({ modal: 'chars' }); }}>
-            <Icon name="card-recive" className="size-4" />{t('chars.title')}
+            <Art name="cards" className="size-5" />{t('chars.title')}
           </button>
         )}
         <div className="coach-actions">

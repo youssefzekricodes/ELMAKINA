@@ -14,9 +14,9 @@ import { t } from '../i18n';
 import { Art } from './ui';
 import type { ArtName } from '../art';
 
-type Screen = 'home' | 'leaderboard' | 'friends' | 'public';
+type Screen = 'home' | 'leaderboard' | 'friends' | 'public' | 'profile';
 /** Where the bar is allowed to appear: the lobby has its own bottom bar, and a game needs the room. */
-export const NAV_SCREENS: string[] = ['home', 'leaderboard', 'friends', 'public'];
+export const NAV_SCREENS: string[] = ['home', 'leaderboard', 'friends', 'public', 'profile'];
 
 type Stop = { key: string; art: ArtName; label: string; go: () => void; badge?: number; active: boolean };
 
@@ -28,7 +28,7 @@ export function NavBar() {
     { key: 'public', art: 'menu', label: t('home.public'), go: () => store.set({ screen: 'public' }), active: at('public') },
     { key: 'home', art: 'home', label: t('nav.home'), go: () => store.set({ screen: 'home' }), active: at('home') },
     { key: 'friends', art: 'gamepad', label: t('fr.title'), go: () => store.set({ screen: 'friends' }), badge: s.friendReqs.length, active: at('friends') },
-    { key: 'profile', art: 'profile', label: t('profile.title'), go: () => store.set({ modal: 'avatar' }), active: s.modal === 'avatar' },
+    { key: 'profile', art: 'profile', label: t('profile.title'), go: () => store.set({ screen: 'profile' }), active: at('profile') },
   ];
   return (
     <nav className="navbar" aria-label={t('nav.title')}>

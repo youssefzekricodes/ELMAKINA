@@ -26,7 +26,7 @@ export interface GameState {
 }
 
 export interface Snapshot {
-  screen: 'home' | 'lobby' | 'game' | 'leaderboard' | 'friends' | 'public';
+  screen: 'home' | 'lobby' | 'game' | 'leaderboard' | 'friends' | 'public' | 'profile';
   connected: boolean;
   net: 'ok' | 'slow' | 'off';   // connection quality shown in the top bar
   room: Room | null;
