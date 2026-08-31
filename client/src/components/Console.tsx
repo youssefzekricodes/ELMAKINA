@@ -182,14 +182,14 @@ export function Console() {
            never eats board height while you are just watching. On wider screens it is a plain
            strip, as before — `open` and the tab do nothing there. */
         <div className={`my-cards ${handOpen ? 'open' : ''}`} ref={handBar}>
-          {/* The tab has to say two things at once: these are YOURS, and they pull out. So it
-              carries the word, the cards mark with your count on it, and a chevron that turns to
-              face whichever way it will move next. */}
+          {/* Two card backs poking out of a slim grip: the shape says "a hand" without a word to
+              read at 8px, the count says how many are yours, and the chevron says which way it
+              goes next. The cards themselves stay hidden until you pull. */}
           <button type="button" className="mc-tab" aria-expanded={handOpen} aria-controls="my-hand"
             onClick={() => setHandOpen((v) => !v)} aria-label={t('board.mycards')}>
-            <Icon name="alt-arrow-left" className="mc-tab-chev size-4" />
-            <span className="mc-tab-mark"><Art name="cards" className="mc-tab-art" /><span className="mc-tab-n">{you.cards.length}</span></span>
-            <span className="mc-tab-tx">{t('board.mycards')}</span>
+            <span className="mc-tab-fan" aria-hidden="true"><i className="cardback" /><i className="cardback" /></span>
+            <span className="mc-tab-n">{you.cards.length}</span>
+            <Icon name="alt-arrow-left" className="mc-tab-chev size-3.5" />
           </button>
           <div className="mc-head">
             <span className="mc-label"><Icon name="card-recive" className="size-3.5" />{t('board.mycards')}</span>

@@ -545,7 +545,7 @@
   .chip-pulse { animation: chip-pulse 1.3s ease-in-out infinite; }
   @keyframes chip-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
   /* countdown: clock badge + seconds + depleting bar */
-  .countdown { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-secondary); box-shadow: inset 0 0 0 1px var(--border); }
+  .countdown { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-secondary); }
   .countdown-clock { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
   .countdown-body { display: flex; flex-direction: column; gap: 3px; min-width: 62px; }
   .countdown-num { font-size: 15px; font-weight: 800; line-height: 1; color: var(--foreground); font-variant-numeric: tabular-nums; }
@@ -2239,7 +2239,7 @@
     /* The header becomes a floating glass bar — same material as the bottom sheet, rounded, sitting
        inside the safe area rather than welded across the top edge. */
     .app.in-game .prompt:not(.prompt-end) .p-strip { flex: none; width: min(460px, 100%); border-radius: 18px;
-      border: 1px solid rgba(255,240,214,.18); border-bottom: 1px solid rgba(255,240,214,.18);
+      border: 0; border-bottom: 0;
       background: linear-gradient(180deg, rgba(58,44,30,.60), rgba(16,12,8,.80));
       -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
       box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 0 10px 30px rgba(0,0,0,.45); }
@@ -2431,22 +2431,25 @@
       .app.in-game .my-cards, .mc-tab { background: linear-gradient(180deg, rgba(40,31,21,.98), rgba(14,10,7,.99)); }
     }
 
-    .mc-tab { position: absolute; top: 50%; left: -54px; right: auto; transform: translateY(-50%);
-      width: 54px; padding: 9px 4px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-      border: 1px solid rgba(255,240,214,.18); border-inline-end: 0; border-radius: 16px 0 0 16px;
+    /* The grip: slim, glass, and made of the game's own card backs. A fan of two says "your hand"
+       at a glance where an 8px label could not, the count says how many, and the chevron says
+       which way it moves next. */
+    .mc-tab { position: absolute; top: 50%; left: -40px; right: auto; transform: translateY(-50%);
+      width: 38px; padding: 9px 5px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      border: 0; border-radius: 16px 0 0 16px;
       background: linear-gradient(180deg, rgba(58,44,30,.60), rgba(16,12,8,.80));
       -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
       box-shadow: inset 0 1px 0 rgba(255,240,214,.10), -8px 10px 28px rgba(0,0,0,.5);
       color: var(--gold); cursor: pointer; }
-    [dir="rtl"] .mc-tab { left: auto; right: -54px; border-radius: 0 16px 16px 0; box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 8px 10px 28px rgba(0,0,0,.5); }
-    .mc-tab-mark { position: relative; display: inline-flex; }
-    .mc-tab-art { width: 26px; height: 26px; object-fit: contain; display: block; }
-    .mc-tab-n { position: absolute; top: -5px; inset-inline-end: -7px; min-width: 16px; height: 16px; padding: 0 4px;
-      display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;
-      background: var(--gold); color: #241505; font-size: 10px; font-weight: 800; line-height: 1; }
-    .mc-tab-tx { font-size: 8.5px; font-weight: 800; letter-spacing: .01em; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-    /* the chevron points where the drawer is going next */
-    .mc-tab-chev { opacity: .8; transition: transform .26s var(--ease); }
+    [dir="rtl"] .mc-tab { left: auto; right: -40px; border-radius: 0 16px 16px 0; box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 8px 10px 28px rgba(0,0,0,.5); }
+    .mc-tab-fan { position: relative; display: block; width: 26px; height: 32px; }
+    .mc-tab-fan .cardback { position: absolute; top: 0; left: 50%; width: 22px; border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+    .mc-tab-fan .cardback:first-child { transform: translateX(-50%) rotate(-11deg); }
+    .mc-tab-fan .cardback:last-child { transform: translateX(-50%) rotate(9deg); }
+    .mc-tab-n { min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 9px; background: var(--gold); color: #241505; font-size: 10.5px; font-weight: 800; line-height: 1; }
+    .mc-tab-chev { opacity: .75; transition: transform .26s var(--ease); }
     .my-cards.open .mc-tab-chev { transform: scaleX(-1); }
     [dir="rtl"] .mc-tab-chev { transform: scaleX(-1); }
     [dir="rtl"] .my-cards.open .mc-tab-chev { transform: none; }
