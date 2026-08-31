@@ -150,6 +150,19 @@
      the way it wants to be, and every surface that carries text (panels, sheets, the console, the
      drawer) brings its own backing, so nothing needs the whole screen dimmed to stay readable. */
   .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: var(--background); }
+  /*
+   * …and then some.
+   *
+   * A fixed box is sized to the viewport the browser reports right now. Retractable browser UI, and
+   * a PWA window that reports the short viewport before it goes edge-to-edge, both leave the art
+   * ending above the bottom of the screen with a band of flat colour under it — obvious on the home
+   * screen, where the bottom of the frame is a lit table, and invisible on a dark page like the
+   * leaderboard, which is why it looked like only one screen was wrong.
+   *
+   * lvh is the tallest the viewport ever gets, so the layer covers the retracted case as well. A
+   * fixed element adds nothing to the document's scrollable area, so the overhang costs no scroll.
+   */
+  @supports (height: 100lvh) { .bg { height: 100lvh; } }
   .bg-layer { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease-in-out; }
   .bg-layer.show { opacity: 1; }
   .bg.in-game .bg-layer { opacity: 1; }
