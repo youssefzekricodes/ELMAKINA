@@ -18,8 +18,14 @@ import { audioChannel, sfx } from './sfx';
 
 /** The lobby track. Set to null to fall back to the generated bed below. */
 const TRACK: string | null = '/audio/lobby.m4a';
-/** Under everything. It is a room tone, not a track you sit and listen to. */
-const TRACK_VOL = 0.14;
+/**
+ * Under everything, but still there.
+ *
+ * Measured on the track itself: at 0.14 it peaked at -19 dBFS (RMS around -33), which on a laptop
+ * speaker is indistinguishable from nothing — a bed has no transients to carry it. 0.28 puts the
+ * peak near -12, which is audible under conversation and still well below the cues.
+ */
+const TRACK_VOL = 0.28;
 const FADE_MS = 1400;
 
 const BPM = 90;
@@ -152,8 +158,10 @@ function attempt() {
   if (!el) return;
   const p = el.play();
   if (!p || !p.catch) return;
-  p.catch(() => {
-    if (!wanted) return;
+  p.catch((err: any) => {
+    // AbortError means a second play() superseded this one (React's dev double-mount does exactly
+    // that) — the track is fine and nothing needs waiting for. Only a policy block does.
+    if (!wanted || (err && err.name === 'AbortError')) return;
     const go = () => { off(); if (wanted && el) attempt(); };
     const off = () => { for (const ev of GESTURES) document.removeEventListener(ev, go); };
     off();
