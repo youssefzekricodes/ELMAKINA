@@ -2321,56 +2321,63 @@
   .acct-tool.is-muted { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
 
   /* ── the main nav ────────────────────────────────────────────────────────────
-     Parchment, not more darkness. Two dark-on-dark attempts read as mud against the table art —
-     the reference works because it is a LIGHT bar carrying saturated icons, and this game already
-     has a light material of its own: the face of its cards. So the rail is a card laid on the
-     table, and the stop you are on is an ember token pressed into it.
+     A hand of cards, because that is what this entire interface is already made of — the board is
+     cards, your hand is cards, the actions are cards. A bar, a rail, a pill: all of them are
+     shapes borrowed from outside this game, which is why they never belonged. These are five
+     small cards fanned along the bottom, and the one you are on is lifted and gold-framed —
+     exactly what the game already does to say "this one is yours" (.board-card.owned).
 
-     Floating on every edge, as asked. Phones and tablets only. */
+     Nothing to attach to an edge, so it floats by construction. Phones and tablets only. */
   .navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; pointer-events: none;
-    display: flex; justify-content: center;
-    padding: 0 calc(14px + var(--sal)) calc(14px + var(--sab)) calc(14px + var(--sar)); }
-  .nav-shelf { pointer-events: auto; position: relative; width: min(430px, 100%); display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; gap: 2px;
-    padding: 9px 8px 7px; border-radius: 22px;
-    background: linear-gradient(180deg, #FCF5E7 0%, #F1E4CB 62%, #E4D3B2 100%);
-    border: 1px solid rgba(74,52,26,.22);
-    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 4px rgba(120,92,52,.18),
-      0 14px 34px rgba(0,0,0,.55), 0 3px 0 rgba(0,0,0,.25); }
+    display: flex; justify-content: center; align-items: flex-end;
+    padding: 0 calc(10px + var(--sal)) calc(10px + var(--sab)) calc(10px + var(--sar)); }
+  .nav-shelf { pointer-events: auto; position: relative; width: auto; display: flex; align-items: flex-end;
+    justify-content: center; gap: 0; padding: 0; background: none; border: 0; box-shadow: none; }
 
-  .nav-stop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 50px; padding: 2px 2px 13px; border: 0; background: none; cursor: pointer; color: #7A6038;
-    font-size: 10.5px; font-weight: 800; line-height: 1.1; transition: color .14s, transform .12s var(--ease); }
-  .nav-stop:active { transform: translateY(2px); }
+  .nav-stop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding: 0 0 15px; margin-inline: -3px; border: 0; background: none; cursor: pointer; color: var(--gold);
+    font-size: 10.5px; font-weight: 800; line-height: 1.1;
+    transition: transform .16s var(--ease); }
+  /* the fan: outer cards lean away from the middle, exactly as a held hand does */
+  .nav-stop:nth-child(1) { --tilt: -7deg; --dip: 5px; }
+  .nav-stop:nth-child(2) { --tilt: -3.5deg; --dip: 1px; }
+  .nav-stop:nth-child(3) { --tilt: 0deg; --dip: 0px; }
+  .nav-stop:nth-child(4) { --tilt: 3.5deg; --dip: 1px; }
+  .nav-stop:nth-child(5) { --tilt: 7deg; --dip: 5px; }
+  [dir="rtl"] .nav-stop:nth-child(1) { --tilt: 7deg; }
+  [dir="rtl"] .nav-stop:nth-child(2) { --tilt: 3.5deg; }
+  [dir="rtl"] .nav-stop:nth-child(4) { --tilt: -3.5deg; }
+  [dir="rtl"] .nav-stop:nth-child(5) { --tilt: -7deg; }
+
+  /* the card face itself: the same white stock, border radius and drop shadow as every other card */
   .nav-ic { position: relative; display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; border-radius: 12px;
-    transition: background .18s var(--ease), box-shadow .18s var(--ease), width .18s var(--ease), height .18s var(--ease), border-radius .18s var(--ease), transform .18s var(--ease); }
-  .nav-art { width: 26px; height: 26px; object-fit: contain; display: block;
-    /* On parchment a dimmed icon reads as disabled, not unselected — they stay nearly full and the
-       raised ember token does the work of saying which one you are on. */
-    opacity: .88; transition: opacity .18s, width .18s var(--ease), height .18s var(--ease); }
-  .nav-stop:hover .nav-art { opacity: 1; }
-  .nav-label { position: absolute; left: 2px; right: 2px; bottom: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    opacity: 0; transform: translateY(-3px); transition: opacity .16s, transform .16s; pointer-events: none; }
+    width: 50px; aspect-ratio: .66; border-radius: 9px; overflow: visible;
+    background: linear-gradient(180deg, #FFFDF8 0%, #EFE4CE 100%);
+    box-shadow: inset 0 0 0 1px rgba(70,48,22,.28), 0 8px 16px rgba(0,0,0,.5);
+    transform: rotate(var(--tilt, 0deg)) translateY(var(--dip, 0px));
+    transform-origin: 50% 115%;
+    transition: transform .18s var(--ease), box-shadow .18s var(--ease), filter .18s; }
+  .nav-art { width: 30px; height: 30px; object-fit: contain; display: block; transition: width .18s var(--ease), height .18s var(--ease); }
+  /* a card you are not holding sits flat and cool */
+  .nav-stop:not(.on) .nav-ic { filter: brightness(.82) saturate(.9); }
+  .nav-stop:not(.on):hover .nav-ic { filter: none; transform: rotate(var(--tilt, 0deg)) translateY(calc(var(--dip, 0px) - 4px)); }
+  .nav-label { position: absolute; left: -14px; right: -14px; bottom: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    opacity: 0; transform: translateY(-3px); transition: opacity .16s, transform .16s; pointer-events: none;
+    text-shadow: 0 2px 6px rgba(0,0,0,.75); }
 
-  /* the active stop: an ember token pressed into the card, ringed in white like the reference */
-  .nav-stop.on { color: #C2530F; }
-  .nav-stop.on .nav-ic { width: 56px; height: 56px; border-radius: 50%; transform: translateY(-24px);
-    background: linear-gradient(180deg, #F2894A 0%, #E5661A 55%, #C4500F 100%);
-    box-shadow: 0 0 0 5px #FCF5E7, 0 0 0 6px rgba(74,52,26,.18),
-      inset 0 2px 0 rgba(255,236,214,.55), inset 0 -4px 8px rgba(120,40,0,.35),
-      0 10px 20px rgba(0,0,0,.45); }
-  .nav-stop.on .nav-ic::before { content: ''; position: absolute; left: 8px; right: 8px; top: 5px; height: 36%;
-    border-radius: 50%; pointer-events: none;
-    background: linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0)); }
-  .nav-stop.on .nav-art { width: 31px; height: 31px; opacity: 1; filter: drop-shadow(0 2px 4px rgba(90,30,0,.45)); }
+  /* the one you are on: straightened, lifted and gold-framed — the game's own "this is yours" */
+  .nav-stop.on { z-index: 2; }
+  .nav-stop.on .nav-ic { transform: rotate(0deg) translateY(-14px) scale(1.06);
+    box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px color-mix(in srgb, var(--gold) 30%, transparent),
+      0 0 22px color-mix(in srgb, var(--gold) 60%, transparent), 0 12px 24px rgba(0,0,0,.55); }
+  .nav-stop.on .nav-art { width: 34px; height: 34px; }
   .nav-stop.on .nav-label { opacity: 1; transform: none; }
-  .nav-badge { position: absolute; top: -3px; inset-inline-end: -3px; min-width: 17px; height: 17px; padding: 0 4px;
+  .nav-badge { position: absolute; top: -4px; inset-inline-end: -4px; min-width: 17px; height: 17px; padding: 0 4px;
     display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
     background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; line-height: 1;
-    box-shadow: 0 0 0 2px #FCF5E7; }
+    box-shadow: 0 0 0 2px rgba(20,14,9,.9); z-index: 3; }
   .nav-stop:focus-visible { outline: none; }
-  .nav-stop:focus-visible .nav-ic { box-shadow: 0 0 0 3px rgba(229,102,26,.55); }
+  .nav-stop:focus-visible .nav-ic { box-shadow: 0 0 0 3px var(--gold), 0 8px 16px rgba(0,0,0,.5); }
   @media (prefers-reduced-motion: reduce) { .nav-stop, .nav-ic, .nav-art, .nav-label { transition: none; } }
 
   /* Desktop keeps its header, which already carries these destinations — a bottom bar there is a
