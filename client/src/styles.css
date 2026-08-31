@@ -1569,7 +1569,12 @@
   /* ── in-game emoji / sticker reactions ── */
   .leave-btn { flex-shrink: 0; font-weight: 700; }
   /* launcher + tray, down on the trailing edge just above the control panel (thumb-reachable); tray opens upward */
-  .react-dock { position: fixed; z-index: 39; inset-inline-end: 12px; bottom: calc(18px + var(--sab)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  /* Bottom RIGHT in every language, like the hand drawer. This is a thumb position, not a piece of
+     text: on an inline-end anchor the button jumped to the other corner the moment you switched to
+     Arabic, and the tray's own alignment went with it. `direction: ltr` on the dock makes every
+     inline-axis decision inside it (align-items, the tray's grid flow) physical at once — there is
+     no text in here to mirror. */
+  .react-dock { position: fixed; z-index: 39; direction: ltr; right: 12px; left: auto; bottom: calc(18px + var(--sab)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
   .react-launch { width: 52px; height: 52px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: transform .15s var(--ease); }
   .react-launch-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,.5)); }
   .react-launch:hover { transform: translateY(-2px); background: var(--accent-soft); }
@@ -1577,7 +1582,10 @@
   .react-dock.open .react-launch { color: #fff; background: var(--danger); border: 2px solid rgba(255,255,255,.85); box-shadow: 0 6px 18px rgba(0,0,0,.5), 0 0 0 4px color-mix(in srgb, var(--danger) 25%, transparent); }
   .react-dock.open .react-launch:hover { transform: translateY(-2px) rotate(90deg); background: var(--danger-hover); }
   .react-dock.open .react-launch svg { width: 26px; height: 26px; stroke-width: 2.2; }
-  .react-tray { display: grid; grid-template-columns: repeat(4, 44px); gap: 5px; padding: 8px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); animation: react-tray-in .18s var(--ease); }
+  /* Twenty-one stickers is six rows, which is taller than a phone lying down: cap it and let the
+     tray scroll rather than letting the top row climb off the screen. */
+  .react-tray { display: grid; grid-template-columns: repeat(4, 44px); gap: 5px; padding: 8px; border-radius: 16px;
+    max-height: min(52vh, 340px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: var(--overlay-shadow); animation: react-tray-in .18s var(--ease); }
   @keyframes react-tray-in { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
   .react-key { width: 44px; height: 44px; border: 0; background: var(--surface-secondary); border-radius: 12px; cursor: pointer; transition: transform .12s var(--ease), box-shadow .12s; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; padding: 3px; }
   .react-key:hover { transform: scale(1.12) rotate(-3deg); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
@@ -1590,6 +1598,33 @@
   .react-name { font-size: 11px; font-weight: 700; color: #fff; background: rgba(0,0,0,.55); padding: 2px 8px; border-radius: 999px; white-space: nowrap; backdrop-filter: blur(4px); max-width: 22ch; overflow: hidden; text-overflow: ellipsis; }
   @keyframes react-rise { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.06); } 22% { transform: translateY(-8px) scale(1); } 100% { opacity: 0; transform: translateY(-190px) scale(.92); } }
   @media (prefers-reduced-motion: reduce) { .react-bubble { animation-duration: 3s; } }
+
+  /* ── you are out ─────────────────────────────────────────────────────────────
+     Losing your last card changes nothing about the screen: the table, the log and the card row
+     all carry on. The one line that said so lived in the console and lost to "waiting for X" most
+     of the time, so people kept trying to take a turn. This is a state, not a notification: it
+     stays up until the game ends. Never intercepts a tap — you are still watching a live board. */
+  .spectating { position: fixed; z-index: 46; top: calc(var(--sat) + 8px); left: 50%; transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: 9px; padding: 7px 14px; border-radius: 999px;
+    /* max-content, not shrink-to-fit: a fixed box with only `left` set sizes against the space
+       LEFT of the edge, which is half the screen here, and the subtitle was being ellipsised at
+       full width for no reason. */
+    width: max-content; max-width: min(92vw, 420px); pointer-events: none; color: var(--foreground);
+    background: linear-gradient(180deg, rgba(74,32,28,.72), rgba(20,10,8,.86));
+    -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
+    box-shadow: inset 0 1px 0 rgba(255,220,214,.12), 0 10px 30px rgba(0,0,0,.5);
+    animation: spec-in .28s var(--ease); }
+  .spectating svg { flex: none; color: var(--danger); }
+  .spectating .sp-tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; line-height: 1.15; }
+  .spectating .sp-tx b { font-family: var(--font-display); font-size: 12.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .spectating .sp-tx i { font-style: normal; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @keyframes spec-in { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } to { opacity: 1; transform: translateX(-50%); } }
+  /* the desktop header is still there to clear */
+  @media (min-width: 1024px) { .spectating { top: calc(var(--sat) + 60px); } }
+  @media (orientation: landscape) and (max-height: 520px) { .spectating { padding: 5px 11px; gap: 7px; }
+    .spectating .sp-tx b { font-size: 11px; } .spectating .sp-tx i { font-size: 10px; } }
+  /* the console says it too, in the one line it has */
+  .status-line.out { color: var(--danger); font-weight: 700; }
 
   /* ── Home top row (trophies + social pages) + sign-in ── */
   .home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
@@ -2309,7 +2344,7 @@
   .gm-btn { inset-inline-end: calc(10px + var(--sar)); }
   .gm-sheet { padding-inline: calc(10px + var(--sal)) calc(10px + var(--sar)); }
   .cine { padding-inline: calc(16px + var(--sal)) calc(16px + var(--sar)); }
-  .react-dock { inset-inline-end: calc(10px + var(--sar)); }
+  .react-dock { right: calc(10px + var(--sar)); }
 
   /* ── the claim panel, lying down ─────────────────────────────────────────────
      A landscape phone gives the panel ~134px of height and 844px of width, and the portrait column

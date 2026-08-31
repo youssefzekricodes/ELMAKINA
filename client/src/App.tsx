@@ -24,6 +24,7 @@ import { UpdateGate } from './components/UpdateGate';
 import { LeaderboardPage, FriendsPage, ProfilePage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
+import { Spectating } from './components/Spectating';
 import { Cinematic } from './components/Cinematic';
 import { NetBadge } from './components/NetBadge';
 import { Coach } from './components/Coach';
@@ -86,6 +87,8 @@ export default function App() {
       {inGame && <Reactions />}
       {/* Phones and tablets have no in-game header at all: this gear is the whole of it. */}
       {inGame && <GameMenu />}
+      {/* Out of the game but still in the room: say it plainly, for as long as it is true. */}
+      {inGame && <Spectating />}
       {/* The briefing prefers the lobby, where no clock is running; Coach decides for itself. */}
       <Coach />
       {inGame && <Cinematic />}

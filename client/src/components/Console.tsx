@@ -141,10 +141,12 @@ export function Console() {
   for (const c of you.cards) owned[c] = (owned[c] || 0) + 1;
 
   let status: React.ReactNode = null;
+  // Being out outranks whose turn it is. It used to come last, so a spectator spent most of the
+  // game reading "waiting for Karim…" — a line that implies they are still in it.
   if (st.phase === 'ended') status = <div className="status-line">{t('game.over')}</div>;
+  else if (!meP.alive) status = <div className="status-line out"><Icon name="eliminated" className="size-4" />{t('game.eliminated')}</div>;
   else if (myTurn) status = <div className="status-line"><Chip variant="primary" color="accent">{t('game.yourturn')}</Chip><span>{t('game.choose')}</span>{ring}</div>;
   else if (st.pending && st.pending.stage === 'turn') status = <div className="status-line"><span dangerouslySetInnerHTML={{ __html: i18n.html('game.waitingFor', { name: (st.players.find((p) => p.id === st.pending!.actorId) || {}).name || '?' }) }} />{ring}</div>;
-  else if (!meP.alive) status = <div className="status-line">{t('game.eliminated')}</div>;
 
   // coaching = the guide's one-off practice tour OR the persistent "learning mode" setting
   const coaching = isCoaching(s);

@@ -28,6 +28,12 @@ const REACTIONS: { token: string; key: string }[] = [
   { token: '/img/reactions/huh.webp', key: 'huh' },
   { token: '/img/reactions/confused.webp', key: 'confused' },
   { token: '/img/reactions/catdog.webp', key: 'catdog' },
+  // The table's own vocabulary: a threat, a funeral, a knockout and a bow. These land on the beats
+  // the game actually has — someone is coming for you, someone just went out, someone played well.
+  { token: '/img/reactions/myers.webp', key: 'myers' },
+  { token: '/img/reactions/rip.webp', key: 'rip' },
+  { token: '/img/reactions/wasted.webp', key: 'wasted' },
+  { token: '/img/reactions/respect.webp', key: 'respect' },
 ];
 
 export function Reactions() {
