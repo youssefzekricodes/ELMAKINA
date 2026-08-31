@@ -7,12 +7,10 @@ export const THEME = {
   brand: { name: 'ELMEKINA', tagline: 'Identity • Deception • Deduction' },
   slideshowMs: 5000,
   img: {
-    bg: ['/assets/background-lobby.png'],
-    bgSmall: ['/assets/background-lobby.png'],
-    // In game the room is shown wide, so the ring of seats sits inside it instead of over the
-    // lobby's portrait framing. Optimised by `npm run assets` from assets/background-game.png.
-    bgGame: ['/img/bg-game.webp'],
-    bgGameSmall: ['/img/bg-game-sm.webp'],
+    // The room, every screen. Built by `npm run assets` from assets/background-game.png — the
+    // lobby PNG it replaces was 2 MB of unoptimised art on the very first paint.
+    bg: ['/img/bg-game.webp'],
+    bgSmall: ['/img/bg-game-sm.webp'],
     poster: '/img/poster.webp',
     machine: '/img/machine.webp',
     machineSmall: '/img/machine-sm.webp',
