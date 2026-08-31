@@ -9,6 +9,10 @@ export const THEME = {
   img: {
     bg: ['/assets/background-lobby.png'],
     bgSmall: ['/assets/background-lobby.png'],
+    // In game the room is shown wide, so the ring of seats sits inside it instead of over the
+    // lobby's portrait framing. Optimised by `npm run assets` from assets/background-game.png.
+    bgGame: ['/img/bg-game.webp'],
+    bgGameSmall: ['/img/bg-game-sm.webp'],
     poster: '/img/poster.webp',
     machine: '/img/machine.webp',
     machineSmall: '/img/machine-sm.webp',

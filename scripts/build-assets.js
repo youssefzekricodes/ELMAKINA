@@ -64,6 +64,12 @@ async function keyOutBackground(input, output, width) {
     await webp(src('background-2.png'), out('bg-2.webp'), 1600, 78);
     await webp(src('background-2.png'), out('bg-2-sm.webp'), 900, 74);
   } else console.log('  (background-2.png absent — skipping bg-2)');
+  // The in-game backdrop is its own art: the table seen wide, so the ring of seats sits inside the
+  // room rather than on top of the lobby's portrait framing.
+  if (fs.existsSync(src('background-game.png'))) {
+    await webp(src('background-game.png'), out('bg-game.webp'), 1600, 76);
+    await webp(src('background-game.png'), out('bg-game-sm.webp'), 900, 72);
+  } else console.log('  (background-game.png absent — skipping bg-game)');
   await webp(src('card-back.png'), out('poster.webp'), 900, 78);
 
   console.log('Machine (keyed)');

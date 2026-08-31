@@ -114,6 +114,9 @@
   html[lang="ar"] body { font-family: "IBM Plex Sans Arabic", "Plus Jakarta Sans Variable", system-ui, sans-serif; letter-spacing: 0; }
   :root {
     --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+    /* Landscape is where a notch sits on a SIDE, and that is exactly when the board is widest
+       and closest to the edges. Every fixed thing pads by these, not just top and bottom. */
+    --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px);
     /* motion */
     --ease: cubic-bezier(.2,.8,.2,1); --ease-bounce: cubic-bezier(.34,1.56,.64,1); --dur-fast: .14s; --dur-base: .24s; --dur-slow: .5s;
     /* materials — repurposed for the white minimalist system (neutral hairlines, soft table) */
@@ -468,7 +471,10 @@
      than a hoop floating around it. Square box + square viewBox = a circle concentric at any size. */
   .seat-clock { position: absolute; inset: -5px; z-index: 3; transform: rotate(-90deg); pointer-events: none; }
   .seat-clock circle { fill: none; stroke-width: 6; }
-  .seat-clock .sc-track { stroke: color-mix(in srgb, var(--foreground) 15%, transparent); }
+  /* The track has to be SEEN. At 15% it was invisible on the dark board, so all anyone saw was a
+     lopsided arc — geometrically dead centre on the avatar, but with no ring around it to say so,
+     it read as a circle that had slipped off. The full rim shows; the arc drains around it. */
+  .seat-clock .sc-track { stroke: color-mix(in srgb, var(--foreground) 30%, transparent); }
   .seat-clock .sc-arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray .12s linear; }
   .seat-clock.low .sc-arc { stroke: var(--danger); }
   /* spotlight focus: when someone is on turn, everyone else recedes — gently, no theatre */
@@ -2015,10 +2021,16 @@
     .app.in-game .game-screen { flex: 1 1 auto; min-height: 0; height: auto; overflow: hidden; }
     .game-grid, .game-grid.log-collapsed { flex: 1 1 auto; min-height: 0; height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "table" "console"; gap: 4px; }
   }
-  /* under ~430px of height there is genuinely no room for both the My-cards strip and a legible
-     card row: drop the strip — the same cards stay gold-framed and badged "YOURS ×n" in the row. */
+  /* Under ~430px of height the strip used to be dropped entirely (the same cards stay gold-framed
+     and badged "YOURS ×n" in the row). Your own hand is the one thing you should never have to hunt
+     for, so it stays — as a thumbnail rail: no label, no shortcut button, cards at thumb size. It
+     costs about 34px of the table, which the ring absorbs. */
   @media (orientation: landscape) and (max-height: 430px) {
-    .my-cards { display: none; }
+    .my-cards { display: flex; padding: 0 4px; gap: 4px; }
+    .my-cards .mc-head { display: none; }
+    .my-cards .hand .gcard { width: 28px !important; }
+    .mc-hand { gap: 5px; padding: 4px 0 0; margin-top: -4px; }
+    .mc-hand .hc-name { display: none; }
   }
 
   /* ── touch targets on phones (portrait or landscape): nothing interactive below ~44px tall ── */
@@ -2160,4 +2172,35 @@
     .board-card:not(.off):not(.owned):hover .bc-art, .board-card.owned:not(.off):hover .bc-art { box-shadow: none; }
     .hand-row .hand .gcard:hover { filter: none; }
   }
+
+  /* ── the claim panel keeps its hands off your hand ───────────────────────────
+     .prompt is fixed and was centred on the viewport, so on a phone it landed straight on top of
+     your own two cards — the one thing you need in order to answer a claim. --hand-h is published
+     by Console.tsx (it measures the bar and reports how much screen bottom it owns); the panel
+     anchors above it. `rise` replaces `prompt-rise` because that keyframe re-applies the centring
+     translate for the length of the animation. */
+  @media (max-width: 1023px) {
+    .app.in-game .prompt:not(.prompt-end) {
+      top: auto; bottom: calc(var(--hand-h, 210px) + 10px);
+      transform: translateX(-50%); animation-name: rise;
+      max-height: calc(100dvh - var(--hand-h, 210px) - var(--sat) - 28px);
+      width: min(480px, calc(100vw - 24px - var(--sal) - var(--sar)));
+    }
+  }
+
+  /* ── the status bar and the hand get a width ─────────────────────────────────
+     Stretched edge to edge on a tablet, two cards and a coin count sat marooned at opposite ends of
+     a 1000px bar. Capped and centred they read as one object. */
+  @media (min-width: 761px), (orientation: landscape) and (max-height: 520px) {
+    .app.in-game .console-top, .app.in-game .my-cards { max-width: 620px; margin-inline: auto; width: 100%; }
+  }
+
+  /* ── safe areas on every fixed thing ─────────────────────────────────────────
+     The board, the gear, the sheet and the cut-scene all reach the screen edge, which on a notched
+     phone in landscape is under the notch or the home indicator. */
+  .app.in-game .game-screen { padding-inline: calc(6px + var(--sal)) calc(6px + var(--sar)); }
+  .gm-btn { inset-inline-end: calc(10px + var(--sar)); }
+  .gm-sheet { padding-inline: calc(10px + var(--sal)) calc(10px + var(--sar)); }
+  .cine { padding-inline: calc(16px + var(--sal)) calc(16px + var(--sar)); }
+  .react-dock { inset-inline-end: calc(10px + var(--sar)); }
 }

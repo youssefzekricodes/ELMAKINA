@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Chip, Tooltip } from '@heroui/react';
 import { IMG } from '../theme';
 import { t } from '../i18n';
@@ -27,12 +27,40 @@ function IconButton({ label, icon, onPress, className = '' }: { label: string; i
 export function GameMenu() {
   const s = useStore();
   const [open, setOpen] = useState(false);
+  const sheet = useRef<HTMLDivElement>(null);
+  const drag = useRef({ y0: 0, t0: 0, dy: 0, live: false });
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', esc);
     return () => document.removeEventListener('keydown', esc);
   }, [open]);
+  /**
+   * Swipe it away. A drag only starts when the list is already scrolled to the top, so flicking
+   * through the items never turns into a dismissal, and only downward movement counts. Let go past
+   * a third of the sheet — or throw it 40px+ faster than 0.5px/ms — and it goes; otherwise it
+   * springs back. The distance floor matters: without it a stray twitch counted as a flick.
+   */
+  const onTouchStart = (e: React.TouchEvent) => {
+    const el = sheet.current; if (!el || el.scrollTop > 0) return;
+    drag.current = { y0: e.touches[0].clientY, t0: Date.now(), dy: 0, live: true };
+    el.style.transition = 'none';
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const el = sheet.current; const d = drag.current;
+    if (!el || !d.live) return;
+    d.dy = Math.max(0, e.touches[0].clientY - d.y0);
+    if (d.dy > 0) el.style.transform = `translateY(${d.dy}px)`;
+  };
+  const onTouchEnd = () => {
+    const el = sheet.current; const d = drag.current;
+    if (!el || !d.live) return;
+    d.live = false;
+    const speed = d.dy / Math.max(1, Date.now() - d.t0);
+    el.style.transition = 'transform .2s var(--ease)';
+    if (d.dy > el.offsetHeight / 3 || (d.dy > 40 && speed > 0.5)) { el.style.transform = `translateY(${el.offsetHeight}px)`; setTimeout(() => setOpen(false), 160); }
+    else el.style.transform = '';
+  };
   const onLeave = async () => {
     if (s.state && s.state.phase === 'playing' && !confirm(t('toast.leave'))) return;
     await leaveRoom();
@@ -50,7 +78,8 @@ export function GameMenu() {
       </button>
       {open && (
         <div className="gm-scrim" onClick={() => setOpen(false)}>
-          <div className="gm-sheet" role="menu" aria-label={t('top.more')} onClick={(e) => e.stopPropagation()}>
+          <div className="gm-sheet" ref={sheet} role="menu" aria-label={t('top.more')} onClick={(e) => e.stopPropagation()}
+            onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
             <div className="gm-head">
               <span className="gm-brand">ELMEKINA</span>
               {s.room && <span className="gm-code ltr" dir="ltr">{s.room.code}</span>}

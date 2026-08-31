@@ -8,14 +8,16 @@ export function Background({ inGame, screen }: { inGame: boolean; screen?: strin
     const pick = () => {
       const el = layer.current; if (!el) return;
       const small = Math.max(window.innerWidth, window.innerHeight) < 1100;
-      const src = (small ? IMG.bgSmall : IMG.bg)[0];
+      // The table has its own room; the lobby keeps the portrait art.
+      const set = inGame ? (small ? IMG.bgGameSmall : IMG.bgGame) : (small ? IMG.bgSmall : IMG.bg);
+      const src = set[0];
       el.style.backgroundImage = `url('${src}')`;
       new Image().src = src;
     };
     pick();
     window.addEventListener('resize', pick);
     return () => window.removeEventListener('resize', pick);
-  }, []);
+  }, [inGame]);
   return (
     <div className={`bg ${inGame ? 'in-game' : ''} ${screen === 'lobby' ? 'smokey' : ''}`} aria-hidden="true">
       <div className="bg-layer show" ref={layer} />

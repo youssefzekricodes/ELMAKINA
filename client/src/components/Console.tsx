@@ -107,6 +107,30 @@ export function Console() {
     } catch { /* private mode: skip the hint rather than break the row */ }
     return () => { el.removeEventListener('scroll', sync); ro.disconnect(); clearTimeout(nudge); };
   }, [handKey]);
+  /**
+   * How much of the screen bottom your hand occupies, published as --hand-h.
+   *
+   * The claim panel is fixed and was centred, so on a phone it landed straight on top of the one
+   * thing you need in order to answer a claim — your own cards. CSS cannot measure another box, so
+   * the console measures itself and the panel anchors above it.
+   */
+  const handBar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const publish = () => {
+      const el = handBar.current;
+      const r = el && el.getBoundingClientRect();
+      // A hidden bar reports a zero rect, and innerHeight - 0 is the whole screen — which pushed
+      // the claim panel clean off the top. No bar on screen means nothing to stay clear of.
+      const px = r && r.height > 0 ? Math.max(0, Math.round(window.innerHeight - r.top)) : 0;
+      document.documentElement.style.setProperty('--hand-h', px + 'px');
+    };
+    publish();
+    const ro = new ResizeObserver(publish);
+    if (handBar.current) ro.observe(handBar.current);
+    window.addEventListener('resize', publish);
+    return () => { ro.disconnect(); window.removeEventListener('resize', publish); };
+  });
+
   if (!you || !meP) return <Card id="console" className="console p-4"><div className="status-line">{t('game.spectating')}</div></Card>;
 
   const myTurn = st.phase === 'playing' && st.pending && st.pending.stage === 'turn' && st.pending.actorId === me && meP.alive;
@@ -152,7 +176,7 @@ export function Console() {
       {/* MY CARDS: one card per physical card in your grip (duplicates show twice), so you never
           have to decode a "×2" badge on the board below. Hidden while spectating / eliminated. */}
       {!selfPick && meP.alive && you.cards.length > 0 && (
-        <div className="my-cards">
+        <div className="my-cards" ref={handBar}>
           <div className="mc-head">
             <span className="mc-label"><Icon name="card-recive" className="size-3.5" />{t('board.mycards')}</span>
             {coaching && (
