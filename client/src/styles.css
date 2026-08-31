@@ -351,8 +351,12 @@
   /* ── the arena ──────────────────────────────────────────────────────────────
      No table shape at all — just the spot the deck and bank live in. The round pool read as another
      object competing with the cards; the players ringed around are the layout. */
-  .arena { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    display: flex; align-items: center; justify-content: center; gap: clamp(20px, 4vw, 42px);
+  /* Deck and bank sit ASIDE at every size, not just on a phone. In the middle of the ring they are
+     the one thing every seat has to be routed around, and they compete with the centre of the
+     board for attention while being the least interactive part of it. In a corner no seat ever
+     reaches, they can hold their full size and the ring gets its middle back. */
+  .arena { position: absolute; left: auto; top: auto; inset-inline-start: 10px; bottom: 6px; transform: none;
+    display: flex; align-items: flex-end; justify-content: flex-start; gap: clamp(18px, 3vw, 34px);
     pointer-events: none; }
   .arena > * { pointer-events: auto; }
   .deck { position: relative; width: 64px; height: 104px; }
