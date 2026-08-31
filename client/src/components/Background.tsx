@@ -22,7 +22,6 @@ export function Background({ inGame, screen }: { inGame: boolean; screen?: strin
   return (
     <div className={`bg ${inGame ? 'in-game' : ''} ${screen === 'lobby' ? 'smokey' : ''}`} aria-hidden="true">
       <div className="bg-layer show" ref={layer} />
-      <div className="bg-vignette" />
     </div>
   );
 }

@@ -146,16 +146,13 @@
 
 /* ───────────────────────── Components (game-specific, tokenized) ───────────────────────── */
 @layer components {
-  /* background: a smokey backroom — the poster wall glows through a dark veil everywhere. */
+  /* Background: the room, shown as painted. No veil over it on any screen — the art is already lit
+     the way it wants to be, and every surface that carries text (panels, sheets, the console, the
+     drawer) brings its own backing, so nothing needs the whole screen dimmed to stay readable. */
   .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: var(--background); }
   .bg-layer { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease-in-out; }
   .bg-layer.show { opacity: 1; }
-  .bg-vignette { position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 32%, rgba(12,10,8,.34) 0%, rgba(12,10,8,.62) 58%, rgba(12,10,8,.88) 100%), linear-gradient(180deg, rgba(12,10,8,.5) 0%, rgba(12,10,8,.2) 30%, rgba(12,10,8,.58) 100%); }
-  /* In game the poster wall used to be buried under a near-opaque black radial (.72 → .96) with the
-     art at half opacity — it read as a mask over the whole screen rather than atmosphere. Just
-     enough shading now to keep names and coins legible over the art. */
-  .bg.in-game .bg-layer { opacity: .82; }
-  .bg.in-game .bg-vignette { background: radial-gradient(120% 85% at 50% 42%, rgba(8,6,4,.18) 0%, rgba(8,6,4,.42) 60%, rgba(6,4,2,.62) 100%); }
+  .bg.in-game .bg-layer { opacity: 1; }
 
   /* shell */
   .app { position: relative; z-index: 1; min-height: 100dvh; display: flex; flex-direction: column; padding-top: var(--sat); }
@@ -458,6 +455,9 @@
   .seat .av-wrap { position: relative; margin-bottom: 14px; }
   .seat .lamp { position: absolute; right: 2px; bottom: 4px; width: 12px; height: 12px; border: 2px solid #0e0c09; margin: 0; }
   .seat .pavatar { box-shadow: 0 0 0 1px var(--border), 0 4px 14px rgba(26,25,24,.10); }
+  /* With the veil gone these sit straight on the poster wall, which is busy and locally bright.
+     A shadow on the letters keeps them readable without dimming the artwork behind them. */
+  .seat .nm, .bank-lbl { text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.65); }
   .seat .nm { font-weight: 600; font-size: 12px; letter-spacing: .01em; color: var(--foreground); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 2px; }
   .seat .coins { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px 1px 5px; font-size: 12px; font-weight: 700; color: var(--warning-soft-foreground); }
   .seat .hand { display: flex; gap: 5px; min-height: 48px; justify-content: center; }
