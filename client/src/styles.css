@@ -156,6 +156,11 @@
 
   /* shell */
   .app { position: relative; z-index: 1; min-height: 100dvh; display: flex; flex-direction: column; padding-top: var(--sat); }
+  /* A game never scrolls the page, at any width — this used to be a phone-only rule. The board is
+     a fixed composition; scrolling it means the table and the cards cannot both be on screen,
+     which is the one thing the layout exists to guarantee. */
+  .app.in-game { height: 100dvh; max-height: 100dvh; overflow: hidden; }
+  .app.in-game .game-screen { flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .screen { flex: 1; display: flex; flex-direction: column; }
   .is-muted { opacity: .55; }
   /* in-game overflow: the four set-once controls, out of the way until asked for */
@@ -342,7 +347,39 @@
      pull the side seats in to 119 as well and six of them would sit on top of each other. Raising
      --ring-ry alone changes nothing either: the top seat is held by --seat-vinset, not the radius.
      The circle is scoped to phones and tablets, where the table area is near-square. */
-  .table-area { grid-area: table; position: relative; min-height: 380px; border-radius: var(--radius-3xl); overflow: hidden; background: transparent; }
+  /* overflow VISIBLE, as on phones. A seat is taller than the ring's radius allows for, and the
+     things that hang off it — the turn glow, the claim badge above the avatar, the status pill
+     below it — all sat outside the box and were being shaved off by the clip. The table has a
+     transparent background, so the clip was protecting nothing. */
+  .table-area { grid-area: table; position: relative; min-height: 380px; border-radius: var(--radius-3xl); overflow: visible; background: transparent;
+    /* Half a desktop seat is ~101px, and the claim badge sits another 32px above its avatar — the
+       inline fallback of 100px left the top player's head on the table's edge and its badge behind
+       the header. */
+    --seat-vinset: 134px; }
+  /* Desktop only: phones and tablets already contain their own height, and reshaping the shared
+     grid to fix a desktop problem collapsed their ring instead. */
+  @media (min-width: 1024px) {
+    /* With `1fr` plus a min-height the grid could only grow, so on a short window the console was
+       pushed past the fold — and once the page stopped scrolling, straight out of reach. The table
+       absorbs the slack instead, which is what phones have always done. */
+    .app.in-game .game-grid { grid-template-rows: minmax(0, 1fr) auto; flex: 1 1 auto; min-height: 0; }
+    .app.in-game .table-area { min-height: min(380px, 44dvh); }
+  }
+  /* …and on a short desktop window the SEAT has to give up height too. A 202px seat centred on a
+     308px table hangs out of both ends of it, which is how the outermost players ended up sitting
+     on the deck in the corner. */
+  @media (min-width: 1024px) and (max-height: 820px) {
+    .app.in-game .table-area { --seat-vinset: 100px; }
+    .app.in-game .seat .pavatar { width: 46px !important; height: 46px !important; }
+    .app.in-game .seat .hand .cardback { width: 27px; }
+    .app.in-game .seat .nm { font-size: 11px; }
+    /* and the corner itself gets smaller, so the outermost seat's fan clears it */
+    .app.in-game .arena { gap: 16px; bottom: 10px; inset-inline-start: 16px; }
+    .app.in-game .deck { width: 46px; height: 70px; }
+    .app.in-game .deck .cardback { width: 46px; }
+    .app.in-game .bank .pile { width: 52px; height: 38px; }
+    .app.in-game .bank .pile img { width: 25px; height: 25px; }
+  }
   .table-area::before { content: none; }
   /* faint concentric rings for depth/creativity */
   .table-area::after { content: none; }
@@ -1610,7 +1647,7 @@
        it pushed your own seat off the edge, stacked the hands under the deck, and gave no sense of
        who plays after whom. Ring + clockwise seating is the turn order. */
     .table-area { min-height: 0; position: relative; padding: 0; border-radius: var(--radius-2xl); overflow: visible;
-      --seat-inset: 36px; --seat-vinset: 46px;   /* 48 pushed the outermost seats inward, closing the gap the ring had just opened */
+      --seat-inset: 36px; --seat-vinset: 70px;   /* inset: 48 pushed the outer seats inward. vinset: half a phone seat, or the top player's head sits behind the header */
       --ring-cx: 50%; --ring-rx: 40%; --ring-cy: 50%; --ring-ry: 34%; }
 
     .table-area::after { display: none; }
