@@ -488,7 +488,14 @@
   .seat.turn .pavatar { box-shadow: 0 8px 20px rgba(26,25,24,.22); }
   /* -5px: the band lands just outside the avatar's edge, so it reads as that avatar's rim rather
      than a hoop floating around it. Square box + square viewBox = a circle concentric at any size. */
-  .seat-clock { position: absolute; inset: -5px; z-index: 3; transform: rotate(-90deg); pointer-events: none; }
+  /* Centred on the avatar's CENTRE, not pinned to its edges.
+     `inset: -5px` asks the browser to derive the box from four edges of the wrapper, and any
+     disagreement about that wrapper's box — a stray line box under an inline-level avatar, a
+     half-pixel of rounding — moves the ring off the face. iOS put it visibly to one side. Anchoring
+     the middle and sizing from the wrapper's own height cannot drift: the circle shares the
+     avatar's centre by construction. */
+  .seat-clock { position: absolute; top: 50%; left: 50%; width: calc(100% + 10px); height: calc(100% + 10px);
+    z-index: 3; transform: translate(-50%, -50%) rotate(-90deg); pointer-events: none; }
   .seat-clock circle { fill: none; stroke-width: 6; }
   /* The track has to be SEEN. At 15% it was invisible on the dark board, so all anyone saw was a
      lopsided arc — geometrically dead centre on the avatar, but with no ring around it to say so,
