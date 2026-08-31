@@ -7,14 +7,18 @@ export const THEME = {
   brand: { name: 'ELMEKINA', tagline: 'Identity • Deception • Deduction' },
   slideshowMs: 5000,
   img: {
-    // The room, every screen. Built by `npm run assets` from assets/background-game.png — the
-    // lobby PNG it replaces was 2 MB of unoptimised art on the very first paint.
-    bg: ['/img/bg-game.webp'],
-    bgSmall: ['/img/bg-game-sm.webp'],
+    // The room, every screen. Built by `npm run assets` from art/background-game.png.
+    //
+    // ?v= is not decoration: repainting the art leaves the filename alone, so a browser that
+    // already holds /img/bg-game.webp keeps serving the old picture from its HTTP cache no matter
+    // what the app does — bumping the in-app cache version only made it re-store the stale bytes.
+    // Changing the URL is the one thing both caches have to respect. Bump on every repaint.
+    bg: ['/img/bg-game.webp?v=2'],
+    bgSmall: ['/img/bg-game-sm.webp?v=2'],
     // The same room framed upright, for a screen taller than it is wide. `cover` on the landscape
     // art crops a phone down to a sliver of its middle; this one is composed for the shape.
-    bgTall: ['/img/bg-portrait.webp'],
-    bgTallSmall: ['/img/bg-portrait-sm.webp'],
+    bgTall: ['/img/bg-portrait.webp?v=2'],
+    bgTallSmall: ['/img/bg-portrait-sm.webp?v=2'],
     poster: '/img/poster.webp',
     machine: '/img/machine.webp',
     machineSmall: '/img/machine-sm.webp',

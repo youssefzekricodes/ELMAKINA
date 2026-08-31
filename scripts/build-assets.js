@@ -11,7 +11,10 @@ const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
 
-const SRC = path.join(__dirname, '..', 'public', 'assets');
+// Sources live OUTSIDE public/: everything under public/ is copied into the deploy verbatim, so
+// keeping the raw art there shipped ~15 MB of PNGs that nothing ever requests — the app only ever
+// loads the optimised files this script writes into public/img.
+const SRC = path.join(__dirname, '..', 'art');
 const OUT = path.join(__dirname, '..', 'public', 'img');
 fs.mkdirSync(path.join(OUT, 'cards'), { recursive: true });
 const src = (f) => path.join(SRC, f);

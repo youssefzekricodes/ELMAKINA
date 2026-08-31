@@ -15,7 +15,15 @@ import { THEME, ACTION_CARDS, CHARACTERS, DEFAULT_AVATARS } from '../theme';
 import { builtInAvatars } from './store';
 
 /** Bump when the art itself changes; a mismatch throws the whole store away. */
-const ASSET_VER = 1;
+/**
+ * Bump whenever a cached file's CONTENTS change under an unchanged name.
+ *
+ * The cache is keyed by URL, so new art at /img/bg-game.webp is invisible to anyone who already
+ * has the old bytes — they would keep the previous background for good. Entries on any other
+ * version are dropped on boot (see preloadAssets).
+ *   1 → 2: the room repainted, landscape and portrait.
+ */
+const ASSET_VER = 2;
 
 interface Cached { url: string; ver: number; blob: Blob }
 
