@@ -9,17 +9,21 @@
 export const ART = {
   timer: '/img/icons/timer.svg',
   stars: '/img/icons/stars.svg',
-  soundOn: '/img/icons/sound-on.svg',
-  soundOff: '/img/icons/sound-off.svg',
-  profile: '/img/icons/profile.svg',
-  menu: '/img/icons/menu.svg',
-  home: '/img/icons/home.svg',
-  gamepad: '/img/icons/gamepad.svg',
   coins: '/img/icons/coins.svg',
-  achievements: '/img/icons/achievements.svg',
   cupGold: '/img/icons/cup-gold.svg',
   cupSilver: '/img/icons/cup-silver.svg',
   cupBronze: '/img/icons/cup-bronze.svg',
+  // `-c` = the tinted build of a mark the set ships in flat grey (see scripts/tint-icons.js).
+  // Grey reads as "disabled" in a game, and the nav is the last place that should look switched off.
+  soundOn: '/img/icons/sound-on-c.svg',
+  soundOff: '/img/icons/sound-off-c.svg',
+  profile: '/img/icons/profile-c.svg',
+  menu: '/img/icons/menu-c.svg',
+  home: '/img/icons/home-c.svg',
+  gamepad: '/img/icons/gamepad-c.svg',
+  achievements: '/img/icons/achievements-c.svg',
+  flagTn: '/img/icons/flag-tn.svg',
+  flagEn: '/img/icons/flag-en.svg',
 } as const;
 
 export type ArtName = keyof typeof ART;

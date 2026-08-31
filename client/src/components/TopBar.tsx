@@ -96,7 +96,9 @@ export function GameMenu() {
             <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); toggleSound(); }}>
               <Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /><span className="gm-tx">{t('top.sound')}</span>
             </button>
-            {item('info-circle', t('top.lang.title'), () => setLanguage(s.lang === 'en' ? 'tn' : 'en'))}
+            <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); setLanguage(s.lang === 'en' ? 'tn' : 'en'); }}>
+              <Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-5" /><span className="gm-tx">{t('top.lang.title')}</span>
+            </button>
             {item('logout-2', t('top.leave'), onLeave, 'danger')}
           </div>
         </div>
@@ -123,7 +125,7 @@ export function TopBar() {
         {/* The header is desktop-only now (phones and tablets get the gear), and a desktop bar has
             room for its controls. Nothing hides behind a ⋯: every action is one click, always. */}
         <Tooltip delay={400}>
-          <Button variant="tertiary" size="sm" onPress={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} className="font-semibold">{t('top.lang')}</Button>
+          <Button isIconOnly variant="tertiary" size="sm" onPress={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} className="art-btn"><Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-5" /></Button>
           <Tooltip.Content>{t('top.lang.title')}</Tooltip.Content>
         </Tooltip>
         <Tooltip delay={400}>

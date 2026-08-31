@@ -14,6 +14,7 @@
     "supabase:link": "supabase link",
     "supabase:deploy": "supabase db push && supabase functions deploy game",
     "supabase:serve": "supabase functions serve game --env-file .env",
+    "icons": "node scripts/tint-icons.js",
     "assets": "node scripts/build-assets.js",
     "splash": "node scripts/build-splash.js"
   },

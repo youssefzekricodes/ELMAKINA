@@ -61,13 +61,19 @@ export function Home() {
         {/* Status and side rooms. Icon-only: none of it is why anyone opened the app. */}
         <div className="home-top">
           <span className="trophy-pill" title={t('lb.trophies')}><Art name="stars" className="size-4" />{s.trophies}</span>
-          {/* Leaderboard, open rooms and friends live in the nav bar now. What is left here are the
-              set-once controls with nowhere else to be — and below 1024px there is no header to
-              hold them either. The rules keep their own link in the footer. */}
+          {/* Split by where each control already lives. Below 1024px the nav bar carries the three
+              destinations and there is no header, so the set-once controls sit here; above it the
+              header holds those and the nav bar is gone, so the destinations sit here instead. */}
           <div className="home-top-tools">
+            <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')} title={t('lb.title')}><Art name="cupGold" className="size-5" /></button>
+            <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')} title={t('home.public')}><Art name="menu" className="size-5" /></button>
+            <button type="button" className="acct-tool only-lg art-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')} title={t('fr.title')}>
+              <Art name="gamepad" className="size-5" />
+              {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
+            </button>
             <button type="button" className="acct-tool only-sm" onClick={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} title={t('top.chars')}><Icon name="card-recive" className="size-4" /></button>
             <button type="button" className="acct-tool only-sm art-tool" onClick={toggleSound} aria-label={t('top.sound')} title={t('top.sound')}><Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /></button>
-            <button type="button" className="acct-tool only-sm acct-lang" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} title={t('top.lang.title')}>{t('top.lang')}</button>
+            <button type="button" className="acct-tool only-sm art-tool" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} title={t('top.lang.title')}><Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-5" /></button>
           </div>
         </div>
 
