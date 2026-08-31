@@ -5,3 +5,5 @@ npm-debug.log*
 client/dist/
 supabase/.temp/
 supabase/.branches/
+# audio masters: the shipped file is public/audio/lobby.m4a, encoded from these
+art/audio/

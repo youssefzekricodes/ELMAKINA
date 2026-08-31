@@ -16,8 +16,11 @@
  */
 import { audioChannel, sfx } from './sfx';
 
-/** e.g. '/audio/lobby.webm'. null = play the generated bed. */
-const TRACK: string | null = null;
+/** The lobby track. Set to null to fall back to the generated bed below. */
+const TRACK: string | null = '/audio/lobby.m4a';
+/** Under everything. It is a room tone, not a track you sit and listen to. */
+const TRACK_VOL = 0.14;
+const FADE_MS = 1400;
 
 const BPM = 90;
 const BEAT = 60 / BPM;
@@ -43,7 +46,21 @@ let timer: any = null;
 let step = 0;
 let next = 0;
 let el: HTMLAudioElement | null = null;
+let fade: any = null;
 let playing = false;
+
+/** Ramp the element's volume — cutting a track in or out at full level is a slap. */
+function fadeTo(target: number, done?: () => void) {
+  clearInterval(fade);
+  const from = el ? el.volume : 0;
+  const t0 = Date.now();
+  fade = setInterval(() => {
+    if (!el) return clearInterval(fade);
+    const k = Math.min(1, (Date.now() - t0) / FADE_MS);
+    el.volume = Math.max(0, Math.min(1, from + (target - from) * k));
+    if (k === 1) { clearInterval(fade); fade = null; done && done(); }
+  }, 40);
+}
 
 const LEVEL = 0.5;              // of the master, which is already 0.5
 
@@ -129,8 +146,10 @@ export const music = {
     if (playing || !sfx.enabled) return;
     if (TRACK) {
       el = el || new Audio(TRACK);
-      el.loop = true; el.volume = 0.35;
+      el.loop = true;
+      el.volume = 0;                       // faded up by hand: HTMLAudioElement has no gain ramp
       el.play().catch(() => { /* no gesture yet: the lobby is a click away, we try again next time */ });
+      fadeTo(TRACK_VOL);
       playing = true;
       return;
     }
@@ -150,7 +169,7 @@ export const music = {
   stop() {
     if (!playing) return;
     playing = false;
-    if (el) { el.pause(); el.currentTime = 0; return; }
+    if (el) { fadeTo(0, () => { if (el) { el.pause(); el.currentTime = 0; } }); return; }
     clearInterval(timer); timer = null;
     if (ctx && out) {
       const g = out, end = ctx.currentTime + 0.6;

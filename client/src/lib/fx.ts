@@ -195,10 +195,18 @@ function playNext() {
   if (!next) return store.set({ cine: null });
   store.set({ cine: next });
   cineShownAt = Date.now();
-  sfx.play(next.out ? 'lose' : next.kind === 'missed' ? 'block' : 'boom');
-  // …and the unease underneath it. An elimination gets the low creak; a lie exposed gets the
-  // tritone. Slightly late so it reads as a consequence of the hit rather than part of it.
-  setTimeout(() => sfx.play(next.out ? 'creak' : next.kind === 'caught' ? 'sting' : 'whisper'), 140);
+  // A challenge is two sounds, not one: the accusation, then what it turned out to be worth. The
+  // gap between them is the whole drama of this game, so the verdict waits long enough to land as
+  // an answer rather than an echo. Everything else keeps its single hit.
+  const accusation = next.kind === 'caught' || next.kind === 'missed';
+  if (accusation) sfx.hit('accuse');
+  else sfx.play(next.out ? 'lose' : 'boom');
+  setTimeout(() => {
+    if (next.out) sfx.hit('perish');            // somebody is out
+    else if (next.kind === 'missed') sfx.hit('womp');   // …and the accuser was wrong
+    else if (next.kind === 'caught') sfx.play('sting'); // a lie exposed: the tritone
+    else sfx.play('whisper');
+  }, accusation ? 760 : 140);
   if (!reducedMotion) cameraShake(document.getElementById('table'), true);
   cineTimer = setTimeout(() => { runAfter(next.id); playNext(); }, CINE_MS);
 }

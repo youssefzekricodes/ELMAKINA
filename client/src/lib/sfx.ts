@@ -40,7 +40,41 @@ const CUES: Record<string, Cue> = {
   thump:     { steps: [[112, 62, 0.13, 'sine', 0.34], [96, 54, 0.15, 'sine', 0.22, 0.15]] },      // lub-dub, while a decision is yours to make
   sting:     { steps: [[440, 440, 0.26, 'sawtooth', 0.17], [622, 622, 0.3, 'sawtooth', 0.15, 0.01]] }, // a tritone: something is wrong
   creak:     { steps: [[130, 58, 0.8, 'sawtooth', 0.14], [65, 39, 0.95, 'sine', 0.18, 0.06]] },   // somebody is out
+  // ── the three beats that carry a sample (see SAMPLE_SRC) ────────────────────
+  // These are what plays until a file is dropped in, and if a file ever 404s. They are written to
+  // stand on their own, not as placeholders: an accusation gets a riser, a wrong one gets the
+  // three-note flop everybody already knows, and going out gets a fall.
+  accuse:    { steps: [[196, 196, 0.1, 'sawtooth', 0.22], [262, 262, 0.1, 'sawtooth', 0.22, 0.1], [392, 784, 0.42, 'sawtooth', 0.26, 0.2]] },
+  womp:      { steps: [[330, 247, 0.19, 'sawtooth', 0.3], [262, 196, 0.19, 'sawtooth', 0.3, 0.2], [208, 104, 0.5, 'sawtooth', 0.34, 0.4]] },
+  perish:    { steps: [[523, 262, 0.5, 'sawtooth', 0.3], [262, 82, 0.6, 'square', 0.26, 0.16]], noise: [0.5, 500, 0.2] },
 };
+
+/**
+ * The three beats that may carry a real recording instead of a cue.
+ *
+ * Drop a file at one of these paths and it plays; leave it missing and the cue above plays and the
+ * fetch is never retried. Anything sampled from somewhere else needs the rights to it first — a
+ * clip being freely playable on a soundboard site does not make it free to ship on an ad-serving
+ * site, and one of these beats is a good place to get that wrong.
+ */
+const SAMPLE_SRC: Record<string, string> = {
+  accuse: '/audio/blame.m4a',   // somebody calls a bluff
+  womp:   '/audio/wrong.m4a',   // …and was wrong
+  perish: '/audio/out.m4a',     // somebody is out of the game
+};
+/** undefined = never asked for, null = asked and there is no file. */
+const samples: Record<string, AudioBuffer | null | undefined> = {};
+
+function loadSample(name: string) {
+  if (samples[name] !== undefined) return;
+  const url = SAMPLE_SRC[name]; if (!url) return;
+  samples[name] = null;                              // claim the slot: one attempt, ever
+  fetch(url)
+    .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('missing'))))
+    .then((b) => new Promise<AudioBuffer>((res, rej) => { const c = ensure(); if (!c) return rej(new Error('no audio')); c.decodeAudioData(b, res, rej); }))
+    .then((buf) => { samples[name] = buf; })
+    .catch(() => { /* no file, or it will not decode: the cue covers this beat */ });
+}
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -101,7 +135,30 @@ export const sfx = {
     return on;
   },
   /** Called from the first user gesture: browsers refuse to start audio any earlier. */
-  unlock() { const c = ensure(); if (c && c.state === 'suspended') c.resume().catch(() => {}); },
+  unlock() {
+    const c = ensure(); if (c && c.state === 'suspended') c.resume().catch(() => {});
+    // Fetch the sampled beats now, not when one is needed: a challenge sting that arrives half a
+    // second after the challenge is worse than no sting at all.
+    for (const name of Object.keys(SAMPLE_SRC)) loadSample(name);
+  },
+  /**
+   * A beat that may have a recording behind it. Falls back to the cue of the same name, so these
+   * three are never silent and never wait on a download.
+   */
+  hit(name: string) {
+    if (!on) return;
+    const buf = samples[name];
+    if (!buf) { this.play(name); return; }
+    const c = ensure(); if (!c || c.state !== 'running') return;
+    const now = Date.now();
+    if (now - (last[name] || 0) < 200) return;
+    last[name] = now;
+    try {
+      const src = c.createBufferSource(); const g = c.createGain();
+      src.buffer = buf; g.gain.value = 0.85;
+      src.connect(g); g.connect(master!); src.start();
+    } catch { /* a dead audio context must never break the game */ }
+  },
   play(name: string) {
     if (!on) return;
     const cue = CUES[name]; if (!cue) return;

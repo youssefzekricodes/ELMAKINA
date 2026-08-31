@@ -51,7 +51,7 @@ export default function App() {
     initAnalytics();
     initAds(); // fetch the ad script early so the first break is not what loads it
     initUpdateCheck(); // a stale PWA is the one bug a user cannot work around
-    (window as any).__mekina = { store, music }; // debugging hook (inspect / inject state from the console)
+    (window as any).__mekina = { store, music, sfx }; // debugging hook (inspect / inject state from the console)
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') store.set({ logOpen: false, modal: null }); }; // Esc also dismisses any sheet
     document.addEventListener('keydown', esc);
     return () => document.removeEventListener('keydown', esc);
