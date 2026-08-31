@@ -5,20 +5,22 @@ import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, type LeaderRow } from '../lib/social';
 import { joinRoom, leaveRoom, listPublicRooms, notify } from '../lib/net';
-import { Icon, PlayerAvatar } from './ui';
+import { Art, Icon, PlayerAvatar } from './ui';
+import type { ArtName } from '../art';
 
 const asPlayer = (uid: string, avatar: string | null, avatarData: string | null) => ({ id: uid, avatar: avatar || 'boy-1', avatarData, color: null });
 const home = () => store.set({ screen: 'home' });
 /** Dismiss a sheet. Without this, `close` fell through to window.close() and did nothing. */
 const closeSheet = () => store.set({ modal: null });
 
-function PageHead({ icon, title }: { icon: string; title: string }) {
+/** `art` takes an illustrated mark from the set; `icon` falls back to the line glyphs. */
+function PageHead({ icon, art, title }: { icon?: string; art?: ArtName; title: string }) {
   return (
     <header className="page-head">
       <button type="button" className="page-back" onClick={home} aria-label={t('page.back')}>
         <Icon name="alt-arrow-left" className="size-5" />
       </button>
-      <h1 className="page-title"><Icon name={icon} className="size-6" />{title}</h1>
+      <h1 className="page-title">{art ? <Art name={art} className="page-art" /> : <Icon name={icon || 'system'} className="size-6" />}{title}</h1>
       <span className="page-head-sp" />
     </header>
   );
@@ -30,7 +32,7 @@ export function LeaderboardPage() {
   return (
     <section className="screen page-screen">
       <div className="page-shell">
-        <PageHead icon="win" title={t('lb.title')} />
+        <PageHead art="achievements" title={t('lb.title')} />
         <div className="page-body">
           {rows === null ? <p className="sheet-empty">{t('lb.loading')}</p>
             : rows.length === 0 ? <p className="sheet-empty">{t('lb.empty')}</p>
@@ -41,7 +43,7 @@ export function LeaderboardPage() {
                     <PlayerAvatar p={asPlayer(r.uid, r.avatar, r.avatarData)} size="sm" />
                     <span className="lb-name">{r.name}{r.me && <span className="lb-you">{t('lobby.you')}</span>}</span>
                     <span className="lb-stat">{t('lb.wins', { n: r.wins })}</span>
-                    <span className="lb-trophies"><Icon name="win" className="size-3.5" />{r.trophies}</span>
+                    <span className="lb-trophies"><Art name="stars" className="size-3.5" />{r.trophies}</span>
                   </li>
                 ))}
               </ol>}
@@ -59,7 +61,7 @@ export function FriendsPage() {
   return (
     <section className="screen page-screen">
       <div className="page-shell">
-        <PageHead icon="users-group-rounded" title={t('fr.title')} />
+        <PageHead art="gamepad" title={t('fr.title')} />
         <div className="page-body">
           {s.account?.isGuest && <p className="fr-hint">{t('fr.guest')}</p>}
 
@@ -192,7 +194,7 @@ export function PublicRoomsPage() {
   return (
     <section className="screen page-screen">
       <div className="page-shell">
-        <PageHead icon="users-room" title={t('pub.title')} />
+        <PageHead art="menu" title={t('pub.title')} />
         <div className="page-body">
           {rooms === null ? <p className="sheet-empty">{t('pub.loading')}</p>
             : rooms.length === 0 ? <p className="sheet-empty">{t('pub.empty')}</p>

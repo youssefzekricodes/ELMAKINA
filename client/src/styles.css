@@ -2315,4 +2315,89 @@
   }
   .acct-lang { font-size: 11px; font-weight: 800; letter-spacing: .04em; }
   .acct-tool.is-muted { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
+
+  /* ── the main nav ────────────────────────────────────────────────────────────
+     A shelf with the centre stop lifted out of it. The reference is a pastel bar on white; this is
+     the same shape in the game's material — dark glass over the table art, a brass hairline along
+     the lit edge, the active stop in the accent. Labels are hidden except on the active stop,
+     which is what fits five of them across a 390px phone. */
+  .navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; pointer-events: none;
+    padding: 0 0 var(--sab); display: flex; justify-content: center; }
+  .nav-shelf { pointer-events: auto; position: relative; width: 100%; display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; gap: 2px;
+    padding: 10px calc(8px + var(--sal)) 10px calc(8px + var(--sar));
+    border-top: 1px solid rgba(255,240,214,.18);
+    border-start-start-radius: 26px; border-start-end-radius: 26px;
+    border-top-left-radius: 26px; border-top-right-radius: 26px;
+    background: linear-gradient(180deg, rgba(58,44,30,.72), rgba(16,12,8,.88));
+    -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 -14px 40px rgba(0,0,0,.5); }
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .nav-shelf { background: linear-gradient(180deg, rgba(40,30,20,.98), rgba(14,10,7,.99)); }
+  }
+  /* The icons of all five sit on one line; only the centre breaks it, upwards. */
+  .nav-stop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 52px; padding: 2px 2px 14px; border: 0; background: none; cursor: pointer; color: rgba(243,233,214,.72);
+    font-size: 10.5px; font-weight: 700; line-height: 1.1; transition: color .14s, transform .12s var(--ease); }
+  .nav-stop:active { transform: translateY(2px); }
+  .nav-ic { position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 11px; transition: background .16s, box-shadow .16s, transform .16s var(--ease); }
+  .nav-art { width: 24px; height: 24px; object-fit: contain; display: block;
+    /* the set draws its nav icons in grey; unselected they stay that way, just dimmer */
+    opacity: .78; transition: opacity .16s, filter .16s; }
+  .nav-stop.on { color: var(--gold); }
+  .nav-stop.on .nav-art { opacity: 1; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+  .nav-stop.on .nav-ic { background: color-mix(in srgb, var(--gold) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 32%, transparent); }
+  /* only the stop you are on says its name — five labels at once is a wall of text on a phone */
+  .nav-label { position: absolute; left: 2px; right: 2px; bottom: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    opacity: 0; transform: translateY(-3px); transition: opacity .16s, transform .16s; pointer-events: none; }
+  .nav-stop.on .nav-label { opacity: 1; transform: none; }
+  /* the centre stop stands proud of the shelf, as in the reference */
+  .nav-stop.centre { justify-content: flex-start; padding-top: 0; }
+  .nav-stop.centre .nav-ic { width: 58px; height: 58px; border-radius: 50%; transform: translateY(-22px);
+    background: linear-gradient(180deg, #2f2417, #171009);
+    box-shadow: 0 0 0 4px rgba(247,238,220,.94), inset 0 1px 0 rgba(255,240,214,.16), 0 10px 22px rgba(0,0,0,.55); }
+  .nav-stop.centre .nav-art { width: 30px; height: 30px; opacity: .9; }
+  .nav-stop.centre.on .nav-ic { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 46%, #2f2417), color-mix(in srgb, var(--accent) 16%, #171009));
+    box-shadow: 0 0 0 4px rgba(247,238,220,.94), inset 0 1px 0 rgba(255,240,214,.22), 0 0 0 7px color-mix(in srgb, var(--accent) 55%, transparent), 0 10px 26px rgba(0,0,0,.6); }
+  .nav-stop.centre.on .nav-art { opacity: 1; }
+
+  .nav-badge { position: absolute; top: -3px; inset-inline-end: -3px; min-width: 17px; height: 17px; padding: 0 4px;
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
+    background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; line-height: 1; }
+  .nav-stop:focus-visible { outline: none; }
+  .nav-stop:focus-visible .nav-ic { box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 45%, transparent); }
+  @media (prefers-reduced-motion: reduce) { .nav-stop, .nav-ic, .nav-art, .nav-label { transition: none; } }
+
+  /* Desktop: not a 1600px strip of chrome. The shelf becomes a floating dock — capped, centred,
+     lifted off the bottom edge and rounded all the way round. */
+  @media (min-width: 700px) {
+    .navbar { padding-bottom: calc(18px + var(--sab)); }
+    .nav-shelf { width: min(520px, calc(100vw - 48px)); border-radius: 26px; border: 1px solid rgba(255,240,214,.18);
+      padding: 10px 14px; box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 18px 44px rgba(0,0,0,.55); }
+    .nav-stop.centre .nav-ic { transform: translateY(-20px); }
+  }
+
+  /* The screens the bar covers get their bottom padding back, so nothing hides under it. */
+  .app.at-home .home-screen, .app.at-leaderboard .page-screen,
+  .app.at-friends .page-screen, .app.at-public .page-screen { padding-bottom: calc(126px + var(--sab)); }
+
+  /* Illustrated icons keep their own palette, so the containers that tint line-art must not tint
+     these: no currentColor, no filters, just a box to sit in. */
+  .art { display: block; object-fit: contain; }
+  .acct-tool.art-tool { padding: 0; }
+  .acct-tool.art-tool .art { width: 20px; height: 20px; }
+  .art-btn .art { width: 20px; height: 20px; }
+  .gm-item .art { flex-shrink: 0; }
+  .gm-btn .art { width: 20px; height: 20px; }
+  /* the coin: the set's gold piece, at the size the old raster occupied */
+  .coins .coin-art { width: 18px; height: 18px; }
+  .countdown-clock { width: 20px; height: 20px; }
+  .trophy-pill .art { width: 16px; height: 16px; }
+  .lb-trophies .art, .res-delta .art { width: 14px; height: 14px; }
+  /* the finishing cups replace the rank numeral, so they take its slot */
+  .res-cup { width: 26px; height: 26px; flex-shrink: 0; }
+  .res-crown .art { width: 34px; height: 34px; }
+  .page-title .page-art { width: 30px; height: 30px; flex-shrink: 0; }
 }

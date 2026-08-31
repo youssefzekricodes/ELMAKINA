@@ -2,11 +2,17 @@
 import { useEffect, useRef } from 'react';
 import { Avatar } from '@heroui/react';
 import { ICONS } from '../icons';
+import { ART, type ArtName } from '../art';
 import { CH, IMG, type CharacterId } from '../theme';
 import { avatarSrc, setLearn, useStore } from '../lib/store';
 import { i18n, t } from '../i18n';
 import { useCountdown } from '../lib/hooks';
 import { sfx } from '../lib/sfx';
+
+/** An illustrated icon from the art set (see art.ts). Decorative unless given an alt. */
+export function Art({ name, className = 'size-5', alt }: { name: ArtName; className?: string; alt?: string }) {
+  return <img src={ART[name]} alt={alt || ''} aria-hidden={alt ? undefined : true} className={`art ${className}`} draggable={false} />;
+}
 
 export function Icon({ name, className = 'size-5' }: { name: string; className?: string }) {
   const body = ICONS[name] || ICONS.system;
@@ -38,7 +44,7 @@ export function PlayerAvatar({ p, size = 'md', className = '' }: { p: any; size?
 export function Coins({ n, big = false, className = '' }: { n: number; big?: boolean; className?: string }) {
   return (
     <span className={`coins ${big ? 'big' : ''} ${className}`} data-coins="">
-      <img src={IMG.coin} alt="" />
+      <Art name="coins" className="coin-art" />
       <span className="n tabular-nums">{n}</span>
     </span>
   );
@@ -99,7 +105,7 @@ export function Ring({ deadline, total, tick = false }: { deadline?: number | nu
   const pct = total && total > 0 ? Math.max(0, Math.min(100, (rem / total) * 100)) : 100;
   return (
     <span className={`countdown ${low ? 'low' : ''}`} dir="ltr" aria-label="Time left" role="timer">
-      <img src="/assets/icons/clock.png" alt="" className="countdown-clock" draggable={false} />
+      <Art name="timer" className="countdown-clock" />
       <span className="countdown-body">
         <span className="countdown-num tabular-nums">{secs.toFixed(rem < 10000 ? 1 : 0)}<span className="countdown-unit">s</span></span>
         <span className="countdown-track"><span className="countdown-fill" style={{ width: `${pct}%` }} /></span>

@@ -19,7 +19,7 @@ export const THEME = {
     machine: '/img/machine.webp',
     machineSmall: '/img/machine-sm.webp',
     cardBack: '/img/card-back.webp',
-    coin: '/img/coin.webp',
+    coin: '/img/icons/coins.svg',   // the illustrated set's coin (see art.ts) — one currency, one look
   },
   characters: {
     taxman: { name: 'Tax Man', color: '#2f7d32', card: '/img/cards/taxman.webp', cardSm: '/img/cards/taxman-sm.webp' },

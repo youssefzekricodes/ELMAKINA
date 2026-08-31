@@ -4,7 +4,7 @@ import { IMG } from '../theme';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { leaveRoom, setLanguage, toggleSound } from '../lib/net';
-import { Icon } from './ui';
+import { Art, Icon } from './ui';
 
 function IconButton({ label, icon, onPress, className = '' }: { label: string; icon: string; onPress: () => void; className?: string }) {
   return (
@@ -73,7 +73,7 @@ export function GameMenu() {
   return (
     <>
       <button type="button" className="gm-btn" aria-label={t('top.more')} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <Icon name="settings-minimalistic" className="size-5" />
+        <Art name="menu" className="size-5" />
         {s.unread > 0 && <span className="gm-dot">{s.unread > 9 ? '9+' : s.unread}</span>}
       </button>
       {open && (
@@ -93,7 +93,9 @@ export function GameMenu() {
             {item('document-text', t('top.log'), () => store.set({ logOpen: !s.logOpen, unread: 0 }), '', s.unread > 0 ? <span className="gm-badge">{s.unread > 9 ? '9+' : s.unread}</span> : null)}
             {item('card-recive', t('top.chars'), () => store.set({ modal: 'chars' }))}
             {item('question-circle', t('top.rules'), () => store.set({ modal: 'guide' }))}
-            {item(s.soundOn ? 'volume-loud' : 'volume-cross', t('top.sound'), toggleSound)}
+            <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); toggleSound(); }}>
+              <Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /><span className="gm-tx">{t('top.sound')}</span>
+            </button>
             {item('info-circle', t('top.lang.title'), () => setLanguage(s.lang === 'en' ? 'tn' : 'en'))}
             {item('logout-2', t('top.leave'), onLeave, 'danger')}
           </div>
@@ -131,7 +133,10 @@ export function TopBar() {
           <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
         </Tooltip>
         <IconButton label={t('top.rules')} icon="question-circle" onPress={() => store.set({ modal: 'guide' })} />
-        <IconButton label={t('top.sound')} icon={s.soundOn ? 'volume-loud' : 'volume-cross'} onPress={toggleSound} className={s.soundOn ? '' : 'is-muted'} />
+        <Tooltip delay={400}>
+          <Button isIconOnly variant="tertiary" size="sm" aria-label={t('top.sound')} onPress={toggleSound} className="art-btn"><Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /></Button>
+          <Tooltip.Content>{t('top.sound')}</Tooltip.Content>
+        </Tooltip>
         {/* Only trouble is worth a badge. A green "everything is fine" dot sat in the header for
             the whole session saying nothing — the slow/offline pills are the states you need. */}
         {s.net !== 'ok' && (

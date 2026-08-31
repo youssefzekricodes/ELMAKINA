@@ -7,7 +7,7 @@ import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
 import { IMG } from '../theme';
-import { GoogleG, Html, Icon, PlayerAvatar } from './ui';
+import { Art, GoogleG, Html, Icon, PlayerAvatar } from './ui';
 
 /**
  * The front door. One thing to press.
@@ -60,19 +60,13 @@ export function Home() {
       <div className="home-stage">
         {/* Status and side rooms. Icon-only: none of it is why anyone opened the app. */}
         <div className="home-top">
-          <span className="trophy-pill" title={t('lb.trophies')}><Icon name="win" className="size-4" />{s.trophies}</span>
+          <span className="trophy-pill" title={t('lb.trophies')}><Art name="stars" className="size-4" />{s.trophies}</span>
+          {/* Leaderboard, open rooms and friends live in the nav bar now. What is left here are the
+              set-once controls with nowhere else to be — and below 1024px there is no header to
+              hold them either. The rules keep their own link in the footer. */}
           <div className="home-top-tools">
-            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')} title={t('lb.title')}><Icon name="win" className="size-4" /></button>
-            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')} title={t('home.public')}><Icon name="users-room" className="size-4" /></button>
-            <button type="button" className="acct-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')} title={t('fr.title')}>
-              <Icon name="users-group-rounded" className="size-4" />
-              {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
-            </button>
-            {/* Below 1024px there is no header on this screen, so the three controls it carried that
-                live nowhere else — the card reference, sound and language — sit here instead. The
-                rules already have their own link in the footer. */}
             <button type="button" className="acct-tool only-sm" onClick={() => store.set({ modal: 'chars' })} aria-label={t('top.chars')} title={t('top.chars')}><Icon name="card-recive" className="size-4" /></button>
-            <button type="button" className={`acct-tool only-sm ${s.soundOn ? '' : 'is-muted'}`} onClick={toggleSound} aria-label={t('top.sound')} title={t('top.sound')}><Icon name={s.soundOn ? 'volume-loud' : 'volume-cross'} className="size-4" /></button>
+            <button type="button" className="acct-tool only-sm art-tool" onClick={toggleSound} aria-label={t('top.sound')} title={t('top.sound')}><Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /></button>
             <button type="button" className="acct-tool only-sm acct-lang" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')} aria-label={t('top.lang.title')} title={t('top.lang.title')}>{t('top.lang')}</button>
           </div>
         </div>

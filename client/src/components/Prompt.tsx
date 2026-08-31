@@ -8,7 +8,8 @@ import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, 
 import { validTargets } from '../lib/rules';
 import { adBreak } from '../lib/ads';
 import { sfx } from '../lib/sfx';
-import { GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
+import { Art, GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
+import { cupFor } from '../art';
 import { logActionCard, logCharacter } from './LogPanel';
 
 const logIcon = (e: LogEntry) => (e.key === 'game.win' ? 'win' : e.kind);
@@ -109,12 +110,14 @@ function ResultRow({ row, me, pl, scored }: { row: Place; me: string | null; pl:
   if (!p) return null;
   return (
     <li className={`res-row r${row.rank} ${row.id === me ? 'mine' : ''}`} style={{ ['--i' as any]: row.rank }}>
-      <span className="res-rank">{row.rank}</span>
+      {cupFor(row.rank)
+        ? <Art name={cupFor(row.rank)!} className="res-cup" alt={String(row.rank)} />
+        : <span className="res-rank">{row.rank}</span>}
       <PlayerAvatar p={p} size="sm" className="res-av" />
       <span className="res-name">{p.name}{row.id === me && <i className="res-you">{t('game.you')}</i>}</span>
       {scored
         ? <span className={`res-delta ${row.delta > 0 ? 'up' : row.delta < 0 ? 'down' : 'flat'}`}>
-            {row.delta > 0 ? `+${row.delta}` : row.delta}<Icon name="win" className="size-3" />
+            {row.delta > 0 ? `+${row.delta}` : row.delta}<Art name="stars" className="size-3" />
           </span>
         : <span className="res-delta flat">—</span>}
     </li>
@@ -160,13 +163,13 @@ export function Prompt() {
           <span className="res-eyebrow">{t('end.winner')}</span>
           {champ && (
             <div className="res-champ">
-              <div className="res-champ-av"><PlayerAvatar p={champ} size="xl" /><span className="res-crown"><Icon name="win" className="size-6" /></span></div>
+              <div className="res-champ-av"><PlayerAvatar p={champ} size="xl" /><span className="res-crown"><Art name="cupGold" className="size-8" /></span></div>
               <div className="res-champ-tx">
                 <h2>{st.winnerId ? pname(st.winnerId) : t('end.nobody')}</h2>
                 <p className="p-sub">{st.winnerId === me ? t('end.you') : t('end.them')}</p>
               </div>
               {scored && <span className={`res-champ-delta ${places[0].delta > 0 ? 'up' : places[0].delta < 0 ? 'down' : 'flat'}`}>
-                {places[0].delta > 0 ? `+${places[0].delta}` : places[0].delta}<Icon name="win" className="size-4" />
+                {places[0].delta > 0 ? `+${places[0].delta}` : places[0].delta}<Art name="stars" className="size-4" />
               </span>}
             </div>
           )}
