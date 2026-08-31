@@ -7,6 +7,7 @@ import { sfx } from './lib/sfx';
 import { initPulse } from './lib/pulse';
 import { initAnalytics, sendPageView } from './lib/analytics';
 import { initAds } from './lib/ads';
+import { initUpdateCheck } from './lib/update';
 import { i18n } from './i18n';
 import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
@@ -19,6 +20,7 @@ import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
 import { Onboarding } from './components/Onboarding';
+import { UpdateGate } from './components/UpdateGate';
 import { LeaderboardPage, FriendsPage, ProfilePage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
 import { VoiceDock } from './components/VoiceDock';
 import { Reactions } from './components/Reactions';
@@ -45,6 +47,7 @@ export default function App() {
     initPulse();  // heartbeat + clock while a decision is mine to make
     initAnalytics();
     initAds(); // fetch the ad script early so the first break is not what loads it
+    initUpdateCheck(); // a stale PWA is the one bug a user cannot work around
     (window as any).__mekina = { store }; // debugging hook (inspect / inject state from the console)
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') store.set({ logOpen: false, modal: null }); }; // Esc also dismisses any sheet
     document.addEventListener('keydown', esc);
@@ -87,6 +90,7 @@ export default function App() {
       <Coach />
       {inGame && <Cinematic />}
       <NetBadge />
+      <UpdateGate />
       {/* The gate goes on top of everything: no header, no modals, no way to play nameless. */}
       {s.onboarding && <Onboarding />}
       <RulesModal />

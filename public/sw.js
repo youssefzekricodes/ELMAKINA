@@ -2,7 +2,9 @@
    IMPORTANT: it only ever touches SAME-ORIGIN GET requests. Supabase (functions + Realtime), the
    WebRTC signalling, and TURN traffic are cross-origin / non-GET / WebSocket and pass straight to the
    network untouched — the live game and voice must never be cached. Bump CACHE to ship a new shell. */
-const CACHE = 'mekina-v1';
+/* The cache name carries the build: a new deploy activates a new SW, which drops every cache that
+   is not its own on activate (below), so the shell can never outlive the build it came from. */
+const CACHE = 'mekina-__BUILD_ID__';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/img/pwa-192.png', '/img/pwa-512.png', '/img/favicon.png'];
 
 self.addEventListener('install', (e) => {

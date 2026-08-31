@@ -55,6 +55,7 @@ export interface Snapshot {
   invite: RoomInvite | null; // a friend invited me to their room (live push)
   searching: boolean;        // quick match is running / we are sitting in a public room waiting for company
   onboarding: boolean;       // full-screen first-run step: pick a face, type a name — no way around it
+  updateReady: boolean;      // a newer build is live and this tab is stale (see lib/update.ts)
   tick: number; // bumps when language changes so every text re-renders
 }
 
@@ -103,7 +104,7 @@ let snap: Snapshot = {
   targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
   account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false,
   // No saved name = a brand-new player: the full-screen onboarding runs until a name exists.
-  onboarding: !(localStorage.getItem('mekina.name') || '').trim(), tick: 0,
+  onboarding: !(localStorage.getItem('mekina.name') || '').trim(), updateReady: false, tick: 0,
 };
 const listeners = new Set<() => void>();
 

@@ -3,9 +3,24 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 import { CONSENT_REGIONS, DEFAULT_ADSENSE_CLIENT, DEFAULT_GA_ID, isAdsClient, isGaId, resolveId } from './src/lib/google';
 
+
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * One id per build, baked into the bundle AND written to dist/version.json.
+ *
+ * The running app compares the two: same id means it is current, a different id means a newer
+ * build is live and this tab is stale (see lib/update.ts). The commit sha is used when git is
+ * available so two builds of identical source share an id; otherwise the clock decides.
+ */
+const buildId = (() => {
+  try { return execSync('git rev-parse --short HEAD', { cwd: here, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); }
+  catch { return String(Date.now()); }
+})();
 
 // Google's verification crawlers (AdSense site review, GA's "tag detected" check) read the raw
 // HTML — they do not boot the React app. Tags injected at runtime from lib/analytics.ts and
@@ -53,6 +68,21 @@ export default defineConfig(({ command, mode }) => {
     react(),
     tailwindcss(),
     {
+      // version.json must never be cached, so it is emitted as a plain asset and served with the
+      // no-store fetch on the client side; Netlify's default HTML rule does not cover it.
+      name: 'mekina-version',
+      apply: 'build' as const,
+      closeBundle() {
+        try {
+          const out = path.resolve(here, 'dist', 'version.json');
+          fs.writeFileSync(out, JSON.stringify({ build: buildId, at: new Date().toISOString() }) + '\n');
+          // sw.js is copied verbatim from publicDir, so its cache name is stamped here
+          const sw = path.resolve(here, 'dist', 'sw.js');
+          if (fs.existsSync(sw)) fs.writeFileSync(sw, fs.readFileSync(sw, 'utf8').split('__BUILD_ID__').join(buildId));
+        } catch { /* a missing version file just means no update prompt */ }
+      },
+    },
+    {
       name: 'mekina-google-tags',
       transformIndexHtml: {
         order: 'pre' as const,
@@ -60,6 +90,7 @@ export default defineConfig(({ command, mode }) => {
       },
     },
   ],
+  define: { __BUILD_ID__: JSON.stringify(buildId) },
   publicDir: path.resolve(here, '..', 'public'), // img/ + assets/ are copied next to the bundle
   build: {
     outDir: path.resolve(here, 'dist'),

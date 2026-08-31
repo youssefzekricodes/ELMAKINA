@@ -2363,4 +2363,24 @@
   .pf-row .pf-chev { flex: none; opacity: .5; }
   .pf-row .pf-flag { border-radius: 50%; }
   .pf-acct { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 2px; }
+
+  /* ── the update gate ───────────────────────────────────────────────────────── */
+  .upd-gate { position: fixed; inset: 0; z-index: 130; display: grid; place-items: center; padding: 20px;
+    background: rgba(16,11,7,.94); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .upd-card { width: min(360px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
+    padding: 26px 22px 22px; border-radius: var(--radius-3xl);
+    background: linear-gradient(180deg, rgba(62,46,30,.96), rgba(26,19,13,.98));
+    border: 1px solid rgba(255,240,214,.18);
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 24px 60px rgba(0,0,0,.6); }
+  .upd-art { width: 54px; height: 54px; }
+  .upd-title { font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--foreground); }
+  .upd-sub { font-size: 14px; line-height: 1.45; color: var(--muted); }
+  /* mid-hand it waits as a strip rather than stealing the game */
+  .upd-strip { position: fixed; z-index: 59; top: calc(var(--sat) + 8px); left: 50%; transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+    background: rgba(24,17,11,.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    color: var(--gold); font-size: 12px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,.5); animation: claim-pop .25s var(--ease); }
+  .upd-strip:active { transform: translateX(-50%) translateY(1px); }
 }
