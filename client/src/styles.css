@@ -828,7 +828,7 @@
     box-shadow: 0 8px 22px rgba(0,0,0,.28); }
   .claim-card.urgent { border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
   /* timer rail pinned to the card's top edge */
-  .timerbar { position: absolute; top: 0; inset-inline: 0; height: 3px; background: color-mix(in srgb, var(--foreground) 10%, transparent); z-index: 2; }
+  .timerbar { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: color-mix(in srgb, var(--foreground) 10%, transparent); z-index: 2; }
   /* the remaining-time bar follows the claimed card's own colour (--c set on the claim-card) */
   .timerbar-fill { display: block; height: 100%; background: var(--c, var(--accent)); box-shadow: 0 0 8px color-mix(in srgb, var(--c, var(--accent)) 70%, transparent); transition: width .25s linear; }
   /* keep the card colour in the final seconds — pulse for urgency instead of switching to red */
@@ -2234,8 +2234,10 @@
       padding: calc(var(--sat) + 8px) calc(12px + var(--sal)) calc(var(--sab) + 8px) calc(12px + var(--sar));
       background: rgba(16,11,7,.95);
       /* The header and the decision are two separate glass objects, not one panel with a rule
-         through it, so the space between them has to say so. */
-      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 26px;
+         through it, so the space between them has to say so. The gap here is header-to-CLOCK: the
+         countdown bar belongs to the header (same width, right under it), and it is the bar that
+         then stands well clear of the decision. */
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 9px;
       overflow-y: auto;   /* a floor, not a plan: every button stays reachable whatever the content */
     }
     /* The header becomes a floating glass bar — same material as the bottom sheet, rounded, sitting
@@ -2269,8 +2271,14 @@
     .app.in-game .prompt:not(.prompt-end) .cm-who,
     .app.in-game .prompt:not(.prompt-end) .cm-effect { flex-shrink: 0; }
     /* and a few pixels back from the chrome, so the card is not the only thing paying */
-    .app.in-game .prompt:not(.prompt-end) .claim-min { gap: 10px; padding: 16px 14px 16px; }
+    .app.in-game .prompt:not(.prompt-end) .claim-min { --claim-px: 14px; gap: 10px; padding: 0 var(--claim-px) 16px; }
     .app.in-game .prompt:not(.prompt-end) .p-strip { padding: 9px 14px; }
+    /* The countdown leads the block instead of hanging off its top edge as an absolute hairline:
+       in flow, the header's own width, and with room under it so the decision does not start on
+       top of the clock. */
+    .app.in-game .prompt:not(.prompt-end) .claim-min > .timerbar {
+      position: static; align-self: stretch; margin: 0 calc(-1 * var(--claim-px)) 9px;
+      height: 4px; border-radius: 999px; overflow: hidden; }
     /* The verdicts are the one irreversible thing on the screen, so they stand apart from the
        sentence that explains them rather than reading as the next line of it. */
     .app.in-game .prompt:not(.prompt-end) .cm-btns { margin-top: 14px; }
@@ -2278,7 +2286,8 @@
        screen without the panel having to scroll. */
     @media (max-height: 700px) {
       .app.in-game .prompt:not(.prompt-end) { gap: 14px; }
-      .app.in-game .prompt:not(.prompt-end) .claim-min { padding: 11px 12px 12px; gap: 7px; }
+      .app.in-game .prompt:not(.prompt-end) .claim-min { --claim-px: 12px; padding: 0 var(--claim-px) 12px; gap: 7px; }
+      .app.in-game .prompt:not(.prompt-end) .claim-min > .timerbar { margin-bottom: 6px; }
       .app.in-game .prompt:not(.prompt-end) .p-strip { padding: 6px 12px; }
       .app.in-game .prompt:not(.prompt-end) .cm-btns { margin-top: 8px; }
     }
@@ -2311,7 +2320,12 @@
     .app.in-game .prompt:not(.prompt-end) { width: min(720px, calc(100vw - 24px - var(--sal) - var(--sar))); }
     .app.in-game .prompt:not(.prompt-end) .claim-min {
       display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
-      column-gap: 12px; row-gap: 4px; text-align: start; padding: 6px 12px 8px; }
+      --claim-px: 12px; column-gap: 12px; row-gap: 4px; text-align: start; padding: 6px var(--claim-px) 8px; }
+    /* Lying down there is no header to sit under and no height to spend on a row of its own, so
+       the clock goes back to a hairline across the top edge of the block. In flow it would take a
+       grid row, and the card's explicit `grid-row: 2 / -2` counts on it not having one. */
+    .app.in-game .prompt:not(.prompt-end) .claim-min > .timerbar {
+      position: absolute; top: 0; left: 0; right: 0; align-self: auto; margin: 0; height: 3px; border-radius: 0; }
     /* The strip only carried the seconds, and the timerbar under it says the same thing in the one
        row the panel can spare here. */
     .app.in-game .prompt:not(.prompt-end) .p-strip { display: none; }
@@ -2423,23 +2437,22 @@
      are YOURS, and they pull — so it carries the word, the cards mark with your count, and a
      chevron facing wherever it will move next. Same glass as the bottom sheet, so it reads as the
      same furniture. It sits above the claim (z 47 vs 40) and is fixed, so it costs the board no
-     height. Physical left/right with an RTL mirror, never inset-inline-*: Safari 14 ignores the
-     logical pair and drops the element to its static position. */
+     height. The RIGHT edge in every language: the hand is not text, it is where your thumb lives,
+     and a player who switches language should not have to hunt for their own cards. Physical
+     left/right only, never inset-inline-*: Safari 14 ignores the logical pair and drops the
+     element to its static position. */
   @media (max-width: 1023px) {
     .app.in-game .my-cards { position: fixed; z-index: 47; top: 50%; right: 0; left: auto;
       width: auto; max-width: 76vw; max-height: 80dvh; align-self: auto; margin: 0;
       padding: 10px 12px calc(12px + var(--sab)) 12px;
       display: flex; flex-direction: column; align-items: center; gap: 6px; overflow: visible;
-      border-radius: 20px 0 0 20px; border: 1px solid rgba(255,240,214,.18); border-inline-end: 0;
+      border-radius: 20px 0 0 20px; border: 1px solid rgba(255,240,214,.18); border-right: 0;
       background: linear-gradient(180deg, rgba(58,44,30,.60), rgba(16,12,8,.80));
       -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
       box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 0 20px 60px rgba(0,0,0,.55);
       transform: translateY(-50%) translateX(100%);
       transition: transform .26s var(--ease); }
-    [dir="rtl"] .app.in-game .my-cards { right: auto; left: 0; border-radius: 0 20px 20px 0;
-      transform: translateY(-50%) translateX(-100%); }
-    .app.in-game .my-cards.open,
-    [dir="rtl"] .app.in-game .my-cards.open { transform: translateY(-50%) translateX(0); }
+    .app.in-game .my-cards.open { transform: translateY(-50%) translateX(0); }
     @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
       .app.in-game .my-cards, .mc-tab { background: linear-gradient(180deg, rgba(40,31,21,.98), rgba(14,10,7,.99)); }
     }
@@ -2454,7 +2467,6 @@
       -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
       box-shadow: inset 0 1px 0 rgba(255,240,214,.10), -8px 10px 28px rgba(0,0,0,.5);
       color: var(--gold); cursor: pointer; }
-    [dir="rtl"] .mc-tab { left: auto; right: -40px; border-radius: 0 16px 16px 0; box-shadow: inset 0 1px 0 rgba(255,240,214,.10), 8px 10px 28px rgba(0,0,0,.5); }
     /* The count rides ON the cards, crowning them, the way a stack is counted everywhere else in
        the game. Under the fan it read as a second, separate thing in a 38px column. */
     .mc-tab-mark { position: relative; display: block; width: 26px; height: 38px; padding-top: 6px; }
@@ -2467,10 +2479,14 @@
       min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;
       border-radius: 9px; background: var(--gold); color: #241505; font-size: 10.5px; font-weight: 800; line-height: 1;
       box-shadow: 0 0 0 2px rgba(16,12,8,.85), 0 2px 6px rgba(0,0,0,.45); }
-    .mc-tab-chev { opacity: .75; transition: transform .26s var(--ease); }
-    .my-cards.open .mc-tab-chev { transform: scaleX(-1); }
-    [dir="rtl"] .mc-tab-chev { transform: scaleX(-1); }
-    [dir="rtl"] .my-cards.open .mc-tab-chev { transform: none; }
+    /* Closed it points at the screen (pull), open it points back at the edge (put away). It is a
+       direction of travel, not reading order, so the blanket RTL arrow mirror (see
+       svg[data-icon="alt-arrow-left"]) is undone here — it needs the extra class to outweigh it. */
+    .mc-tab-chev { opacity: .75; transform: none; transition: transform .26s var(--ease); }
+    [dir="rtl"] .mc-tab .mc-tab-chev { transform: none; }
+    .my-cards.open .mc-tab-chev,
+    [dir="rtl"] .my-cards.open .mc-tab .mc-tab-chev,
+    [dir="rtl"] .my-cards.open .mc-tab-chev { transform: scaleX(-1); }
 
     /* Cards stack down the drawer. Nothing here clips: a card that lifts or focuses would be
        shaved by an overflow on the list, so the DRAWER scrolls instead and the list stays open. */
