@@ -1,9 +1,9 @@
 /* Rules (case file) and avatar picker — both HeroUI Modals controlled from the store. */
 import { useEffect, useRef, useState } from 'react';
 import { Button, Modal, Tooltip } from '@heroui/react';
-import { CHARACTERS, DEFAULT_AVATARS, IMG, PALETTE } from '../theme';
+import { CHARACTERS, IMG } from '../theme';
 import { i18n, t } from '../i18n';
-import { useStore, store, type Profile } from '../lib/store';
+import { useStore, store, mvAvatar, type Profile } from '../lib/store';
 import { commitProfile, notify } from '../lib/net';
 import { GameCard, Html, Icon, PlayerAvatar } from './ui';
 
@@ -71,12 +71,27 @@ export function CharactersModal() {
   );
 }
 
+/** Opening hand of drawn faces (Multiavatar seeds) — stable so the picker looks the same each visit. */
+const MV_SET = ['sahara', 'sirocco', 'medina', 'harissa', 'jasmine', 'carthage', 'bousaadia', 'sidi bou'];
+export const randSeed = () => Math.random().toString(36).slice(2, 9);
+
 /** Name + avatar + colour — the one place you edit who you are, from home OR from inside a room. */
 export function AvatarPicker() {
   const s = useStore();
   const open = s.modal === 'avatar';
   const file = useRef<HTMLInputElement>(null);
   const p = s.profile;
+  const [mvSeeds, setMvSeeds] = useState<string[]>(MV_SET);
+  // Whatever you already wear stays in the tray, even after a shuffle — otherwise picking then
+  // shuffling would show you as selected-on-nothing.
+  const mySeed = p.avatar.startsWith('mv:') ? p.avatar.slice(3) : null;
+  const mvList = mySeed && !mvSeeds.includes(mySeed) ? [mySeed, ...mvSeeds.slice(0, mvSeeds.length - 1)] : mvSeeds;
+  /** Deal a fresh hand and wear the first face immediately — the button's effect must be visible. */
+  const shuffle = () => {
+    const seeds = Array.from({ length: MV_SET.length }, randSeed);
+    setMvSeeds(seeds);
+    set({ avatar: 'mv:' + seeds[0], avatarData: null });
+  };
   const [nm, setNm] = useState(s.name);
   useEffect(() => { if (open) setNm(store.get().name); }, [open]);
   const set = (patch: Partial<Profile>) => commitProfile({ ...p, ...patch });
@@ -118,35 +133,31 @@ export function AvatarPicker() {
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLInputElement).blur(); saveName(); } }}
               />
             </label>
+            {/* Your face, and the one clear way to change it: generate deals a fresh hand of drawn
+                faces AND puts the first one on you — the preview changes with every press. */}
             <div className="flex flex-wrap items-center gap-5">
               <PlayerAvatar p={preview} size="xl" />
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-medium text-muted">{t('profile.color')}</span>
-                <div className="flex flex-wrap gap-2">
-                  <Tooltip delay={300}>
-                    <button type="button" aria-label={t('profile.auto')} onClick={() => set({ color: null })} className={`color-chip auto ${!p.color ? 'sel' : ''}`}>A</button>
-                    <Tooltip.Content>{t('profile.auto')}</Tooltip.Content>
-                  </Tooltip>
-                  {PALETTE.map((c) => (
-                    <Tooltip key={c.color} delay={300}>
-                      <button type="button" aria-label={i18n.charName(c.name)} onClick={() => set({ color: c.color })} className={`color-chip ${p.color === c.color ? 'sel' : ''}`} style={{ '--c': c.color } as any} />
-                      <Tooltip.Content>{i18n.charName(c.name)}</Tooltip.Content>
-                    </Tooltip>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="avatar-grid">
-              {DEFAULT_AVATARS.map((a) => (
-                <button key={a} type="button" onClick={() => set({ avatar: a, avatarData: null })} className={`av-opt ${p.avatar === a ? 'sel' : ''}`} style={{ '--bg': p.color || '#727274' } as any}>
-                  <img src={`/img/avatars/${a}.webp`} alt={a} />
-                </button>
-              ))}
-              <button type="button" onClick={() => file.current?.click()} className={`av-opt upload ${p.avatar === 'custom' ? 'sel' : ''}`} style={{ '--bg': p.color || '#727274' } as any}>
-                {p.avatar === 'custom' && p.avatarData ? <img src={p.avatarData} alt="" /> : <Icon name="gallery-add" className="size-7 text-accent" />}
-                <span className="text-[11px] font-medium">{t('profile.upload')}</span>
+              <button type="button" className="mv-gen" onClick={shuffle}>
+                <Icon name="refresh-circle" className="size-5" />{t('profile.shuffle')}
               </button>
-              <input ref={file} type="file" accept="image/*" className="hidden" onChange={onFile} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="pf-label">{t('profile.mv')}</span>
+              <div className="avatar-grid">
+                {mvList.map((seed) => (
+                  <button key={seed} type="button" onClick={() => set({ avatar: 'mv:' + seed, avatarData: null })} className={`av-opt ${p.avatar === 'mv:' + seed ? 'sel' : ''}`}>
+                    <img src={mvAvatar(seed)} alt="" />
+                  </button>
+                ))}
+                <Tooltip delay={300}>
+                  <button type="button" onClick={() => file.current?.click()} className={`av-opt upload ${p.avatar === 'custom' ? 'sel' : ''}`} aria-label={t('profile.upload')}>
+                    {p.avatar === 'custom' && p.avatarData ? <img src={p.avatarData} alt="" /> : <Icon name="gallery-add" className="size-6 text-accent" />}
+                  </button>
+                  <Tooltip.Content>{t('profile.upload')}</Tooltip.Content>
+                </Tooltip>
+                <input ref={file} type="file" accept="image/*" className="hidden" onChange={onFile} />
+              </div>
+              <span className="mv-credit">Avatars by <a href="https://multiavatar.com" target="_blank" rel="noreferrer">Multiavatar</a></span>
             </div>
           </Modal.Body>
           <Modal.Footer><Button variant="primary" onPress={close}>{t('profile.done')}</Button></Modal.Footer>

@@ -18,7 +18,7 @@
  *     deleteMembers(code)                             drop every membership of one room
  */
 import { Game, GameError, MIN_PLAYERS, MAX_PLAYERS, ACTION_GRACE, standings } from './engine.mjs';
-import { BOT_NAMES, runBots, botsNextDue } from './bots.mjs';
+import { BOTS, runBots, botsNextDue } from './bots.mjs';
 
 export const DEFAULT_AVATARS = ['boy-1', 'boy-2', 'boy-3', 'boy-4', 'boy-5', 'boy-6', 'girl-1', 'girl-2', 'girl-3', 'girl-4', 'girl-5', 'girl-6'];
 export const PALETTE = ['#2f7d32', '#d7a800', '#1e4fb5', '#b3261e', '#4b6b2b', '#5b2d9e', '#b5561a'];
@@ -60,6 +60,8 @@ export function cleanProfile(raw) {
   if (!raw || typeof raw !== 'object') return out;
   if (raw.avatar === 'custom' && typeof raw.avatarData === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(raw.avatarData) && raw.avatarData.length <= MAX_AVATAR_DATA) { out.avatar = 'custom'; out.avatarData = raw.avatarData; }
   else if (DEFAULT_AVATARS.includes(raw.avatar)) out.avatar = raw.avatar;
+  // `mv:<seed>` = a Multiavatar the client generates locally from the seed — any short seed is valid.
+  else if (typeof raw.avatar === 'string' && /^mv:[A-Za-z0-9 _.-]{1,32}$/.test(raw.avatar)) out.avatar = raw.avatar;
   if (typeof raw.color === 'string' && PALETTE.includes(raw.color.toLowerCase())) out.color = raw.color.toLowerCase();
   return out;
 }
@@ -67,7 +69,9 @@ export function genCode(rand = Math.random) { let code = ''; for (let i = 0; i <
 const uuid = () => (globalThis.crypto && crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36));
 
 function applyDefaults(players, player) {
-  if (!player.avatar) { const used = new Set(players.filter((p) => p !== player).map((p) => p.avatar)); player.avatar = DEFAULT_AVATARS.find((a) => !used.has(a)) || DEFAULT_AVATARS[players.indexOf(player) % DEFAULT_AVATARS.length]; }
+  // No avatar chosen → a Multiavatar seeded from the player's id: unique per player, drawn
+  // client-side, and consistent with the faces the picker now offers (the photo set is legacy).
+  if (!player.avatar) player.avatar = 'mv:' + String(player.id).replace(/[^A-Za-z0-9]/g, '').slice(0, 12);
   if (!player.color) { const used = new Set(players.filter((p) => p !== player).map((p) => p.color)); player.color = PALETTE.find((c) => !used.has(c)) || PALETTE[players.indexOf(player) % PALETTE.length]; }
 }
 const humans = (room) => room.players.filter((p) => !p.isBot);
@@ -433,8 +437,11 @@ class RoomOps {
   pushBot() {
     const room = this.room;
     if (room.players.length >= MAX_PLAYERS) throw fail('Room is full');
+    // Random pick from the unused roster, so the same three faces don't host every solo game.
     const used = new Set(room.players.map((p) => p.name));
-    const bot = { id: uuid(), name: BOT_NAMES.find((n) => !used.has(n)) || `Machine·${room.players.length + 1}`, ready: true, connected: true, isBot: true, avatar: null, avatarData: null, color: null };
+    const pool = BOTS.filter((b) => !used.has(b.name));
+    const b = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { name: `Bot ${room.players.length + 1}`, avatar: null };
+    const bot = { id: uuid(), name: b.name, ready: true, connected: true, isBot: true, avatar: b.avatar, avatarData: null, color: null };
     room.players.push(bot); applyDefaults(room.players, bot); return bot;
   }
   addBot(me) { if (this.room.host_id !== me.id) throw fail('Only the host can add bots'); if (this.room.phase !== 'lobby') throw fail('Game in progress'); this.pushBot(); return this.done({ room: lobbyView(this.room) }); }

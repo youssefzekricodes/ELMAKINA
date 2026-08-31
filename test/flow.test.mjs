@@ -2,6 +2,7 @@
 // lobby → game → bots/ticks → winner → new game, plus concurrency (CAS) and presence. Run: node test/flow.test.mjs
 import assert from 'node:assert';
 import { handleOp } from '../supabase/functions/game/room.mjs';
+import { BOTS } from '../supabase/functions/game/bots.mjs';
 
 /** In-memory implementation of the DB adapter used by room.mjs (mirrors the Postgres one in game/index.ts). */
 function memDb() {
@@ -97,7 +98,8 @@ await test('solo: bots play by themselves through ticks until the game ends; new
     v = viewOf(db, code, A);
   }
   assert.equal(v.phase, 'ended', 'game should end');
-  const botLog = v.log.filter((e) => e.params && /Machine/.test(e.params.name || '')).length;
+  const botNames = new Set(BOTS.map((b) => b.name));
+  const botLog = v.log.filter((e) => e.params && botNames.has(e.params.name)).length;
   console.log(`   (my turns: ${myTurns}, ticks: ${ticks}, bot log entries: ${botLog}, winner: ${v.players.find((p) => p.id === v.winnerId)?.name})`);
   assert.ok(botLog >= 3, 'bots should act');
   assert.equal(db.rooms.get(code).next_due, null, 'nothing due once ended');

@@ -28,7 +28,7 @@ export function GoogleG({ className = 'size-4' }: { className?: string }) {
 export function PlayerAvatar({ p, size = 'md', className = '' }: { p: any; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
   const dim = { xs: 'size-7', sm: 'size-10', md: 'size-14', lg: 'size-[72px]', xl: 'size-28' }[size];
   return (
-    <Avatar className={`pavatar ${p && p.avatar === 'custom' ? 'custom' : ''} ${dim} ${className}`} style={{ '--bg': (p && p.color) || '#727274' } as any}>
+    <Avatar className={`pavatar ${p && p.avatar === 'custom' ? 'custom' : ''} ${p && String(p.avatar || '').startsWith('mv:') ? 'mv' : ''} ${dim} ${className}`} style={{ '--bg': (p && p.color) || '#727274' } as any}>
       <Avatar.Image src={avatarSrc(p)} alt="" className="pavatar-img" />
       <Avatar.Fallback>{(p?.name || '?').slice(0, 2).toUpperCase()}</Avatar.Fallback>
     </Avatar>
@@ -60,6 +60,23 @@ export function CardBack({ className = '', onPress, label, style }: { className?
 }
 
 /** Countdown for timed windows: the clock badge + seconds and a depleting bar (turns red near the end). */
+/**
+ * The turn clock, worn by the seat itself: an arc around the avatar that drains as the player's
+ * time runs out. It replaces the old pulsing glow — the ring is both the "who's on" marker and
+ * the countdown, the way a real game clock sits in front of the player it times.
+ */
+export function SeatClock({ deadline, total }: { deadline?: number | null; total?: number }) {
+  const rem = useCountdown(deadline);
+  if (!deadline || !total) return null;
+  const frac = Math.max(0, Math.min(1, rem / total));
+  return (
+    <svg className={`seat-clock ${rem < 5000 ? 'low' : ''}`} viewBox="0 0 100 100" aria-hidden="true">
+      <circle className="sc-track" cx="50" cy="50" r="46" pathLength={100} />
+      <circle className="sc-arc" cx="50" cy="50" r="46" pathLength={100} strokeDasharray={`${frac * 100} 100`} />
+    </svg>
+  );
+}
+
 export function Ring({ deadline, total, tick = false }: { deadline?: number | null; total?: number; tick?: boolean }) {
   const rem = useCountdown(deadline);
   const secs = Math.max(0, rem / 1000);

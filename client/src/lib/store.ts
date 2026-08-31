@@ -1,5 +1,6 @@
 /* Tiny external store: the socket layer writes here, React reads it with useStore(). */
 import { useSyncExternalStore } from 'react';
+import multiavatar from '@multiavatar/multiavatar/esm';
 import type { ActionDef } from '../theme';
 
 export interface Profile { avatar: string; avatarData: string | null; color: string | null }
@@ -158,8 +159,17 @@ export const saveProfile = (p: Profile) => localStorage.setItem('mekina.profile'
 export const customAvatars: Record<string, string> = {};
 /** Built-in avatars resolved through the IndexedDB cache when it has them (see lib/assets). */
 export const builtInAvatars: Record<string, string> = {};
+/**
+ * `mv:<seed>` avatars are Multiavatars (multiavatar.com): the seed IS the image, generated locally
+ * as an SVG — nothing to download, nothing to cache in IndexedDB, and the same seed draws the same
+ * face on every device. Bots ship with hand-picked seeds; players can pick their own.
+ */
+const mvCache: Record<string, string> = {};
+export const mvAvatar = (seed: string) =>
+  mvCache[seed] || (mvCache[seed] = 'data:image/svg+xml;utf8,' + encodeURIComponent(multiavatar(seed)));
 export const avatarSrc = (p?: { id?: string; avatar?: string; avatarData?: string | null } | null) => {
   if (p && p.avatar === 'custom') return customAvatars[p.id || ''] || p.avatarData || '';
   const name = (p && p.avatar) || 'boy-1';
+  if (name.startsWith('mv:')) return mvAvatar(name.slice(3));
   return builtInAvatars[name] || `/img/avatars/${name}.webp`;
 };

@@ -3,7 +3,7 @@ import { CH, IMG, type CharacterId } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore, type GPlayer } from '../lib/store';
 import { tapTarget } from '../lib/net';
-import { CardBack, Coins, Icon, PlayerAvatar, SoundWaves } from './ui';
+import { CardBack, Coins, Icon, PlayerAvatar, SeatClock, SoundWaves } from './ui';
 import { validTargets } from '../lib/rules';
 import { useVoice, speakingOf, inCall } from '../lib/voice';
 
@@ -46,8 +46,9 @@ function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>): { icon: string;
     if (w.eligible.includes(p.id)) return { icon: 'hourglass', label: t('seat.deciding'), cls: 'deciding' };
   } else if (w && w.type === 'decision' && w.playerId === p.id) return { icon: 'hourglass', label: t('seat.deciding'), cls: 'deciding' };
   const isTurn = st.turnPlayerId === p.id && st.phase === 'playing';
-  if (isTurn && st.pending && st.pending.stage === 'turn') return { icon: 'bolt', label: p.id === s.me ? t('seat.yourTurn') : t('seat.theirTurn'), cls: 'playing' };
-  if (st.pending && st.pending.actorId === p.id && st.pending.stage === 'resolving') return { icon: 'bolt', label: t('seat.acting'), cls: 'playing' };
+  // No bolt icon: the seat clock already marks the active player, the plate just names the state.
+  if (isTurn && st.pending && st.pending.stage === 'turn') return { icon: '', label: p.id === s.me ? t('seat.yourTurn') : t('seat.theirTurn'), cls: 'playing' };
+  if (st.pending && st.pending.actorId === p.id && st.pending.stage === 'resolving') return { icon: '', label: t('seat.acting'), cls: 'playing' };
   if (!p.connected) return { icon: 'cpu-bolt', label: t('seat.left'), cls: 'auto' };
   return null;
 }
@@ -56,7 +57,16 @@ function seatStatus(p: GPlayer, s: ReturnType<typeof useStore>): { icon: string;
 function StatusPill({ p, s }: { p: GPlayer; s: ReturnType<typeof useStore> }) {
   const info = seatStatus(p, s);
   if (!info) return null;
-  return <span className={`seat-status ${info.cls}`}><Icon name={info.icon} className="size-3" /><span className="ss-tx">{info.label}</span></span>;
+  return <span className={`seat-status ${info.cls}`}>{info.icon && <Icon name={info.icon} className="size-3" />}<span className="ss-tx">{info.label}</span></span>;
+}
+
+/** The clock this seat is playing against right now (its own turn or its own decision), or null. */
+function seatClock(p: GPlayer, st: any): { deadline: number; total: number } | null {
+  const pend = st.pending; if (!pend || st.phase !== 'playing' || !p.alive) return null;
+  if (pend.stage === 'turn' && pend.actorId === p.id && pend.deadline) return { deadline: pend.deadline, total: st.timings.turn };
+  const w = pend.window;
+  if (w && w.type === 'decision' && w.playerId === p.id && w.deadline) return { deadline: w.deadline, total: st.timings.decision };
+  return null;
 }
 
 export function Table() {
@@ -112,6 +122,7 @@ export function Table() {
               <div className={`av-wrap ${inCall(p.id) ? 'in-call' : ''} ${speakingOf(p.id) ? 'speaking' : ''}`}>
                 {claimCh && <span className="claim-badge" style={{ ['--c' as any]: CH[claimCh].color }} title={i18n.charName(claimCh)}><img src={CH[claimCh].cardSm} alt={i18n.charName(claimCh)} /></span>}
                 <PlayerAvatar p={p} size="md" />
+                {(() => { const c = seatClock(p, st); return c && <SeatClock deadline={c.deadline} total={c.total} />; })()}
                 <span className={`lamp ${p.connected ? 'on' : 'off'}`} />
                 {inCall(p.id) && (p.id in v.peers && v.peers[p.id].muted
                   ? <span className="mic-tag muted"><Icon name="microphone-off" className="size-3" /></span>
@@ -140,6 +151,7 @@ export function Table() {
           <div className={`av-wrap ${inCall(me || '') ? 'in-call' : ''} ${speakingOf(me || '') ? 'speaking' : ''}`}>
             {claimedChar(meP, st) && <span className="claim-badge" style={{ ['--c' as any]: CH[claimedChar(meP, st)!].color }}><img src={CH[claimedChar(meP, st)!].cardSm} alt="" /></span>}
             <PlayerAvatar p={meP} size="md" />
+            {(() => { const c = seatClock(meP, st); return c && <SeatClock deadline={c.deadline} total={c.total} />; })()}
             {inCall(me || '') && (v.muted
               ? <span className="mic-tag muted"><Icon name="microphone-off" className="size-3" /></span>
               : speakingOf(me || '') ? <SoundWaves className="wave-tag" /> : <span className="mic-tag"><Icon name="microphone" className="size-3" /></span>)}

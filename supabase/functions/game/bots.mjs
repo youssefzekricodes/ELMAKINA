@@ -5,7 +5,24 @@
  */
 import { GameError, CHARACTERS } from './engine.mjs';
 
-export const BOT_NAMES = ['Machine·Hamza', 'Machine·Leila', 'Machine·Karim', 'Machine·Nour', 'Machine·Sami'];
+/**
+ * The bots present as people, not appliances: a real first name and a Multiavatar face
+ * (`mv:<seed>` — the client draws it, see client lib/store). The seeds are hand-picked from the
+ * generator's 12 billion for faces that read well at seat size. The "Bot" chip by the name is
+ * what says they're machines; the name no longer has to.
+ */
+export const BOTS = [
+  { name: 'Hamza', avatar: 'mv:Hamza' },
+  { name: 'Mariem', avatar: 'mv:Mariem.tn' },
+  { name: 'Karim', avatar: 'mv:Karim.tn' },
+  { name: 'Leila', avatar: 'mv:Leila.tn' },
+  { name: 'Aziz', avatar: 'mv:Aziz.mekina' },
+  { name: 'Salma', avatar: 'mv:Salma.77' },
+  { name: 'Sami', avatar: 'mv:Sami.77' },
+  { name: 'Nour', avatar: 'mv:Nour.77' },
+  { name: 'Yassine', avatar: 'mv:Yassine.plays' },
+  { name: 'Farouk', avatar: 'mv:Farouk.mekina' },
+];
 const rnd = (n) => Math.floor(Math.random() * n);
 const pick = (arr) => arr[rnd(arr.length)];
 const VALUE = { terrorist: 6, colonel: 5, businesswoman: 4, taxman: 3, thief: 3, police: 2, politician: 1 }; // how valuable a card is to keep

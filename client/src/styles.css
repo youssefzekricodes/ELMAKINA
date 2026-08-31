@@ -318,8 +318,12 @@
   .pavatar-empty { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 2px rgba(255,255,255,.15); display: block; }
 
   /* avatars */
-  .pavatar { --bg: #727274; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--bg) 70%, #fff) 0%, var(--bg) 70%); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 60%, #000), 0 0 0 3px rgba(255,240,205,.15), 0 6px 14px rgba(0,0,0,.45); overflow: hidden; flex-shrink: 0; transition: box-shadow .25s; }
+  /* Always a circle — HeroUI's Avatar goes rounded-square at the larger sizes, and a square
+     face in the profile sheet next to a tray of round ones read as a bug. */
+  .pavatar { --bg: #727274; border-radius: 50%; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--bg) 70%, #fff) 0%, var(--bg) 70%); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 60%, #000), 0 0 0 3px rgba(255,240,205,.15), 0 6px 14px rgba(0,0,0,.45); overflow: hidden; flex-shrink: 0; transition: box-shadow .25s; }
   .pavatar .pavatar-img { width: 86%; height: 92%; object-fit: contain; object-position: bottom; margin: auto auto 0; border-radius: 0; }
+  /* a Multiavatar is its own full circle: let it fill the frame edge-to-edge */
+  .pavatar.mv .pavatar-img { width: 100%; height: 100%; object-fit: cover; object-position: center; margin: 0; }
   /* an uploaded photo fills the whole circle (cover) instead of the illustration's bottom-fit */
   .pavatar.custom .pavatar-img { width: 100%; height: 100%; object-fit: cover; object-position: center; margin: 0; }
   /* profile editor: name field sits above the avatar/colour picker */
@@ -327,16 +331,20 @@
   .pf-label { font-size: 12px; font-weight: 600; color: var(--muted); }
   .pf-name { width: 100%; padding: 11px 13px; font-size: 16px; font-weight: 600; color: var(--foreground); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); outline: none; transition: border-color .15s, box-shadow .15s; }
   .pf-name:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .color-chip { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: var(--c, #ccc); cursor: pointer; padding: 0; transition: transform .1s; }
-  .color-chip.auto { background: linear-gradient(135deg, #2f7d32, #d7a800, #1e4fb5, #b3261e, #5b2d9e); color: #fff; font-weight: 800; font-size: 12px; }
-  .color-chip:hover { transform: scale(1.1); }
-  .color-chip.sel { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
-  .avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
-  .av-opt { border: 2px solid var(--border); border-radius: var(--radius-xl); background: var(--surface); padding: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .1s, border-color .15s; color: var(--muted); }
-  .av-opt img { width: 68px; height: 68px; border-radius: 50%; object-fit: contain; object-position: bottom; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--bg) 70%, #fff) 0%, var(--bg) 70%); }
+  /* the avatar tray: round faces, because that's their shape everywhere else in the game */
+  .avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 12px; }
+  .av-opt { aspect-ratio: 1; border: 2px solid transparent; border-radius: 50%; background: none; padding: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: transform .1s, border-color .15s, box-shadow .15s; color: var(--muted); }
+  .av-opt img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
   .av-opt:hover { transform: translateY(-2px); border-color: var(--border-secondary); }
   .av-opt.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .av-opt.upload { justify-content: center; min-height: 104px; }
+  .av-opt.upload { border: 2px dashed var(--border); background: var(--surface); }
+  .av-opt.upload:hover { border-color: var(--accent); }
+  /* the one clear way to a new face: a real button, next to the preview it changes */
+  .mv-gen { display: inline-flex; align-items: center; gap: 8px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 999px; background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, var(--surface))); padding: 10px 18px; font-size: 13.5px; font-weight: 700; color: var(--foreground); cursor: pointer; transition: transform .1s, box-shadow .15s; }
+  .mv-gen:hover { transform: translateY(-1px); box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 25%, transparent); }
+  .mv-gen:active { transform: translateY(0); }
+  .mv-credit { font-size: 10.5px; color: var(--muted); }
+  .mv-credit a { color: inherit; text-decoration: underline; }
 
   /* game layout */
   .game-screen { padding: 10px 12px calc(10px + var(--sab)); }
@@ -422,7 +430,6 @@
   .seat { position: absolute; width: 150px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; transition: transform .35s var(--ease), filter .3s; }
   .seat .av-wrap { position: relative; margin-bottom: 14px; }
   .seat .lamp { position: absolute; right: 2px; bottom: 4px; width: 12px; height: 12px; border: 2px solid #0e0c09; margin: 0; }
-  .seat .turn-tag { position: absolute; left: -6px; top: -4px; background: var(--accent); color: var(--accent-foreground); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 40%, transparent); animation: pulse 1.2s infinite; }
   .seat .pavatar { box-shadow: 0 0 0 1px var(--border), 0 4px 14px rgba(26,25,24,.10); }
   .seat .nm { font-weight: 600; font-size: 12px; letter-spacing: .01em; color: var(--foreground); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 2px; }
   .seat .coins { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px 1px 5px; font-size: 12px; font-weight: 700; color: var(--warning-soft-foreground); }
@@ -444,15 +451,24 @@
   .seat.picking .hand .cardback:hover { transform: translateY(-6px) scale(1.08); }
   @keyframes pick-pulse { 50% { box-shadow: 0 0 0 5px var(--gold), 0 0 26px rgba(247,183,80,.9); } }
   .seat .status { min-height: 20px; }
-  .seat.turn .pavatar { box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--background), 0 0 0 5px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 24px color-mix(in srgb, var(--accent) 55%, transparent); }
-  /* lamp glow behind the active player */
-  .seat.turn .av-wrap::before { content: ''; position: absolute; inset: -22px; z-index: -1; border-radius: 50%; background: radial-gradient(circle, var(--lamp), transparent 68%); animation: pulse 2.4s ease-in-out infinite; pointer-events: none; }
-  /* spotlight focus: when someone is on turn, dim everyone else */
-  .seats:has(.seat.turn) .seat:not(.turn) { filter: brightness(.66) saturate(.85); }
-  .seats:has(.seat.turn) .seat:not(.turn) { transition: filter .35s var(--ease); }
-  /* YOUR turn is the one you must never miss: brighter ring, gold lamp, a heavier pill */
-  .seat.me.turn .pavatar { box-shadow: 0 0 0 3px var(--gold), 0 0 0 5px var(--background), 0 0 30px color-mix(in srgb, var(--gold) 70%, transparent); }
-  .seat.me.turn .seat-status.playing { background: var(--gold); color: #241505; font-weight: 800; letter-spacing: .06em; }
+  /* ── the turn ──────────────────────────────────────────────────────────────
+     No lamp, no pulsing halo. The active seat steps forward a fraction, wears a clock arc that
+     drains with their time (SeatClock in ui.tsx), and their plate goes solid ink. Everyone else
+     steps back half a step. The arc is the marker AND the countdown — one element, two jobs. */
+  .seat .av-wrap { transition: transform .3s var(--ease); }
+  .seat.turn .av-wrap { transform: scale(1.08); }
+  .seat.turn .pavatar { box-shadow: 0 0 0 2px var(--background), 0 8px 20px rgba(26,25,24,.22); }
+  .seat-clock { position: absolute; inset: -6px; z-index: 3; transform: rotate(-90deg); pointer-events: none; }
+  .seat-clock circle { fill: none; stroke-width: 6; }
+  .seat-clock .sc-track { stroke: color-mix(in srgb, var(--foreground) 15%, transparent); }
+  .seat-clock .sc-arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray .12s linear; }
+  .seat-clock.low .sc-arc { stroke: var(--danger); }
+  /* spotlight focus: when someone is on turn, everyone else recedes — gently, no theatre */
+  .seats:has(.seat.turn) .seat:not(.turn) { filter: brightness(.78) saturate(.9); transition: filter .35s var(--ease); }
+  /* YOUR turn is the one you must never miss: the arc and the plate go gold */
+  .seat.me .seat-clock .sc-arc { stroke: var(--gold); }
+  .seat.me .seat-clock.low .sc-arc { stroke: var(--danger); }
+  .seat.me.turn .seat-status.playing { background: var(--gold); color: #241505; }
   .seat.dead { filter: grayscale(1); opacity: .5; }
   .seat.dead .av-wrap::after { content: 'OUT'; position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: .12em; color: var(--danger); border: 2px solid var(--danger); border-radius: 50%; transform: rotate(-14deg); background: color-mix(in srgb, var(--surface) 70%, transparent); }
   .seat.offline .pavatar { filter: grayscale(.55); opacity: .85; }
@@ -466,7 +482,8 @@
   .seat-status svg { flex-shrink: 0; opacity: .95; }
   .seat-status.claim { background: var(--accent); color: var(--accent-foreground); border-color: transparent; box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 30%, transparent); }
   .seat-status.deciding { color: var(--warning-soft-foreground); border-color: color-mix(in srgb, var(--warning) 35%, var(--border)); animation: claim-pop .22s var(--ease), chip-pulse 1.1s ease-in-out infinite .22s; }
-  .seat-status.playing { background: var(--accent); color: var(--accent-foreground); border-color: transparent; box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 45%, transparent); animation: claim-pop .22s var(--ease), chip-pulse 1.2s ease-in-out infinite .22s; }
+  /* the turn plate: solid ink, no icon, no pulse — the draining arc above carries the urgency */
+  .seat-status.playing { background: var(--foreground); color: var(--background); border-color: transparent; font-weight: 800; box-shadow: 0 3px 10px rgba(26,25,24,.28); }
   .seat-status.passed { color: var(--muted); }
   .seat-status.auto { color: var(--warning-soft-foreground); border-color: color-mix(in srgb, var(--warning) 30%, var(--border)); }
   .seat-status.out { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
