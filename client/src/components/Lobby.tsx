@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Button, Tooltip } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { copyInvite, kickPlayer, leaveRoom, setRoomPublic, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
+import { music } from '../lib/music';
 import { Art, Icon, PlayerAvatar } from './ui';
 import { AddFriendButton } from './Social';
 import { useVoice, speakingOf, inCall } from '../lib/voice';
@@ -19,6 +21,12 @@ export function Lobby() {
   const cap = Math.min(room.maxPlayers, 6);
   const empties = Math.max(0, cap - n);
   const openEditor = () => store.set({ modal: 'avatar' });
+  // The bed plays only while this screen is up: it starts when the room opens, stops the moment
+  // the game does (or the mute goes on), and never survives the component.
+  useEffect(() => {
+    if (s.soundOn) music.start(); else music.stop();
+    return () => music.stop();
+  }, [s.soundOn]);
 
   return (
     <section className="screen lobby-screen">

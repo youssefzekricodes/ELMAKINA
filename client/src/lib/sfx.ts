@@ -80,6 +80,18 @@ function hiss(c: AudioContext, [dur, cut, g = 0.4]: [number, number, number?]) {
   src.connect(flt); flt.connect(env); env.connect(master!); src.start(t0); src.stop(t0 + dur);
 }
 
+/**
+ * A channel on the same context, for anything that runs longer than a cue.
+ *
+ * Cues are fire-and-forget; the lobby bed runs for minutes and needs its own level and its own
+ * fade. It hangs off the same master gain, so one mute silences everything.
+ */
+export function audioChannel(gain: number): { ctx: AudioContext; out: GainNode } | null {
+  const c = ensure(); if (!c || !master) return null;
+  const g = c.createGain(); g.gain.value = gain; g.connect(master);
+  return { ctx: c, out: g };
+}
+
 export const sfx = {
   get enabled() { return on; },
   toggle() {
