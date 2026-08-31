@@ -18,6 +18,20 @@ const src = (f) => path.join(SRC, f);
 const out = (f) => path.join(OUT, f);
 const kb = (f) => Math.round(fs.statSync(f).size / 1024) + ' KB';
 
+/** The logo with its light-grey studio backdrop keyed out and trimmed, at `width`, as a buffer. */
+async function keyed(width) {
+  const img = sharp(src('logo.png')).resize({ width, withoutEnlargement: true }).ensureAlpha();
+  const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+  const bg = [data[0], data[1], data[2]];
+  for (let i = 0; i < data.length / 4; i++) {
+    const d = Math.hypot(data[i * 4] - bg[0], data[i * 4 + 1] - bg[1], data[i * 4 + 2] - bg[2]);
+    const a = d < 14 ? 0 : d > 60 ? 255 : Math.round(((d - 14) / 46) * 255);
+    data[i * 4 + 3] = Math.min(data[i * 4 + 3], a);
+  }
+  return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .trim({ threshold: 10 }).png().toBuffer();
+}
+
 async function webp(input, output, width, quality = 80, extra = (s) => s) {
   await extra(sharp(input).resize({ width, withoutEnlargement: true })).webp({ quality }).toFile(output);
   console.log(' ', path.relative(OUT, output), kb(output));
@@ -44,8 +58,12 @@ async function keyOutBackground(input, output, width) {
   console.log('Backgrounds');
   await webp(src('background.png'), out('bg-1.webp'), 1600, 78);
   await webp(src('background.png'), out('bg-1-sm.webp'), 900, 74);
-  await webp(src('background-2.png'), out('bg-2.webp'), 1600, 78);
-  await webp(src('background-2.png'), out('bg-2-sm.webp'), 900, 74);
+  // background-2 is optional: the second slideshow slide has never shipped with the repo, and its
+  // absence used to abort the whole build before the icons were reached.
+  if (fs.existsSync(src('background-2.png'))) {
+    await webp(src('background-2.png'), out('bg-2.webp'), 1600, 78);
+    await webp(src('background-2.png'), out('bg-2-sm.webp'), 900, 74);
+  } else console.log('  (background-2.png absent — skipping bg-2)');
   await webp(src('card-back.png'), out('poster.webp'), 900, 78);
 
   console.log('Machine (keyed)');
@@ -78,10 +96,40 @@ async function keyOutBackground(input, output, width) {
     console.log(' ', `avatars/${name}.webp`, kb(out(`avatars/${name}.webp`)));
   }
 
-  console.log('Coin / favicon');
+  // The link preview: the lobby art, cropped to the 1200x630 every scraper expects. It used to be
+  // a made-for-the-purpose card; the table itself is a better advert for the game than a title is.
+  console.log('Link preview');
+  await sharp(src('background-lobby.png'))
+    .resize(1200, 630, { fit: 'cover', position: 'attention' })
+    .png({ quality: 90, compressionLevel: 9 })
+    .toFile(path.join(__dirname, '..', 'public', 'og-image.png'));
+  console.log('  og-image.png', kb(path.join(__dirname, '..', 'public', 'og-image.png')));
+
+  console.log('Coin / icons');
   await webp(src('golden-coin-money-dollar-icon.png'), out('coin.webp'), 128, 85);
-  await sharp(src('logo.png')).extract({ left: 330, top: 330, width: 600, height: 600 }).resize(64, 64).png().toFile(out('favicon.png'));
-  await sharp(src('logo.png')).extract({ left: 330, top: 330, width: 600, height: 600 }).resize(180, 180).png().toFile(out('apple-touch-icon.png'));
-  console.log('  favicon.png', kb(out('favicon.png')));
+  // Every icon is the mark on WHITE, and the whole mark rather than a crop of its middle. The old
+  // ones cut a 600px square out of the illustration, which sliced the machine's edges off at the
+  // one size where an icon has to be recognisable in a glance. On white it also survives whatever
+  // background a launcher or a browser tab puts behind it.
+  const markOnWhite = async (size, file) => {
+    const pad = Math.round(size * 0.08);
+    const mark = await keyed(size - pad * 2);
+    await sharp({ create: { width: size, height: size, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } } })
+      .composite([{ input: mark, gravity: 'center' }])
+      .png({ compressionLevel: 9 }).toFile(file);
+    console.log(' ', path.basename(file), kb(file));
+  };
+  await markOnWhite(64, out('favicon.png'));
+  await markOnWhite(180, out('apple-touch-icon.png'));
+  await markOnWhite(192, out('pwa-192.png'));
+  await markOnWhite(512, out('pwa-512.png'));
+  // Maskable icons are cropped to a circle by the launcher, so the mark sits in the middle 60%.
+  {
+    const size = 512, inner = Math.round(size * 0.58);
+    await sharp({ create: { width: size, height: size, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } } })
+      .composite([{ input: await keyed(inner), gravity: 'center' }])
+      .png({ compressionLevel: 9 }).toFile(out('pwa-maskable-512.png'));
+    console.log('  pwa-maskable-512.png', kb(out('pwa-maskable-512.png')));
+  }
   console.log('Done.');
 })().catch((e) => { console.error(e); process.exit(1); });
