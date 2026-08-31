@@ -482,7 +482,10 @@
   .coins .n { transition: transform .2s var(--ease); display: inline-block; }
   .coins.bump .n { animation: bump .35s var(--ease); }
   @keyframes bump { 40% { transform: scale(1.5); } }
-  .cardback { width: 24px; aspect-ratio: .61; border-radius: 5px; background: #fff url('/img/card-back.webp') center/cover; border: 0; box-shadow: 0 2px 4px rgba(0,0,0,.5); padding: 0; }
+  /* A bright rim, not just a shadow: the art on the back is dark and the table behind it is darker,
+     so without one a hand reads as a smudge rather than as cards. */
+  .cardback { width: 24px; aspect-ratio: .61; border-radius: 5px; background: #fff url('/img/card-back.webp') center/cover; border: 0; padding: 0;
+    box-shadow: 0 0 0 1.5px rgba(255,246,232,.85), 0 2px 6px rgba(0,0,0,.75); }
   .cardback.pick { cursor: pointer; outline: 2px solid var(--accent); }
   .cardback.lg { width: 64px; border-radius: 7px; }
   .gcard { position: relative; aspect-ratio: .61; border-radius: var(--radius-lg); overflow: hidden; background: #fff; box-shadow: 0 10px 22px rgba(0,0,0,.35); flex-shrink: 0; padding: 0; border: 0; display: block; }
@@ -775,8 +778,16 @@
   .cm-guess .gcard { flex-shrink: 0; border-radius: 7px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 55%, transparent), 0 4px 12px rgba(0,0,0,.4); }
   .cm-guess-tx { font-size: 13px; font-weight: 600; line-height: 1.35; text-align: start; color: var(--foreground); }
   .cm-guess-tx .c { color: color-mix(in srgb, var(--c) 75%, var(--foreground)); font-weight: 800; }
-  .cm-effect { font-size: 12.5px; font-weight: 500; line-height: 1.4; color: var(--muted); max-width: 38ch; }
-  .cm-effect b { color: var(--foreground); font-weight: 700; }
+  /* What happens if nobody reacts. This is the single most useful sentence on the screen for anyone
+     who has not memorised seven characters, so it reads as a callout rather than as fine print —
+     and it is never hidden, least of all on a phone, which is where beginners actually are. */
+  .cm-effect { display: flex; align-items: flex-start; gap: 8px; max-width: 42ch; padding: 8px 11px;
+    border-radius: 10px; border: 1px solid color-mix(in srgb, var(--c, var(--gold)) 30%, transparent);
+    background: color-mix(in srgb, var(--c, var(--gold)) 9%, transparent);
+    font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--foreground); text-align: start; }
+  .cm-effect::before { content: ''; flex: 0 0 3px; align-self: stretch; border-radius: 2px;
+    background: color-mix(in srgb, var(--c, var(--gold)) 65%, transparent); }
+  .cm-effect b { color: var(--foreground); font-weight: 800; }
   /* one column of identical buttons — icon and label always line up */
   .cm-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
   .cm-btns .rx { display: grid; grid-template-columns: 30px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 16px; width: 100%; }
@@ -1033,6 +1044,17 @@
   .modal-title { font-family: var(--font-display); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
   .rule-chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 6px 0; }
   .rule-char { display: flex; gap: 10px; align-items: flex-start; background: var(--surface-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px; font-size: 13px; }
+
+  /* A percentage radius is a percentage of a DIFFERENT number on each axis, so equal percentages
+     draw an oval — a wide one on a squat phone, a tall one on a long one, and a circle on neither.
+     Container query units give both axes the same length, so the ring is actually round. Wrapped in
+     @supports because an unsupported unit inside calc() invalidates the whole declaration, and a
+     seat with no inset falls back to its static position: every seat stacked in one corner. Without
+     support the percentages above still apply, which is exactly today's behaviour. */
+  @supports (container-type: size) {
+    .table-area { container-type: size; }
+    .app.in-game .table-area { --ring-rx: min(40cqw, 40cqh); --ring-ry: min(40cqw, 40cqh); }
+  }
 
   /* ── cut-scenes: one beat of the game, told across the whole screen ──────────
      Black mask, a raking streak in the verdict's colour, both faces and the card that did it.
@@ -1481,6 +1503,10 @@
 
   /* responsive */
   @media (max-width: 1023px) {
+    /* Tablets fell between the two sets: the desktop seat, on a table sized like a phone's. */
+    .seat .hand .cardback { width: 36px; }
+    .seat .coins { font-size: 13px; font-weight: 800; }
+    .seat .coins img { width: 16px; height: 16px; }
     .game-grid, .game-grid.log-collapsed { grid-template-columns: minmax(0, 1fr); grid-template-areas: "table" "console"; min-height: 0; }
   }
   @media (max-width: 760px) {
@@ -1512,18 +1538,21 @@
        it pushed your own seat off the edge, stacked the hands under the deck, and gave no sense of
        who plays after whom. Ring + clockwise seating is the turn order. */
     .table-area { min-height: 0; position: relative; padding: 0; border-radius: var(--radius-2xl); overflow: visible;
-      --seat-inset: 48px; --seat-vinset: 46px; }
+      --seat-inset: 48px; --seat-vinset: 46px;
+      --ring-cx: 50%; --ring-rx: 40%; --ring-cy: 50%; --ring-ry: 34%; }
     .table-area::after { display: none; }
-    /* The deck sits BELOW the ring's centre. Dead-centre it collided with the top seat's fan —
-       above the midline the ring is crowded (three opponents), below it only my own seat, which
-       has no cards on the table. Shorter deck for the same reason: on a 640px-tall phone the
-       vertical band between the top seat and my own is all the room there is. */
-    .arena { position: absolute; left: 50%; top: 57%; transform: translate(-50%, -50%); width: auto; height: auto; margin: 0; gap: 14px; }
-    .deck { width: 34px; height: 50px; } .deck .cardback { width: 34px; }
-    .deck-n { min-width: 21px; height: 21px; padding: 0 6px; font-size: 10.5px; inset-inline-end: -9px; bottom: -7px; }
-    .bank .pile { width: 42px; height: 30px; } .bank .pile img { width: 20px; height: 20px; }
-    .bank .pile img:nth-child(1) { left: 0; top: 10px; } .bank .pile img:nth-child(2) { left: 12px; top: 11px; } .bank .pile img:nth-child(3) { left: 23px; top: 8px; }
-    .bank .pile img:nth-child(4) { left: 5px; top: 2px; } .bank .pile img:nth-child(5) { left: 18px; top: 1px; } .bank .pile img:nth-child(6) { left: 11px; top: -5px; }
+    /* Deck and bank move OUT of the middle and sit together in the bottom inline-start corner —
+       the one part of the table no seat ever reaches. In the centre they were squeezed between the
+       top seat's fan and my own row, which is why they had to keep shrinking until neither could
+       be read. Out of the ring's way they can be a decent size again, and the ring gets the middle
+       back, which is what lets it be round instead of a flattened oval. */
+    .arena { position: absolute; left: auto; top: auto; transform: none; inset-inline-start: 2px; bottom: 0;
+      width: auto; height: auto; margin: 0; gap: 10px; align-items: flex-end; }
+    .deck { width: 42px; height: 62px; } .deck .cardback { width: 42px; }
+    .deck-n { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; inset-inline-end: -8px; bottom: -6px; }
+    .bank .pile { width: 48px; height: 34px; } .bank .pile img { width: 23px; height: 23px; }
+    .bank .pile img:nth-child(1) { left: 0; top: 11px; } .bank .pile img:nth-child(2) { left: 13px; top: 12px; } .bank .pile img:nth-child(3) { left: 25px; top: 9px; }
+    .bank .pile img:nth-child(4) { left: 6px; top: 2px; } .bank .pile img:nth-child(5) { left: 19px; top: 1px; } .bank .pile img:nth-child(6) { left: 12px; top: -5px; }
     .bank-lbl { font-size: 8.5px; letter-spacing: .1em; }
     .seats { position: absolute; inset: 0; display: block; }
     /* Just the face. No card, no border, no fill — the avatars ARE the table. */
@@ -1533,13 +1562,13 @@
     .seat .pavatar { width: 40px !important; height: 40px !important; }
     .seats[data-n="5"] .seat .pavatar { width: 36px !important; height: 36px !important; }
     .seat .nm { font-size: 9.5px; line-height: 1.25; max-width: 100%; padding: 0; }
-    .seat .coins { font-size: 9.5px; padding: 0 5px 0 3px; }
-    .seat .coins img { width: 12px; height: 12px; }
+    .seat .coins { font-size: 12px; font-weight: 800; padding: 1px 7px 1px 4px; }
+    .seat .coins img { width: 15px; height: 15px; }
     .seat .bot-chip { display: none; }
     /* the card-back row keeps the felt-dock look but drops the desktop dock's 22px of padding —
        that padding alone was ~1/5 of the seat card's height */
     .seat .hand { min-height: 0; gap: 2px; padding: 2px 4px; border-radius: 8px; }
-    .seat .hand .cardback { width: 26px; }
+    .seat .hand .cardback { width: 32px; }
     /* police slot-pick blows the card-backs up to a real tap target: shrink the felt for the
        duration so the taller seat still fits the table region instead of spilling on the console */
 
@@ -1680,9 +1709,9 @@
     .seat .pavatar { width: 36px !important; height: 36px !important; }
     .seats[data-n="5"] .seat .pavatar { width: 32px !important; height: 32px !important; }
     .seat .nm { font-size: 9px; }
-    .seat .coins { font-size: 9px; }
-    .seat .coins img { width: 11px; height: 11px; }
-    .seat .hand .cardback { width: 24px; }
+    .seat .coins { font-size: 11px; }
+    .seat .coins img { width: 14px; height: 14px; }
+    .seat .hand .cardback { width: 29px; }
     .mc-label { font-size: 8.5px; }
 
     .hand .gcard { width: min(40vw, 100px) !important; }
@@ -1700,17 +1729,21 @@
        its top reaches half its own height above it — with the old 46px inset the top player's head
        ended up behind the header. Shrink the seat and push the ring's ceiling down to clear it. */
     .table-area { --seat-vinset: 62px; }
+    /* A short phone cannot fit a full-size ring AND a seat-height of clearance above it, so the
+       radius comes in rather than letting the clamp flatten the top of the circle into an arc. */
+    @supports (container-type: size) {
+      .app.in-game .table-area { --ring-rx: min(31cqw, 31cqh); --ring-ry: min(31cqw, 31cqh); }
+    }
     .seat .pavatar { width: 34px !important; height: 34px !important; }
     .seats[data-n="5"] .seat .pavatar, .seats[data-n="6"] .seat .pavatar { width: 31px !important; height: 31px !important; }
     .seat .av-wrap { margin-bottom: 5px; }
     .seat .nm { font-size: 9px; }
-    .seat .hand .cardback { width: 20px; }
-    .arena { top: 62%; }   /* below the top seat's fan, above my own seat: the only clear band left */
+    .seat .hand .cardback { width: 26px; }
     .deck { width: 30px; height: 44px; } .deck .cardback { width: 30px; }
     .bank .pile { width: 36px; height: 26px; } .bank .pile img { width: 17px; height: 17px; }
     .prompt { max-height: 84dvh; }
     .claim-min { padding: 12px 12px 12px; gap: 8px; }
-    .claim-min .cm-effect { display: none; }
+    .claim-min .cm-effect { font-size: 12px; padding: 6px 9px; gap: 7px; }
     .cm-card .gcard { width: 58px !important; }
     .cm-btns { gap: 6px; }
     .cm-btns .rx { min-height: 46px; }
@@ -1719,10 +1752,10 @@
     /* Landscape is short, and the claim panel stacks: card, sentence, then three full-width
        verdicts. That ran past the fold INSIDE the panel — the buttons existed but you had to
        scroll the panel to reach them, which is worse than them being far away. Lay the verdicts
-       across instead and drop the explanatory line; the card and the title carry the meaning. */
+       across instead and tighten the explanatory line rather than dropping it. */
     .prompt { max-height: min(92dvh, 100dvh - 24px); width: min(600px, calc(100vw - 20px)); }
     .claim-min { padding: 10px 12px 11px; gap: 7px; }
-    .claim-min .cm-effect { display: none; }
+    .claim-min .cm-effect { font-size: 11.5px; padding: 5px 9px; gap: 6px; max-width: none; }
     .cm-card .gcard { width: 54px !important; }
     .cm-btns { flex-direction: row; gap: 6px; margin-top: 0; }
     .cm-btns .rx { min-height: 44px; grid-template-columns: 26px 1fr; padding-inline: 9px; gap: 8px; }
@@ -1752,12 +1785,12 @@
     .seat .av-wrap { margin-bottom: 6px; }
     .seat .pavatar { width: 34px !important; height: 34px !important; }
     .seat .nm { font-size: 9px; line-height: 1.2; max-width: 100%; padding: 0; }
-    .seat .coins { font-size: 9px; padding: 0 5px 0 3px; }
-    .seat .coins img { width: 11px; height: 11px; }
+    .seat .coins { font-size: 11px; font-weight: 800; padding: 0 6px 0 3px; }
+    .seat .coins img { width: 14px; height: 14px; }
     .seat .bot-chip { display: none; }
     .seat .status { min-height: 0; }
     .seat .hand { min-height: 0; gap: 2px; padding: 2px 4px; border-radius: 8px; }
-    .seat .hand .cardback { width: 20px; }
+    .seat .hand .cardback { width: 26px; }
     .seat .lamp { width: 8px; height: 8px; border-width: 1.5px; right: 0; bottom: 2px; }
     .seat .claim-badge { width: 22px; top: -22px; }
     .seat .seat-status { max-width: calc(100% + 12px); font-size: 8.5px; padding: 2px 5px; bottom: -8px; }

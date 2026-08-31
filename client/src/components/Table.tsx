@@ -90,8 +90,10 @@ export function Table() {
           return (
             <div key={p.id} className={cls} data-seat={p.id} onClick={() => onSeat(p.id)} role={targetable ? 'button' : undefined}
               style={{
-                left: `clamp(var(--seat-inset, 80px), ${50 + 40 * Math.cos(a)}%, calc(100% - var(--seat-inset, 80px)))`,
-                top: `clamp(var(--seat-vinset, 100px), ${52 + 33 * Math.sin(a)}%, calc(100% - var(--seat-vinset, 100px)))`,
+                // The ring's shape is CSS's to set: the table area is much wider than it is tall on
+                // a phone, so a single hard-coded radius gives an oval there and a circle nowhere.
+                left: `clamp(var(--seat-inset, 80px), calc(var(--ring-cx, 50%) + var(--ring-rx, 40%) * ${Math.cos(a).toFixed(4)}), calc(100% - var(--seat-inset, 80px)))`,
+                top: `clamp(var(--seat-vinset, 100px), calc(var(--ring-cy, 52%) + var(--ring-ry, 33%) * ${Math.sin(a).toFixed(4)}), calc(100% - var(--seat-vinset, 100px)))`,
               }}>
               {targetable && !pickSlots && <span className="target-tap"><Icon name="cursor" className="size-3" />{t('pick.tap')}</span>}
               <div className={`av-wrap ${inCall(p.id) ? 'in-call' : ''} ${speakingOf(p.id) ? 'speaking' : ''}`}>

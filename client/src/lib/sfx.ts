@@ -36,6 +36,8 @@ const CUES: Record<string, Cue> = {
   // long as a claim was undecided; it was removed because a sound you cannot end by playing well
   // is just noise, and waiting is most of this game.
   whisper:   { noise: [0.4, 700, 0.1] },                                                          // a character card lands: it might be a lie
+  tock:      { steps: [[1400, 1150, 0.028, 'square', 0.16], [720, 620, 0.05, 'triangle', 0.1, 0.004]] }, // a clock, once a second, near the end
+  thump:     { steps: [[112, 62, 0.13, 'sine', 0.34], [96, 54, 0.15, 'sine', 0.22, 0.15]] },      // lub-dub, while a decision is yours to make
   sting:     { steps: [[440, 440, 0.26, 'sawtooth', 0.17], [622, 622, 0.3, 'sawtooth', 0.15, 0.01]] }, // a tritone: something is wrong
   creak:     { steps: [[130, 58, 0.8, 'sawtooth', 0.14], [65, 39, 0.95, 'sine', 0.18, 0.06]] },   // somebody is out
 };
