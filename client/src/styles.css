@@ -1291,6 +1291,17 @@
   @keyframes net-badge-in { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
   @media (prefers-reduced-motion: reduce) { .net-badge, .net-badge.off { animation: none; } }
 
+  /* A tap on a touch screen leaves :hover STUCK on the element until you tap elsewhere, so every
+     hover-lift here became a permanent one — and a card lifted inside a row that clips its
+     overflow gets its top shaved. Pointer-less devices get no hover transforms at all; they have
+     :active for feedback, which ends when the finger does. */
+  @media (hover: none) {
+    .board-card:not(.off):hover, .board-card.owned:not(.off):hover,
+    .hand-row .hand .gcard:hover, .seat.picking .hand .cardback:hover { transform: var(--fan, none); }
+    .board-card.owned:not(.off):hover { transform: var(--fan, none) translateY(-7px); }
+    .board-card:not(.off):not(.owned):hover .bc-art, .board-card.owned:not(.off):hover .bc-art { box-shadow: none; }
+  }
+
   /* fx */
   .fx-root { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; perspective: 900px; }
   .fx-coin { position: absolute; width: 26px; height: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); will-change: transform; }
@@ -1471,6 +1482,13 @@
 
   /* ─── characters cheat sheet ─── */
   .chars-sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  /* The dialog has to be bounded by the VIEWPORT, not by its content. HeroUI's scroll="inside"
+     gives the body `max-height: 100%`, but 100% of a container that is itself content-sized is no
+     constraint at all — on a 640px phone the seven-character list made an 812px dialog and ran
+     nearly 200px off the bottom of the screen. Cap it, and let the list be the thing that scrolls
+     so the heading and the close button never leave. */
+  .chars-dialog { max-height: 88dvh; display: flex; flex-direction: column; }
+  .chars-dialog .chars-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   .chars-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .char-row { display: flex; gap: 14px; align-items: center; padding: 12px 2px; }
   .char-row + .char-row { border-top: 1px solid var(--border); }
