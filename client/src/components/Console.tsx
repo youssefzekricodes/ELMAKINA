@@ -115,6 +115,7 @@ export function Console() {
    * the console measures itself and the panel anchors above it.
    */
   const handBar = useRef<HTMLDivElement>(null);
+  const [handOpen, setHandOpen] = useState(false);
   useEffect(() => {
     const publish = () => {
       const el = handBar.current;
@@ -176,7 +177,16 @@ export function Console() {
       {/* MY CARDS: one card per physical card in your grip (duplicates show twice), so you never
           have to decode a "×2" badge on the board below. Hidden while spectating / eliminated. */}
       {!selfPick && meP.alive && you.cards.length > 0 && (
-        <div className="my-cards" ref={handBar}>
+        /* On a phone this is a drawer parked off the side of the screen: the tab stays in reach and
+           the hand only comes out when you pull it, so a full-screen claim never buries it and it
+           never eats board height while you are just watching. On wider screens it is a plain
+           strip, as before — `open` and the tab do nothing there. */
+        <div className={`my-cards ${handOpen ? 'open' : ''}`} ref={handBar}>
+          <button type="button" className="mc-tab" aria-expanded={handOpen} aria-controls="my-hand"
+            onClick={() => setHandOpen((v) => !v)} aria-label={t('board.mycards')}>
+            <Art name="cards" className="mc-tab-art" />
+            <span className="mc-tab-n">{you.cards.length}</span>
+          </button>
           <div className="mc-head">
             <span className="mc-label"><Icon name="card-recive" className="size-3.5" />{t('board.mycards')}</span>
             {coaching && (
@@ -185,7 +195,7 @@ export function Console() {
               </button>
             )}
           </div>
-          <div className="hand mc-hand">
+          <div className="hand mc-hand" id="my-hand">
             {you.cards.map((c, i) => (
               <div className="hand-card" key={handKey + ':my:' + i} style={CH[c as keyof typeof CH] ? ({ '--c': CH[c as keyof typeof CH].color } as any) : undefined}>
                 <GameCard c={c} w={68} small />

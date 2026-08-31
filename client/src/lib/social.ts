@@ -26,7 +26,15 @@ export async function initSocial(uid: string) {
     isGuest,
   };
   store.set({ account });
-  if (!isGuest && !store.get().name.trim()) store.set({ name: account.name });
+  // Take the Google account's name as the display name — but only where it is actually wanted:
+  // the moment you sign in (signInWithGoogle leaves the flag), or when there is no name at all.
+  // Re-adopting on every session restore would undo a rename every time the page reloaded.
+  const asked = (() => { try { return localStorage.getItem('mekina.adoptName') === '1'; } catch { return false; } })();
+  if (!isGuest && account.name && (asked || !store.get().name.trim())) {
+    const nm = account.name.trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (nm) { store.set({ name: nm }); try { localStorage.setItem('mekina.name', nm); } catch { /* private mode */ } }
+  }
+  try { localStorage.removeItem('mekina.adoptName'); } catch { /* ignore */ }
   await syncProfile();
   await Promise.all([loadTrophies(), loadFriends()]);
   subscribeFriends();
@@ -103,6 +111,9 @@ export async function dismissInvite() {
 
 // ── actions ──
 export async function signInWithGoogle() {
+  // Consumed by initSocial after the round trip: signing in is the one moment the account's own
+  // name should win over whatever was typed at the front door.
+  try { localStorage.setItem('mekina.adoptName', '1'); } catch { /* private mode */ }
   if (!supabase) return;
   track('sign_in', { method: 'google' }); // the event only — the account's email is never sent to GA
   await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
