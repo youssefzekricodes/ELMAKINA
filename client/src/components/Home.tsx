@@ -92,7 +92,7 @@ export function Home() {
         {/* Who you are at the table: one line, the placeholder does the labelling. */}
         <div className="home-badge">
           <button type="button" className="badge-photo" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')} title={t('profile.change')}>
-            <PlayerAvatar p={mePreview} size="md" />
+            <PlayerAvatar p={mePreview} size="lg" />
             <span className="badge-photo-edit"><Icon name="pen" className="size-3" /></span>
           </button>
           {/* An unmistakable field: a small standing label, because once a name is typed the
