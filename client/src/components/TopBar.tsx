@@ -73,7 +73,7 @@ export function GameMenu() {
   return (
     <>
       <button type="button" className="gm-btn" aria-label={t('top.more')} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <Art name="menu" className="size-5" />
+        <Art name="screw" className="size-5" />
         {s.unread > 0 && <span className="gm-dot">{s.unread > 9 ? '9+' : s.unread}</span>}
       </button>
       {open && (

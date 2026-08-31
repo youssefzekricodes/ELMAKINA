@@ -44,7 +44,7 @@ export interface Snapshot {
   unread: number;
   banner: { text: string; id: number; cls?: string } | null;
   cine: Cine | null;            // the full-screen cut-scene playing right now (attack / verdict), or null
-  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | 'settings' | null;
+  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews (one game, from the guide)
   learn: boolean; // persistent "learning mode": the same coaching in EVERY game until it's switched off
   reactions: FloatingReaction[]; // ephemeral in-game emoji reactions (broadcast, not persisted)

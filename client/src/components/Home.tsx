@@ -115,8 +115,8 @@ export function Home() {
           <span className="hp-tx"><b>{t('home.playNow')}</b><i>{t('home.randomSub')}</i></span>
         </Button>
 
-        {/* Four ways in, each with the thing it opens: a door, a pad, a key, a bolt. Two by two on a
-            phone — four across a 390px screen leaves no room for a label under an illustration. */}
+        {/* Three ways in, each with the thing it opens: a door, a pad, a key. Settings is not one of
+            them — it belongs to a game in progress, behind the in-game menu. */}
         <div className="home-more">
           <button type="button" className="hm-opt" onClick={() => go('create')} disabled={busy === 'create'}>
             <span className="hm-ic"><Art name="dungeon" className="hm-art" /></span><span className="hm-tx">{t('home.create')}</span>
@@ -126,9 +126,6 @@ export function Home() {
           </button>
           <button type="button" className={`hm-opt ${joining ? 'on' : ''}`} aria-expanded={joining} onClick={() => setJoining((v) => !v)}>
             <span className="hm-ic"><Art name="key" className="hm-art" /></span><span className="hm-tx">{t('home.joinCode')}</span>
-          </button>
-          <button type="button" className="hm-opt" onClick={() => store.set({ modal: 'settings' })}>
-            <span className="hm-ic"><Art name="screw" className="hm-art" /></span><span className="hm-tx">{t('set.title')}</span>
           </button>
         </div>
 
