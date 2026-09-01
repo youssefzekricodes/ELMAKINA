@@ -2619,6 +2619,27 @@
        now, and anything longer scrolls INSIDE itself with no rail drawn for it. */
     .page-head { display: none; }
     .app:not(.in-game) { height: 100dvh; max-height: 100dvh; overflow: hidden; }
+    /* ── how the screen actually goes full height on iOS ─────────────────────────
+       Safari only retracts its chrome when the DOCUMENT scrolls — that is why the old leaderboard,
+       which scrolled the page, expanded to the full screen, and why locking the page at 100dvh
+       froze the browser in its collapsed state with a dead strip below (there is no fullscreen API
+       to ask instead; iOS does not have one for elements).
+
+       So the document is exactly one LARGE viewport tall — scrollable by precisely the height of
+       the chrome — and the app rides inside it on sticky. The first upward swipe spends that slack,
+       Safari expands, dvh grows to lvh, and from then on there is nothing left to scroll: the app
+       fills the glass and the page cannot move again. Anywhere chrome never collapses (a PWA, this
+       desktop harness, Android fullscreen), lvh equals dvh, the slack is zero and all of this is a
+       no-op — measured. */
+    @supports (height: 100lvh) {
+      html, body { height: 100lvh; }
+      /* The slack must live INSIDE the sticky's parent. #app sits in React's #root, and a root
+         left at auto height is exactly as tall as the app — zero room, sticky degrades to static
+         and the app scrolls off with the page. Stretched to the body's 100lvh, the root holds the
+         slack and the app pins against it. */
+      #root { height: 100%; }
+      .app:not(.in-game), .app.in-game { position: sticky; top: 0; }
+    }
     .app:not(.in-game) .screen { flex: 1 1 auto; min-height: 0; overflow: hidden; }
     /* Every screen but the front door starts below the corner controls, the same 54px the home
        screen already reserves for them — with the head gone there is nothing else holding content
