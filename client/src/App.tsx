@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Toast } from '@heroui/react';
 import { useStore, store } from './lib/store';
 import { connect, setLanguage } from './lib/net';
-import { goFullscreen, isFullscreen, isInstalled } from './lib/fullscreen';
+import { goFullscreen, isFullscreen, isHandheld, isInstalled } from './lib/fullscreen';
 import { keepAudioAwake, sfx } from './lib/sfx';
 import { initPulse } from './lib/pulse';
 import { initAnalytics, sendPageView } from './lib/analytics';
@@ -57,7 +57,10 @@ export default function App() {
     // browser counts — and then it stops for good. Somebody who leaves fullscreen on purpose is not
     // asking to be put back.
     const claim = () => {
-      if (!isInstalled()) return document.removeEventListener('pointerdown', claim);
+      // Any handheld, not just the installed app. A phone browser keeps its own chrome AND the
+      // system bars, which is the strip of dead space under the board — fullscreen is the only
+      // thing that takes both back, and it is the whole reason the band was there.
+      if (!isInstalled() && !isHandheld()) return document.removeEventListener('pointerdown', claim);
       goFullscreen();
       if (isFullscreen()) document.removeEventListener('pointerdown', claim);
     };

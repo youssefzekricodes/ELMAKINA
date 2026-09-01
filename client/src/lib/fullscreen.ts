@@ -12,6 +12,19 @@ type FsDoc = Document & {
   msExitFullscreen?: () => Promise<void> | void;
 };
 
+/**
+ * A phone or a tablet — a touch screen small enough that the browser's own chrome is a real cost.
+ *
+ * Deliberately not a user-agent sniff: what matters is a coarse pointer and a small viewport, which
+ * is exactly the case where the system bars eat a strip of the board. A laptop with a touchscreen
+ * fails the width test, and a desktop fails both.
+ */
+export function isHandheld(): boolean {
+  try {
+    return window.matchMedia('(pointer: coarse)').matches && window.matchMedia('(max-width: 1023px)').matches;
+  } catch { return false; }
+}
+
 /** Running as the installed app rather than a tab — where the system bars are ours to remove. */
 export function isInstalled(): boolean {
   try {
