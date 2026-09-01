@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 import { store, type Account, type Friend } from './store';
 import { track } from './analytics';
 import { pushOnline } from './push';
+import { setMonitorUser } from './monitor';
 
 export interface LeaderRow { uid: string; name: string; avatar: string | null; avatarData: string | null; trophies: number; wins: number; games: number; me: boolean }
 
@@ -27,6 +28,9 @@ export async function initSocial(uid: string) {
     isGuest,
   };
   store.set({ account });
+  // Sentry gets the account id and nothing else — no email, no name. Enough to tell one player's
+  // crashes from another's, which is all a bug report needs.
+  setMonitorUser(uid);
   // Take the Google account's name as the display name — but only where it is actually wanted:
   // the moment you sign in (signInWithGoogle leaves the flag), or when there is no name at all.
   // Re-adopting on every session restore would undo a rename every time the page reloaded.

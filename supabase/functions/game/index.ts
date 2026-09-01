@@ -4,6 +4,7 @@
 // due room AND reaps dead ones (`{ op: 'reap' }` runs the sweep on its own).
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { handleOp } from './room.mjs';
+import { reportError } from '../_shared/sentry.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -65,11 +66,13 @@ function makeDb(sb: SupabaseClient) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
+  let op: string | null = null;   // remembered for the error report: the body cannot be read twice
   try {
     const auth = req.headers.get('Authorization') || '';
     const token = auth.replace(/^Bearer\s+/i, '');
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
     const body = await req.json().catch(() => ({}));
+    op = typeof body?.op === 'string' ? body.op : null;
     let uid: string | null = null, isService = false;
     if (token && token === SERVICE_KEY) isService = true;
     else {
@@ -81,6 +84,9 @@ Deno.serve(async (req) => {
     return json(res);
   } catch (e) {
     console.error('[game]', e);
+    // The log line stays — it is what you read while you are already looking. The report is what
+    // tells you to look at all.
+    await reportError(e, { fn: 'game', op });
     return json({ ok: false, error: 'Server error' }, 500);
   }
 });

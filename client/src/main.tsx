@@ -8,6 +8,7 @@ import '@fontsource/ibm-plex-sans-arabic/700.css';
 import './styles.css';
 import App from './App';
 import { preloadAssets } from './lib/assets';
+import { captureError, initMonitor } from './lib/monitor';
 
 // Keep the last runtime errors reachable for debugging (window.__mekinaErrors) and show a readable fallback.
 const errs: string[] = ((window as any).__mekinaErrors = []);
@@ -18,7 +19,10 @@ window.addEventListener('unhandledrejection', (e) => push(e.reason));
 class Boundary extends React.Component<{ children: React.ReactNode }, { err: any }> {
   state = { err: null as any };
   static getDerivedStateFromError(err: any) { return { err }; }
-  componentDidCatch(err: any) { push(err); }
+  // A React tree that has fallen over is the one error worth knowing about above all others: the
+  // player is looking at a fallback screen and cannot tell us anything useful themselves. It goes
+  // to the local buffer (readable from the console, and replayed if Sentry loads later) AND out.
+  componentDidCatch(err: any, info: any) { push(err); captureError(err, { componentStack: info?.componentStack }); }
   render() {
     if (this.state.err) {
       return (
@@ -53,6 +57,7 @@ function mount() {
     </React.StrictMode>,
   );
   dismissSplash();
+  initMonitor();   // after the app is on screen: monitoring is not what anyone came for
 }
 
 /**

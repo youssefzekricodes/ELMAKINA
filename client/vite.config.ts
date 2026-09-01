@@ -105,6 +105,10 @@ export default defineConfig(({ command, mode }) => {
         // Split heavy vendor libs into their own long-cache chunks so the app bundle stays small.
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return;
+          // Sentry is imported dynamically and must STAY dynamic. Naming it here would fold it into
+          // vendor, which every page load fetches — measured at +476 KB raw / +156 KB gzipped on the
+          // critical path, for a library the game never needs in order to run.
+          if (id.includes('@sentry')) return;
           if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
           if (id.includes('@heroui')) return 'heroui';
           return 'vendor';

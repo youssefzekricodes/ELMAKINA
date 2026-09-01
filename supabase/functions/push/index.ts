@@ -8,6 +8,7 @@
 // The PUBLIC key is also given to the browser as VITE_VAPID_PUBLIC_KEY — it is public by design.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
+import { cronCheckIn, reportError } from '../_shared/sentry.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -106,11 +107,13 @@ const HOURS = (n: number) => n * 3600_000;
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
+  let opName: string | null = null;   // remembered for the error report: the body cannot be read twice
   try {
     const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     const sb = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
     const body = await req.json().catch(() => ({}));
     const op = String(body.op || '');
+    opName = op || null;
     const isService = !!token && token === SERVICE_KEY;
 
     let uid: string | null = null;
@@ -199,6 +202,9 @@ Deno.serve(async (req) => {
     // Only players who have not opened the app today, and never twice in twenty hours. Anyone who
     // played today is skipped: a reminder to do the thing you just did is spam.
     if (op === 'daily' && isService) {
+      // Tell Sentry the job started. If it ever stops starting, that silence is the alert — a cron
+      // that quietly dies produces no error to catch.
+      await cronCheckIn('elmekina-daily-push', 'in_progress');
       const cutoff = new Date(now - HOURS(20)).toISOString();
       const { data: rows } = await sb.from('push_subs').select('user_id').lt('last_seen', cutoff).limit(2000);
       const uids = [...new Set((rows || []).map((r: { user_id: string }) => r.user_id))];
@@ -216,12 +222,15 @@ Deno.serve(async (req) => {
           await sb.from('push_state').upsert({ user_id: u, last_daily_at: new Date(now).toISOString(), updated_at: new Date(now).toISOString() }, { onConflict: 'user_id' });
         }
       }
+      await cronCheckIn('elmekina-daily-push', 'ok');
       return json({ ok: true, sent, considered: uids.length });
     }
 
     return json({ ok: false, error: 'Unknown op' }, 400);
   } catch (e) {
     console.error('[push]', e);
+    if (opName === 'daily') await cronCheckIn('elmekina-daily-push', 'error');
+    await reportError(e, { fn: 'push', op: opName });
     return json({ ok: false, error: 'Server error' }, 500);
   }
 });
