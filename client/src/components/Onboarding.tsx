@@ -2,6 +2,7 @@
    button and no way around it, because a table can't seat a player with no name. */
 import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
+import { enablePush } from '../lib/push';
 import { t } from '../i18n';
 import { useStore, store, mvAvatar } from '../lib/store';
 import { commitProfile, notify } from '../lib/net';
@@ -32,6 +33,10 @@ export function Onboarding() {
     commitProfile(store.get().profile, v);
     localStorage.setItem('mekina.name', v);
     store.set({ onboarding: false });
+    // The one honest moment to ask: they have just typed a name and pressed Start, so the prompt is
+    // the answer to something they did rather than an interruption of it. Inside the click, because
+    // browsers will not show a permission prompt outside a gesture.
+    enablePush();
   };
   return (
     <div className="ob-screen" role="dialog" aria-modal="true" aria-label={t('ob.title')}>

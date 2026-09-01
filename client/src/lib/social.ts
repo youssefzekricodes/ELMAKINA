@@ -4,6 +4,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { store, type Account, type Friend } from './store';
 import { track } from './analytics';
+import { pushOnline } from './push';
 
 export interface LeaderRow { uid: string; name: string; avatar: string | null; avatarData: string | null; trophies: number; wins: number; games: number; me: boolean }
 
@@ -39,6 +40,9 @@ export async function initSocial(uid: string) {
   await Promise.all([loadTrophies(), loadFriends()]);
   subscribeFriends();
   subscribeInvites();
+  // Refresh the push subscription and announce that we are here — which is what makes a friend's
+  // phone light up. Only ever for a player who already granted permission; it never asks.
+  pushOnline();
 }
 
 /** Upsert my public profile row (name + avatar) so friends and leaderboards can show me. */
@@ -102,6 +106,10 @@ export async function inviteToRoom(toUid: string, code: string): Promise<{ ok: b
   if (!supabase || !curUid || !code) return { ok: false };
   const name = (store.get().account?.name || store.get().name || 'A friend').trim() || 'A friend';
   const { error } = await supabase.from('room_invites').insert({ from_uid: curUid, to_uid: toUid, from_name: name, code });
+  // The row above only reaches a friend who has the app open. The push reaches the rest of them —
+  // and an invitation nobody sees is the same as no invitation. Fire and forget: whether their
+  // phone can be reached is not something the sender should have to wait on.
+  if (!error) supabase.functions.invoke('push', { body: { op: 'invite', toUid, code } }).catch(() => {});
   return { ok: !error };
 }
 export async function dismissInvite() {

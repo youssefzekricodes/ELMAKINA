@@ -20,6 +20,43 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
+/* ── push ───────────────────────────────────────────────────────────────────
+   Standard Web Push, no Firebase: the payload is signed and sent by supabase/functions/push and
+   arrives here even when the app is closed. Everything is defensive — a malformed payload must
+   still raise SOMETHING, because a push event that ends without showing a notification costs the
+   site its permission in Chrome. */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
+  const title = d.title || 'ELMEKINA';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: d.body || '',
+    icon: '/img/pwa-192.png?v=3',
+    badge: '/img/pwa-192.png?v=3',
+    tag: d.tag || 'mekina',
+    renotify: true,
+    vibrate: [40, 30, 40],
+    data: { url: d.url || '/' },
+  }));
+});
+
+/* Tapping one takes you to the table it is about — and reuses the window that is already open
+   rather than stacking another copy of the game on top of it. */
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) {
+      if (new URL(c.url).origin !== self.location.origin) continue;
+      await c.focus();
+      if (url !== '/' && 'navigate' in c) { try { await c.navigate(url); } catch (_) { /* focus is enough */ } }
+      return;
+    }
+    await self.clients.openWindow(url);
+  })());
+});
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;                                  // never cache POSTs (Supabase fn invokes)

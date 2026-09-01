@@ -30,21 +30,25 @@ export function Lobby() {
             <h1 className="lobby-title">{t('lobby.title')}</h1>
           </div>
           <div className="lobby-head-right">
-            {/* Who may walk in. The host can flip it here rather than having to have decided
-                before the room existed — and can take it back off the board just as easily. */}
-            {isHost ? (
-              <button type="button" className={`vis-badge act ${room.isPublic ? 'pub' : 'priv'}`}
-                aria-pressed={!!room.isPublic} title={t('lobby.makePublic')}
-                onClick={() => setRoomPublic(!room.isPublic)}>
-                <Icon name={room.isPublic ? 'users-room' : 'eye'} className="size-3.5" />{t(room.isPublic ? 'lobby.public' : 'lobby.private')}
+            {/* Who may walk in. A single badge that flipped between two words made you read it,
+                work out which of the two states it was showing, and guess whether tapping set it or
+                described it. Two pills side by side answer all three at a glance: both options are
+                visible, the lit one is the answer, and the other one is the thing you can press. */}
+            <div className={`pill-switch ${isHost ? '' : 'ro'}`} data-on={room.isPublic ? 'pub' : 'priv'}
+              role="group" aria-label={t('lobby.visibility')}>
+              <button type="button" className={`ps-opt ${room.isPublic ? '' : 'on'}`} aria-pressed={!room.isPublic}
+                disabled={!isHost} onClick={() => setRoomPublic(false)}>
+                <Icon name="eye" className="size-3.5" />{t('lobby.private')}
               </button>
-            ) : (
-              <span className={`vis-badge ${room.isPublic ? 'pub' : 'priv'}`}>
-                <Icon name={room.isPublic ? 'users-room' : 'eye'} className="size-3.5" />{t(room.isPublic ? 'lobby.public' : 'lobby.private')}
-              </span>
-            )}
+              <button type="button" className={`ps-opt ${room.isPublic ? 'on' : ''}`} aria-pressed={!!room.isPublic}
+                disabled={!isHost} onClick={() => setRoomPublic(true)}>
+                <Icon name="users-room" className="size-3.5" />{t('lobby.public')}
+              </button>
+            </div>
             <span className="lobby-count" aria-label={`${n}/${cap}`}><b>{n}</b><i>/{cap}</i></span>
-            <Button variant="outline" size="sm" className="lobby-leave" onPress={leaveRoom}>
+            {/* Leaving is the one irreversible thing on this screen, so it is worded, not implied:
+                an unlabelled arrow in a corner is a door nobody is sure about. */}
+            <Button variant="danger" size="sm" className="lobby-leave" onPress={leaveRoom}>
               <Icon name="logout-2" className="size-4" /><span className="lobby-leave-tx">{t('lobby.leave')}</span>
             </Button>
           </div>

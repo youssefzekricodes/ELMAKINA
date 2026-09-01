@@ -4,7 +4,8 @@ import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow } from '../lib/social';
-import { joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleSound } from '../lib/net';
+import { copyInvite, joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleSound } from '../lib/net';
+import { disablePush, enablePush, pushStatus } from '../lib/push';
 import { Art, GoogleG, Icon, PlayerAvatar } from './ui';
 import type { ArtName } from '../art';
 
@@ -120,13 +121,28 @@ export function InviteModal() {
           <button type="button" className="sheet-x" onClick={closeSheet} aria-label={t('preview.cancel')}><Icon name="close-circle" className="size-5" /></button>
         </div>
         <div className="sheet-body">
+          {/* The room comes first. Half of inviting somebody is sending them the code, and it used
+              to be somewhere else entirely — you opened this, found no way to share a link, and
+              closed it again. */}
+          {code && (
+            <div className="inv-room">
+              <span className="inv-room-lbl">{t('invite.room')}</span>
+              <b className="inv-code ltr" dir="ltr">{code}</b>
+              <Button size="sm" variant="outline" className="inv-copy" onPress={() => copyInvite(code)}>
+                <Icon name="copy" className="size-4" />{t('invite.share')}
+              </Button>
+            </div>
+          )}
+          <div className="inv-sep"><span>{t('invite.friends')}</span></div>
           {friends.length === 0 ? <p className="sheet-empty">{t('invite.none')}</p> : friends.map((f) => (
-            <div className="fr-row" key={f.id}>
+            <div className="fr-row inv-row" key={f.id}>
               <PlayerAvatar p={asPlayer(f.uid, f.avatar, f.avatarData)} size="sm" />
               <span className="fr-name">{f.name}</span>
               {sent[f.uid]
-                ? <span className="fr-pending">{t('invite.sentTag')}</span>
-                : <Button size="sm" variant="primary" onPress={() => invite(f.uid)}>{t('invite.send')}</Button>}
+                ? <span className="fr-pending inv-sent"><Icon name="check-circle" className="size-4" />{t('invite.sentTag')}</span>
+                : <Button size="sm" variant="primary" onPress={() => invite(f.uid)}>
+                    <Icon name="user-plus-rounded" className="size-4" />{t('invite.send')}
+                  </Button>}
             </div>
           ))}
         </div>
@@ -259,6 +275,19 @@ export function ProfilePage() {
               <Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-6 pf-flag" /><span>{t('top.lang.title')}</span>
               <Icon name="alt-arrow-right" className="size-4 pf-chev" />
             </button>
+            {/* Notifications are opt-in and stay that way: this row is the only thing that ever
+                asks, and it says what the browser currently thinks rather than what we would like
+                it to think. Denied is a dead end until the player clears it in site settings, so it
+                says so instead of pretending a tap will fix it. */}
+            {pushStatus() !== 'unsupported' && (
+              <button type="button" className="pf-row" disabled={pushStatus() === 'denied'}
+                onClick={() => (s.pushOn ? disablePush() : enablePush())}>
+                <Icon name="bell" className="size-6" /><span>{t('push.title')}</span>
+                <span className="pf-val">
+                  {pushStatus() === 'denied' ? t('push.blocked') : t(s.pushOn ? 'profile.on' : 'profile.off')}
+                </span>
+              </button>
+            )}
           </div>
 
           <div className="pf-acct">

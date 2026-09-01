@@ -207,11 +207,25 @@
   .vis-opt i { font-style: normal; font-size: 10.5px; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .vis-opt.on { border-color: var(--accent); background: var(--accent-soft); color: var(--foreground); }
   .vis-opt svg { flex-shrink: 0; }
-  .vis-badge.act { cursor: pointer; transition: border-color .12s, background .12s; }
-  .vis-badge.act:hover { filter: brightness(1.15); }
-  .vis-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
-  .vis-badge.pub { color: var(--accent-soft-foreground); background: var(--accent-soft); }
-  .vis-badge.priv { color: var(--muted); background: var(--surface-secondary); }
+  /* ── who can join: a two-pill switch ─────────────────────────────────────────
+     Both states are on screen at once and the lit one is the answer, so there is nothing to decode
+     and nothing to guess about what a tap will do. The thumb is exactly half the track and slides
+     by its own width — no measuring, and the mirror for RTL is one line. */
+  .pill-switch { position: relative; display: inline-flex; align-items: center; padding: 3px; border-radius: 999px;
+    background: rgba(8,5,3,.5); box-shadow: inset 0 0 0 1px rgba(255,240,214,.14); flex-shrink: 0; }
+  .pill-switch::before { content: ''; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px);
+    border-radius: 999px; background: linear-gradient(180deg, #F2803A, #E5661A);
+    box-shadow: 0 3px 10px rgba(0,0,0,.45); transition: transform .22s var(--ease); }
+  .pill-switch[data-on="pub"]::before { transform: translateX(100%); }
+  [dir="rtl"] .pill-switch[data-on="pub"]::before { transform: translateX(-100%); }
+  .ps-opt { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    min-width: 84px; padding: 6px 11px; border: 0; background: none; border-radius: 999px; cursor: pointer;
+    font-size: 11px; font-weight: 800; letter-spacing: .04em; color: rgba(243,233,214,.6);
+    transition: color .18s var(--ease); }
+  .ps-opt.on { color: #241505; }
+  .ps-opt:disabled { cursor: default; }
+  .pill-switch.ro .ps-opt:not(.on) { opacity: .45; }   /* a guest reads it; only the host sets it */
+  .ps-opt svg { flex-shrink: 0; }
   .pub-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   .pub-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--surface-secondary); }
   .pub-code { font-weight: 800; letter-spacing: .18em; font-size: 13px; color: var(--gold); font-variant-numeric: tabular-nums; }
@@ -1639,6 +1653,20 @@
   /* the console says it too, in the one line it has */
   .status-line.out { color: var(--danger); font-weight: 700; }
 
+  /* ── invite: the room, then the people ───────────────────────────────────────
+     Sending somebody a code is half of inviting them, and there was no way to do it from here. */
+  .inv-room { display: flex; align-items: center; gap: 10px; padding: 11px 12px; margin-bottom: 6px;
+    border-radius: 14px; background: rgba(255,240,214,.05); box-shadow: inset 0 0 0 1px rgba(255,240,214,.12); }
+  .inv-room-lbl { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .inv-code { flex: 1; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: .22em;
+    color: var(--gold); text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+  .inv-copy { flex-shrink: 0; gap: 5px; }
+  .inv-sep { display: flex; align-items: center; gap: 9px; margin: 12px 2px 6px; color: var(--muted);
+    font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .inv-sep::before, .inv-sep::after { content: ''; height: 1px; flex: 1; background: var(--separator); }
+  .inv-row { padding-block: 4px; }
+  .inv-sent { display: inline-flex; align-items: center; gap: 5px; color: var(--success, #6FCF7F); }
+
   /* ── Home top row (trophies + social pages) + sign-in ── */
   .home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
   .home-top-tools { display: inline-flex; align-items: center; gap: 6px; }
@@ -1941,7 +1969,9 @@
     .lobby-shell { padding: 16px; gap: 14px; }
     .lobby-head { align-items: center; }
     .lobby-title { font-size: clamp(22px, 6.5vw, 30px); }
-    .lobby-leave-tx { display: none; }               /* icon-only Leave on phones */
+    /* Leave keeps its word on a phone too. Icon-only, it was an arrow in a corner that nobody was
+       sure about — and this is the one control on the screen you cannot take back. */
+    .lobby-leave { padding-inline: 10px; }
     .invite-card { padding: 14px 16px; gap: 12px; }
     .invite-copy { width: 100%; }
     .seat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
