@@ -2609,7 +2609,11 @@
     .page-head { display: none; }
     .app:not(.in-game) { height: 100dvh; max-height: 100dvh; overflow: hidden; }
     .app:not(.in-game) .screen { flex: 1 1 auto; min-height: 0; overflow: hidden; }
-    .page-screen { padding-block: 12px 0; }
+    /* Every screen but the front door starts below the corner controls, the same 54px the home
+       screen already reserves for them — with the head gone there is nothing else holding content
+       clear of language, sound and music sitting up there. */
+    .page-screen { padding-block: calc(var(--sat) + 54px) 0; }
+    .lobby-screen { padding-top: calc(var(--sat) + 54px); }
     .page-shell { flex: 1 1 auto; min-height: 0; }
     /* the scrollers: each keeps clear of the fixed bar, and none of them draws a rail */
     .page-body, .home-screen, .lobby-screen {
