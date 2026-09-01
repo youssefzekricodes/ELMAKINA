@@ -109,6 +109,17 @@
 /* ───────────────────────── Base ───────────────────────── */
 @layer base {
   html, body { margin: 0; min-height: 100%; overscroll-behavior: none; font-family: var(--font-sans); letter-spacing: var(--tracking-normal); background: var(--background); color: var(--foreground); }
+  /*
+   * The artwork goes on the CANVAS as well as in .bg.
+   *
+   * A fixed layer is sized to the viewport the browser reports, and on iOS that is the SHORT one —
+   * so under the tab bar there was a strip the background could not reach, painted flat black while
+   * the room stopped dead above it. The root element's background is different: the browser paints
+   * it across the whole canvas, including the part below the layout viewport. Same file .bg uses
+   * and the splash already preloads, so it costs one cache hit and nothing else.
+   */
+  html { background-image: url('/img/bg-portrait-sm.webp?v=2'); background-size: cover; background-position: center; background-repeat: no-repeat; }
+  @media (orientation: landscape) { html { background-image: url('/img/bg-game-sm.webp?v=2'); } }
   body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
   img { user-select: none; }
   html[lang="ar"] body { font-family: "IBM Plex Sans Arabic", "Plus Jakarta Sans Variable", system-ui, sans-serif; letter-spacing: 0; }
@@ -2623,10 +2634,10 @@
       overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
       scrollbar-width: none; -ms-overflow-style: none;
       padding-bottom: calc(96px + var(--sab)); }
-    /* Soft edges on the scrollers. With no rail and no header, a list just stopped mid-row at the
-       top and ran under the bar at the bottom, which reads as broken rather than as more-to-come.
-       The mask fades the first 18px and the strip above the bar, so content arrives and leaves. */
-    .page-body {
+    /* Soft edges, on the leaderboard alone. It is the one screen with a list long enough to be cut
+       mid-row at either end; everywhere else the fade had nothing to soften and just dimmed the
+       last row for no reason. */
+    .app.at-leaderboard .page-body {
       -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 112px), transparent calc(100% - 78px));
       mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 112px), transparent calc(100% - 78px)); }
     .page-body::-webkit-scrollbar, .home-screen::-webkit-scrollbar, .lobby-screen::-webkit-scrollbar {
