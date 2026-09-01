@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Toast } from '@heroui/react';
 import { useStore, store } from './lib/store';
 import { connect, setLanguage } from './lib/net';
-import { goFullscreen, isInstalled } from './lib/fullscreen';
+import { goFullscreen, isFullscreen, isInstalled } from './lib/fullscreen';
 import { keepAudioAwake, sfx } from './lib/sfx';
 import { initPulse } from './lib/pulse';
 import { initAnalytics, sendPageView } from './lib/analytics';
@@ -46,12 +46,21 @@ export default function App() {
     const unlock = () => sfx.unlock();
     document.addEventListener('pointerdown', unlock, { once: true });
     keepAudioAwake(); // …and keep it awake: an installed app is suspended and resumed all day long
-    // The installed app is the one place the window is ours to take. Standalone leaves the system
-    // bars in place and paints the strip under the page with the manifest colour, which is the band
-    // showing under the artwork — fullscreen removes the strip rather than trying to paint into it.
-    // Never in a plain tab: taking a browser fullscreen uninvited is somebody else's window.
-    const claim = () => { if (isInstalled()) goFullscreen(); };
-    document.addEventListener('pointerdown', claim, { once: true });
+    // The installed app is the one place the window is ours to take, and it is taken on the FIRST
+    // touch of the front door — there is nothing about starting a game that should be the price of
+    // a full screen. Standalone leaves the system bars in place and paints the strip under the page
+    // with the manifest colour, which is the band showing under the artwork; fullscreen removes the
+    // strip rather than trying to paint into it.
+    //
+    // It keeps asking until one attempt lands, because the first gesture is not always one the
+    // browser counts — and then it stops for good. Somebody who leaves fullscreen on purpose is not
+    // asking to be put back.
+    const claim = () => {
+      if (!isInstalled()) return document.removeEventListener('pointerdown', claim);
+      goFullscreen();
+      if (isFullscreen()) document.removeEventListener('pointerdown', claim);
+    };
+    document.addEventListener('pointerdown', claim);
     for (const c of CHARACTERS) { new Image().src = CH[c].card; new Image().src = CH[c].cardSm; }
     connect();
     initPulse();  // heartbeat + clock while a decision is mine to make
@@ -67,6 +76,15 @@ export default function App() {
   // automatic page_view would fire exactly once for a whole session.
   useEffect(() => { sendPageView('/' + s.screen); }, [s.screen]);
   const inGame = s.screen === 'game' && !!s.state;
+  /**
+   * The bed plays over the whole front of house — the door, the lobby, the pages off it — and stops
+   * when a hand starts. It lived in the lobby alone, which meant the only way to hear the game's own
+   * music was to open a room first; the front door is where it belongs. In a game it would sit on
+   * top of the cues that are telling you what just happened to you.
+   */
+  useEffect(() => {
+    if (!inGame && s.soundOn) music.start(); else music.stop();
+  }, [inGame, s.soundOn]);
   // Auto-fullscreen when a game begins (best-effort; the start-game clicks also request it within their gesture).
   useEffect(() => { if (inGame) goFullscreen(); }, [inGame]);
   return (
