@@ -212,14 +212,21 @@
      and nothing to guess about what a tap will do. The thumb is exactly half the track and slides
      by its own width — no measuring, and the mirror for RTL is one line. */
   .pill-switch { position: relative; display: inline-flex; align-items: center; padding: 3px; border-radius: 999px;
-    background: rgba(8,5,3,.5); box-shadow: inset 0 0 0 1px rgba(255,240,214,.14); flex-shrink: 0; }
+    background: rgba(8,5,3,.5); box-shadow: inset 0 0 0 1px rgba(255,240,214,.14); min-width: 0; overflow: hidden; }
   .pill-switch::before { content: ''; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px);
     border-radius: 999px; background: linear-gradient(180deg, #F2803A, #E5661A);
     box-shadow: 0 3px 10px rgba(0,0,0,.45); transition: transform .22s var(--ease); }
   .pill-switch[data-on="pub"]::before { transform: translateX(100%); }
-  [dir="rtl"] .pill-switch[data-on="pub"]::before { transform: translateX(-100%); }
+  /* RTL is not a mirror of the transform, it is a swap of which end each option is at.
+     The thumb is anchored to the physical left; in RTL the FIRST option (private) sits on the right
+     and the second (public) on the left, so the two states trade places. Negating the translate
+     instead — the obvious-looking mirror — walks the thumb a full width past the left edge and out
+     of the control entirely, which is exactly what it did. */
+  [dir="rtl"] .pill-switch::before { transform: translateX(100%); }
+  [dir="rtl"] .pill-switch[data-on="pub"]::before { transform: none; }
   .ps-opt { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-    min-width: 84px; padding: 6px 11px; border: 0; background: none; border-radius: 999px; cursor: pointer;
+    flex: 1 1 0; min-width: 78px; padding: 6px 11px; border: 0; background: none; border-radius: 999px; cursor: pointer;
+    white-space: nowrap;
     font-size: 11px; font-weight: 800; letter-spacing: .04em; color: rgba(243,233,214,.6);
     transition: color .18s var(--ease); }
   .ps-opt.on { color: #241505; }
@@ -1450,7 +1457,11 @@
   .lobby-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .lobby-kicker { display: inline-block; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
   .lobby-title { font-family: var(--font-display); font-size: clamp(26px, 5vw, 36px); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; line-height: 1.05; margin-top: 2px; }
-  .lobby-head-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  /* Never wider than the card it sits in. `flex-shrink: 0` with no wrap meant three controls that
+     add up to more than a phone is wide simply left the box — Leave ended up half off the screen,
+     which is a fine way to make a button look broken. */
+  .lobby-head-right { display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+    flex-wrap: wrap; min-width: 0; }
   .lobby-leave { flex-shrink: 0; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
   .lobby-leave:hover { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
   /* seated count as a stamped fraction, not a dashboard gauge */
@@ -2462,6 +2473,20 @@
   .acct-tool.art-tool .art { width: 20px; height: 20px; }
   /* six of them on a phone row now: shed a little more width rather than wrap under the trophy */
   @media (max-width: 420px) { .home-top-tools { gap: 4px; } .home-top-tools .acct-tool { width: 30px; height: 30px; } }
+
+  /* ── the lobby header, on a phone ────────────────────────────────────────────
+     Three controls on one line need about 360px and a phone card has about 300. Stacked: the title
+     keeps the top, the switch takes a line of its own and splits it in half, and the count and the
+     way out share the last one. Nothing shrinks below what it can be read at. */
+  @media (max-width: 560px) {
+    .lobby-head { flex-direction: column; align-items: stretch; gap: 10px; }
+    .lobby-head-main { min-width: 0; }
+    .lobby-head-right { width: 100%; justify-content: space-between; gap: 8px; }
+    .pill-switch { flex: 1 1 100%; order: -1; }        /* above the count and Leave, not beside them */
+    .ps-opt { min-width: 0; }
+    .lobby-count { flex: 0 0 auto; }
+    .lobby-leave { flex: 0 1 auto; }
+  }
   .art-btn .art { width: 20px; height: 20px; }
   .gm-item .art { flex-shrink: 0; }
   .gm-btn .art { width: 20px; height: 20px; }
