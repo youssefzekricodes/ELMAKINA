@@ -2652,9 +2652,16 @@
     .page-shell { flex: 1 1 auto; min-height: 0; }
     /* the scrollers: each keeps clear of the fixed bar, and none of them draws a rail */
     .page-body, .home-screen, .lobby-screen {
-      overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: none; -ms-overflow-style: none;
+      touch-action: pan-y;
       padding-bottom: calc(96px + var(--sab)); }
+    /* The scroller owns a definite height. It was getting one by being SHRUNK — flex: 0 1 auto
+       squeezed by the shell — which Chrome resolves and iOS Safari does not: same class of bug as
+       the claim card and the turn ring, an element sized by derived geometry that Safari drops.
+       The page then measured as scrollable and refused to move. flex-basis 0 makes the height its
+       own, and the 40vh min-height floor (harmless in Chrome, a fight on a short phone) goes. */
+    .page-body { flex: 1 1 0px; min-height: 0; }
     /* Soft edges, on the leaderboard alone. It is the one screen with a list long enough to be cut
        mid-row at either end; everywhere else the fade had nothing to soften and just dimmed the
        last row for no reason. */
