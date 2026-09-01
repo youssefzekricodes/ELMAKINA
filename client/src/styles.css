@@ -159,10 +159,15 @@
    * screen, where the bottom of the frame is a lit table, and invisible on a dark page like the
    * leaderboard, which is why it looked like only one screen was wrong.
    *
-   * lvh is the tallest the viewport ever gets, so the layer covers the retracted case as well. A
-   * fixed element adds nothing to the document's scrollable area, so the overhang costs no scroll.
+   * lvh is the tallest the viewport ever gets, and then 12vh more on top, because a browser that
+   * reports a conservative lvh leaves the same band under a layer that trusted it. A fixed element
+   * adds nothing to the document's scrollable area, so the overhang costs no scroll — measured.
+   *
+   * If the band survives even this, it is not the page: it is the system strip outside the web
+   * contents, which nothing in CSS can paint into. That is what the app going fullscreen on first
+   * touch is for (see App.tsx) — it removes the strip instead of trying to fill it.
    */
-  @supports (height: 100lvh) { .bg { height: 100lvh; } }
+  @supports (height: 100lvh) { .bg { height: calc(100lvh + 12vh); } }
   .bg-layer { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease-in-out; }
   .bg-layer.show { opacity: 1; }
   .bg.in-game .bg-layer { opacity: 1; }
@@ -2422,6 +2427,8 @@
   @media (max-width: 1023px) { .mc-tab { display: flex; } }
   .acct-tool.art-tool { padding: 0; }
   .acct-tool.art-tool .art { width: 20px; height: 20px; }
+  /* six of them on a phone row now: shed a little more width rather than wrap under the trophy */
+  @media (max-width: 420px) { .home-top-tools { gap: 4px; } .home-top-tools .acct-tool { width: 30px; height: 30px; } }
   .art-btn .art { width: 20px; height: 20px; }
   .gm-item .art { flex-shrink: 0; }
   .gm-btn .art { width: 20px; height: 20px; }

@@ -14,19 +14,32 @@ import { setLanguage, toggleSound } from '../lib/net';
 import { t } from '../i18n';
 import { Art } from './ui';
 
-export function QuickControls() {
+/**
+ * The two buttons themselves, so the home screen can put them in the row it already has instead of
+ * having a second set floating over it. `cls` is the caller's own button class — this decides what
+ * the buttons DO, never where they sit.
+ */
+export function LangSound({ cls }: { cls: string }) {
   const s = useStore();
-  if (s.screen === 'game') return null;
   return (
-    <div className="qc">
-      <button type="button" className="qc-btn" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')}
+    <>
+      <button type="button" className={cls} onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')}
         aria-label={t('top.lang.title')} title={t('top.lang.title')}>
         <Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-6" />
       </button>
-      <button type="button" className="qc-btn" onClick={toggleSound}
+      <button type="button" className={cls} onClick={toggleSound}
         aria-label={t('top.sound')} title={t('top.sound')} aria-pressed={s.soundOn}>
         <Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-6" />
       </button>
-    </div>
+    </>
   );
+}
+
+export function QuickControls() {
+  const s = useStore();
+  // Not in a game — the gear carries both. And not on the home screen, which has a row of icons in
+  // this exact corner: floating a second pair over it put language and sound on top of the
+  // leaderboard and the profile. Home renders them inline instead, in the row that is already there.
+  if (s.screen === 'game' || s.screen === 'home') return null;
+  return <div className="qc"><LangSound cls="qc-btn" /></div>;
 }
