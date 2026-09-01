@@ -958,16 +958,17 @@
   /* flex: 0 0 auto, against the base .rx's `flex: 1 1 0`: with a zero basis these took their height
      from the column rather than from what is in them, so the line under the label was simply
      clipped — 67px of content in a 46px box. Stacked verdicts are sized by their own words. */
-  .cm-btns .rx { display: grid; grid-template-columns: 30px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 16px; width: 100%; flex: 0 0 auto; height: auto; }
+  .cm-btns .rx { display: grid; grid-template-columns: 30px 1fr; align-items: center; justify-items: start; text-align: start;
+    column-gap: 12px; row-gap: 0; padding-inline: 16px; width: 100%; flex: 0 0 auto; height: auto; }
   /* One 30px leading column for all three verdicts — the counter's card and the other two icons sit
      in the same slot, so every label starts on the same x instead of stepping in and out. */
   .cm-btns .rx svg { justify-self: center; box-sizing: content-box; width: 17px; height: 17px; padding: 5px; border-radius: 999px; background: color-mix(in srgb, currentColor 15%, transparent); }
   /* What pressing THIS costs, under the thing you press. Sentences floating above three choices
      made you hold both in your head and work out which belonged to which; this one cannot be
      misread. The mark spans both rows so it stays centred against the pair. */
-  .cm-btns .rx { padding-block: 8px; }
+  .cm-btns .rx { padding-block: 6px; }
   .cm-btns .rx > svg, .cm-btns .rx > .rx-card { grid-row: 1 / -1; }
-  .cm-btns .rx .rx-why { grid-column: 2; margin-top: 2px; font-family: var(--font-sans); font-style: normal;
+  .cm-btns .rx .rx-why { grid-column: 2; margin-top: 1px; font-family: var(--font-sans); font-style: normal;
     font-size: 10.5px; font-weight: 600; letter-spacing: 0; text-transform: none; white-space: normal;
     line-height: 1.25; opacity: .72;
     /* A caption, not a paragraph: two lines is the most this may ever cost the panel. */
