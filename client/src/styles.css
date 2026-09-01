@@ -295,7 +295,8 @@
     transform: translate(-2px, 2px);
     border-bottom-width: 3px; border-left-width: 3px;
     box-shadow: inset 0 2px 0 color-mix(in srgb, #fff 18%, transparent), 0 5px 12px rgba(0,0,0,.4); }
-  @media (prefers-reduced-motion: reduce) { .home-play { transition: none; } .home-play:active { transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .tb-item.on .tb-mark, .tb-item.on .tb-name, .tb-item.on::after { animation: none; } .home-play { transition: none; } .home-play:active { transform: none; } }
   .hp-tx { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.05; }
   .hp-tx b { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
   .hp-tx i { font-style: normal; font-size: 11.5px; font-weight: 500; opacity: .8; letter-spacing: .01em; }
@@ -1727,6 +1728,21 @@
   .tb-btn:active .tb-mark { transform: scale(.92); }
 
   /* the one you are on: out of the bar, in a disc of its own */
+  /* Arriving. The disc springs up out of the bar, the name comes up under it a beat later, and the
+     amber rule opens from its middle — so a tab change reads as something landing rather than the
+     highlight teleporting. Every frame carries translateX(-50%) because that is what centres the
+     disc: drop it from one keyframe and the disc jumps half its width mid-animation. */
+  @keyframes tb-pop {
+    0%   { transform: translateX(-50%) translateY(12px) scale(.55); opacity: 0; }
+    55%  { transform: translateX(-50%) translateY(-3px) scale(1.09); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes tb-name-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  @keyframes tb-rule-in { from { transform: translateX(-50%) scaleX(.15); opacity: 0; } to { transform: translateX(-50%) scaleX(1); opacity: 1; } }
+  .tb-item.on .tb-mark { animation: tb-pop .34s cubic-bezier(.2,.9,.3,1.3) both; }
+  .tb-item.on .tb-name { animation: tb-name-in .26s var(--ease) .07s both; }
+  .tb-item.on::after { animation: tb-rule-in .3s var(--ease) .05s both; }
+
   /* Anchored to the TOP of the bar, not lifted from its bottom. A fixed lift measured upward from
      the baseline meant the disc protruded by whatever was left over — 20px on a phone, 2px once the
      bar grew taller on a tablet, where it stopped reading as raised at all. From the top edge it
