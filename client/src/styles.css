@@ -1696,10 +1696,20 @@
      flush to the edge hangs over artwork that has already curved away from underneath it. */
   .tb-list { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
     gap: 2px; width: min(420px, 100%); margin-inline: auto; min-height: 62px; padding: 0 22px;
+    /* fallback height for anything without aspect-ratio — see the @supports below */
     list-style: none; pointer-events: auto;
     background: url('/img/navbar/shape-dark.svg') center bottom / 100% 100% no-repeat;
     filter: drop-shadow(0 8px 22px rgba(0,0,0,.45)); }
-  .tb-item { position: relative; flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+  /* The bar keeps the artwork's proportions instead of being stretched to fit.
+     Pinned at 62px tall while the width ran to its 420px cap, the shape was drawn at an aspect of
+     6.67 against the 5.18 it was drawn at — 29% flatter, the arch pulled out of shape and the
+     raised disc left looking too big for the bar it sits in. That is what a tablet was showing.
+     Height follows width now, within bounds. Safari 14 has no aspect-ratio and keeps min-height. */
+  @supports (aspect-ratio: 1) {
+    .tb-list { aspect-ratio: 347 / 67; height: auto; max-height: 82px; }
+  }
+
+  .tb-item { position: relative; flex: 1 1 0; min-width: 0; display: flex; justify-content: center; align-self: stretch; }
   /* The tab you are on is wider than its neighbours, because it is the only one carrying a word.
      Without this the name of an END tab hung off the side of the bar — "Settings" and the disc both
      sat outside the artwork, which is what the shape's corner radius made so obvious. */
@@ -1708,21 +1718,26 @@
      than around it. Clipped by the bar's own bottom curve at the ends, exactly as drawn. */
   .tb-item.on::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
     width: 78%; max-width: 92px; height: 5px; border-radius: 999px 999px 0 0; background: #FFD97A; }
-  .tb-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%;
-    padding: 0 0 8px; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .tb-btn { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px;
+    width: 100%; height: 100%; padding: 0 0 9px; border: 0; background: none; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; }
   .tb-mark { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
     transition: transform .2s var(--ease); }
   .tb-mark img { width: 30px; height: 30px; object-fit: contain; }
   .tb-btn:active .tb-mark { transform: scale(.92); }
 
   /* the one you are on: out of the bar, in a disc of its own */
-  .tb-item.on .tb-mark { width: 52px; height: 52px; border-radius: 50%; background: #F6EEE0;
-    box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 -3px 0 rgba(139,109,68,.35);
-    transform: translateY(-20px); }
+  /* Anchored to the TOP of the bar, not lifted from its bottom. A fixed lift measured upward from
+     the baseline meant the disc protruded by whatever was left over — 20px on a phone, 2px once the
+     bar grew taller on a tablet, where it stopped reading as raised at all. From the top edge it
+     clears the bar by the same 18px at every size. */
+  .tb-item.on .tb-mark { position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    width: 52px; height: 52px; border-radius: 50%; background: #F6EEE0;
+    box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 -3px 0 rgba(139,109,68,.35); }
   .tb-item.on .tb-mark img { width: 32px; height: 32px; }
   /* The name is allowed out of its own tab: a fifth of a phone is not enough for a word like
      المتصدرين, and only one tab is ever labelled, so there is nothing beside it to collide with. */
-  .tb-name { margin-top: -16px; font-size: 10.5px; font-weight: 800; letter-spacing: .02em;
+  .tb-name { font-size: 10.5px; font-weight: 800; letter-spacing: .02em;
     color: #F3E9D6; white-space: nowrap;
     /* It may lean a little into its neighbours, but never past the end of the bar. */
     max-width: calc(100% + 20px); overflow: hidden; text-overflow: ellipsis; }
