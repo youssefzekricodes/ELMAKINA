@@ -2598,8 +2598,26 @@
        THIS block and not beside the tab bar rules: same specificity as the base .home-top-tools, so
        whichever comes last in the file wins, and up there it lost. */
     .home-top-tools { display: none; }
-    /* the bar is fixed, so every scrolling screen has to stop above it */
-    .app:not(.in-game) .screen { padding-bottom: calc(92px + var(--sab)); }
+    /* ── one screenful, and the page itself never moves ─────────────────────────
+       The page head is gone on a phone: the tab bar names the screen you are on and is how you
+       leave it, so a title bar repeating that name over a back button was the same information
+       twice, charged against the top of every screen.
+
+       And the document stops scrolling. A page that scrolls drags the browser's own chrome in and
+       out with it, which is half the dead strip under the board — the app is exactly one viewport
+       now, and anything longer scrolls INSIDE itself with no rail drawn for it. */
+    .page-head { display: none; }
+    .app:not(.in-game) { height: 100dvh; max-height: 100dvh; overflow: hidden; }
+    .app:not(.in-game) .screen { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    .page-screen { padding-block: 12px 0; }
+    .page-shell { flex: 1 1 auto; min-height: 0; }
+    /* the scrollers: each keeps clear of the fixed bar, and none of them draws a rail */
+    .page-body, .home-screen, .lobby-screen {
+      overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; -ms-overflow-style: none;
+      padding-bottom: calc(96px + var(--sab)); }
+    .page-body::-webkit-scrollbar, .home-screen::-webkit-scrollbar, .lobby-screen::-webkit-scrollbar {
+      width: 0; height: 0; display: none; }
     /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
     .home-top-tools { gap: 5px; }
     .home-top-tools .acct-tool { width: 32px; height: 32px; }
