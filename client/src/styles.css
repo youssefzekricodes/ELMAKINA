@@ -1690,17 +1690,20 @@
      The tab you are on lifts out of the bar into a white disc and is the only one that says its
      name. One thing raised, one thing labelled, everything else quiet. */
   .tabbar { position: fixed; z-index: 46; left: 0; right: 0; bottom: 0;
-    padding: 26px calc(10px + var(--sal)) calc(6px + var(--sab)) calc(10px + var(--sar));
+    padding: 26px calc(12px + var(--sal)) calc(14px + var(--sab)) calc(12px + var(--sar));
     pointer-events: none; }                        /* only the buttons take taps, not the gap above */
   /* 22px of inset, not 8: the bar's ends are a 19px corner radius under an arch, so a mark sitting
      flush to the edge hangs over artwork that has already curved away from underneath it. */
   .tb-list { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
     gap: 2px; width: min(420px, 100%); margin-inline: auto; min-height: 62px; padding: 0 22px;
     list-style: none; pointer-events: auto;
-    background: url('/img/navbar/shape.svg') center bottom / 100% 100% no-repeat;
+    background: url('/img/navbar/shape-dark.svg') center bottom / 100% 100% no-repeat;
     filter: drop-shadow(0 8px 22px rgba(0,0,0,.45)); }
   .tb-item { position: relative; flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
-  .tb-item.on { overflow: visible; }
+  /* The tab you are on is wider than its neighbours, because it is the only one carrying a word.
+     Without this the name of an END tab hung off the side of the bar — "Settings" and the disc both
+     sat outside the artwork, which is what the shape's corner radius made so obvious. */
+  .tb-item.on { flex: 1.7 1 0; overflow: visible; }
   /* The amber rule along the bottom edge: the second half of "you are here", under the name rather
      than around it. Clipped by the bar's own bottom curve at the ends, exactly as drawn. */
   .tb-item.on::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
@@ -1713,19 +1716,20 @@
   .tb-btn:active .tb-mark { transform: scale(.92); }
 
   /* the one you are on: out of the bar, in a disc of its own */
-  .tb-item.on .tb-mark { width: 52px; height: 52px; border-radius: 50%; background: #fff;
-    box-shadow: 0 6px 14px rgba(23,58,94,.28), inset 0 -3px 0 rgba(178,205,249,.5);
+  .tb-item.on .tb-mark { width: 52px; height: 52px; border-radius: 50%; background: #F6EEE0;
+    box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 -3px 0 rgba(139,109,68,.35);
     transform: translateY(-20px); }
   .tb-item.on .tb-mark img { width: 32px; height: 32px; }
   /* The name is allowed out of its own tab: a fifth of a phone is not enough for a word like
      المتصدرين, and only one tab is ever labelled, so there is nothing beside it to collide with. */
   .tb-name { margin-top: -16px; font-size: 10.5px; font-weight: 800; letter-spacing: .02em;
-    color: #1F4E79; white-space: nowrap; }
+    color: #F3E9D6; white-space: nowrap;
+    /* It may lean a little into its neighbours, but never past the end of the bar. */
+    max-width: calc(100% + 20px); overflow: hidden; text-overflow: ellipsis; }
 
   /* Above 1024 the bar is gone and the header row carries the same five marks, larger — see
      Home / NavIcons. Below it, the row is gone and the bar has them: one set, one place, per size. */
   @media (min-width: 1024px) { .tabbar { display: none; } }
-  @media (max-width: 1023px) { .home-top-tools { display: none; } }
   .nav-ico { position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 3px; min-width: 62px; padding: 7px 6px 6px; border: 0; border-radius: 14px; background: none; cursor: pointer;
     transition: transform .14s var(--ease), background .14s; }
@@ -2559,6 +2563,10 @@
        inset pushes the content clear of them — in the installed app there IS no inset, which is
        exactly when the row rode up and landed under language and sound. */
     .app.at-home .home-screen { padding-top: calc(var(--sat) + 54px); }
+    /* The bar has the destinations down here, so the header row must not repeat them. This lives in
+       THIS block and not beside the tab bar rules: same specificity as the base .home-top-tools, so
+       whichever comes last in the file wins, and up there it lost. */
+    .home-top-tools { display: none; }
     /* the bar is fixed, so every scrolling screen has to stop above it */
     .app:not(.in-game) .screen { padding-bottom: calc(92px + var(--sab)); }
     /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
