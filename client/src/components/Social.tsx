@@ -165,12 +165,25 @@ export function InviteBanner() {
   };
   return (
     <div className="invite-pop" role="alert">
-      <span className="invite-pop-ic"><Icon name="users-room" className="size-5" /></span>
-      <div className="invite-pop-tx"><b>{inv.fromName}</b><span>{t('invite.incoming', { code: inv.code })}</span></div>
-      <div className="invite-pop-btns">
-        <Button size="sm" variant="primary" onPress={join}>{t('invite.join')}</Button>
-        <Button size="sm" variant="tertiary" isIconOnly aria-label={t('invite.dismiss')} onPress={() => dismissInvite()}><Icon name="close-circle" className="size-4" /></Button>
+      {/* Who is asking comes first. It used to be a generic room icon and one grey line carrying
+          both the name and the code, which read as a system message rather than a person. */}
+      <div className="invite-pop-top">
+        <span className="invite-pop-face"><PlayerAvatar p={asPlayer(inv.fromUid, inv.avatar, inv.avatarData)} size="lg" /></span>
+        <div className="invite-pop-tx">
+          <b>{inv.fromName}</b>
+          <span>{t('invite.incomingLine')}</span>
+        </div>
+        <button type="button" className="invite-pop-x" onClick={() => dismissInvite()} aria-label={t('invite.dismiss')}>
+          <Icon name="close-circle" className="size-5" />
+        </button>
       </div>
+      <div className="invite-pop-room">
+        <span className="invite-pop-lbl">{t('invite.room')}</span>
+        <b className="invite-pop-code ltr" dir="ltr">{inv.code}</b>
+      </div>
+      <Button fullWidth size="lg" variant="primary" className="invite-pop-go" onPress={join}>
+        <Icon name="login-2" className="size-5" />{t('invite.join')}
+      </Button>
     </div>
   );
 }

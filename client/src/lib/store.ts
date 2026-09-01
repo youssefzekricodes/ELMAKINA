@@ -84,7 +84,7 @@ export interface Cine {
 export interface FloatingReaction { id: number; uid: string; name: string; emoji: string }
 export interface Account { uid: string; name: string; email: string | null; avatarUrl: string | null; isGuest: boolean }
 export interface Friend { id: string; uid: string; name: string; avatar: string | null; avatarData: string | null; status: 'pending' | 'accepted'; incoming: boolean }
-export interface RoomInvite { id: string; fromName: string; code: string }
+export interface RoomInvite { id: string; fromUid: string; fromName: string; code: string; avatar: string | null; avatarData: string | null }
 
 /** Learning mode: an explicit choice wins; otherwise a player who has never seen the briefing is a
     newcomer and gets the help by default (a veteran who already dismissed it is left alone). */

@@ -98,10 +98,34 @@ function subscribeInvites() {
   if (!supabase || !curUid || invitesChannel) return;
   invitesChannel = supabase.channel('invites-' + curUid)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_invites', filter: `to_uid=eq.${curUid}` }, ({ new: r }: any) => {
-      if (r && r.code) store.set({ invite: { id: r.id, fromName: r.from_name || 'A friend', code: r.code } });
+      if (!r || !r.code) return;
+      // Show it at once with what the row already carries, then put a face on it. An invitation
+      // that waits on a round-trip before appearing is an invitation to a table that has started.
+      const known = store.get().friends.find((f) => f.uid === r.from_uid);
+      store.set({ invite: { id: r.id, fromUid: r.from_uid, fromName: r.from_name || 'A friend', code: r.code,
+        avatar: known?.avatar || null, avatarData: known?.avatarData || null } });
+      if (!known) faceFor(r.id, r.from_uid);
     })
     .subscribe();
 }
+/**
+ * Fill in the sender's face after the fact.
+ *
+ * Invites usually come from a friend, whose avatar is already loaded — this is for the ones that do
+ * not, and it patches the banner in place rather than holding it back. Ignored if the player has
+ * already dealt with the invite by the time it lands.
+ */
+async function faceFor(inviteId: string, uid: string) {
+  if (!supabase || !uid) return;
+  try {
+    const { data } = await supabase.from('profiles').select('name,avatar,avatar_data').eq('user_id', uid).maybeSingle();
+    if (!data) return;
+    const inv = store.get().invite;
+    if (!inv || inv.id !== inviteId) return;
+    store.set({ invite: { ...inv, avatar: data.avatar || null, avatarData: data.avatar_data || null, fromName: inv.fromName || data.name } });
+  } catch { /* a nameless face is still an invitation */ }
+}
+
 export async function inviteToRoom(toUid: string, code: string): Promise<{ ok: boolean }> {
   if (!supabase || !curUid || !code) return { ok: false };
   const name = (store.get().account?.name || store.get().name || 'A friend').trim() || 'A friend';
