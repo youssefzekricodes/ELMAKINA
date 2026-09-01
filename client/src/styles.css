@@ -1462,8 +1462,14 @@
      which is a fine way to make a button look broken. */
   .lobby-head-right { display: flex; align-items: center; justify-content: flex-end; gap: 12px;
     flex-wrap: wrap; min-width: 0; }
-  .lobby-leave { flex-shrink: 0; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
-  .lobby-leave:hover { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
+  /* Leave is a solid danger button now, so it wants the variant's own foreground. These two lines
+     were left over from when it was an outline: red TEXT, which the red fill then swallowed whole —
+     the button was there, it just could not be read. */
+  .lobby-leave { flex-shrink: 0; font-weight: 700;
+    /* The stock danger fill puts the label at 4.49:1 — right on the line, and this is the one
+       control on the screen you cannot take back. A little deeper and it is comfortably readable. */
+    background: color-mix(in srgb, var(--danger) 82%, #150705); }
+  .lobby-leave:hover { background: color-mix(in srgb, var(--danger) 92%, #150705); }
   /* seated count as a stamped fraction, not a dashboard gauge */
   .lobby-count { display: inline-flex; align-items: baseline; gap: 1px; font-family: var(--font-display); line-height: 1; padding: 6px 12px; border-radius: 12px; background: rgba(255,240,214,.06); border: 1px solid rgba(255,240,214,.12); }
   .lobby-count b { font-size: 22px; font-weight: 700; color: var(--accent); }

@@ -281,8 +281,24 @@ export async function leaveRoom() { exiting = true; await emit('leave_room'); ex
 export async function closeRoom() { exiting = true; const r = await emit('close_room'); if (r && r.ok) exitToHome(); else exiting = false; return r; }
 async function lobbyOp(op: string, data?: any) { const r = await emit(op, data); if (r && r.room) applyRoom(r.room); return r; }
 export const toggleReady = () => lobbyOp('toggle_ready');
-/** Host lists the room on the public board, or takes it back off. Lobby only. */
-export const setRoomPublic = (isPublic: boolean) => lobbyOp('set_public', { isPublic });
+/**
+ * Host lists the room on the public board, or takes it back off. Lobby only.
+ *
+ * The switch answers the tap, not the network. Waiting for the round-trip left the thumb sitting
+ * where it was for as long as the server took, which reads as a control that ignored you — and the
+ * one thing worse than a slow switch is a switch you press twice. If the server disagrees, its own
+ * room payload arrives a moment later and overwrites this; if it fails outright, we put it back.
+ */
+export async function setRoomPublic(isPublic: boolean) {
+  const before = store.get().room;
+  if (before) store.set({ room: { ...before, isPublic } });
+  const res = await lobbyOp('set_public', { isPublic });
+  if (!res || !res.ok) {
+    const now = store.get().room;
+    if (now && now.isPublic === isPublic) store.set({ room: { ...now, isPublic: !isPublic } });
+  }
+  return res;
+}
 export const startGame = () => { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); return emit('start_game'); };
 /** Host removes somebody from the lobby (works on bots too). */
 export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });
