@@ -14,6 +14,7 @@ import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
 import { GameMenu } from './components/GameMenu';
 import { QuickControls } from './components/QuickControls';
+import { NavBar } from './components/NavBar';
 import { Home } from './components/Home';
 import { Lobby } from './components/Lobby';
 import { Table } from './components/Table';
@@ -115,6 +116,9 @@ export default function App() {
           else the two settings worth keeping stand on their own in the corner. */}
       {inGame && <GameMenu />}
       <QuickControls />
+      {/* Phones and tablets navigate from the bar at the bottom; a desktop uses the header row on
+          the front door instead (see Home / NavIcons). */}
+      <NavBar />
       {/* Out of the game but still in the room: say it plainly, for as long as it is true. */}
       {inGame && <Spectating />}
       {/* The briefing prefers the lobby, where no clock is running; Coach decides for itself. */}

@@ -1682,6 +1682,51 @@
   /* the console says it too, in the one line it has */
   .status-line.out { color: var(--danger); font-weight: 700; }
 
+  /* ── the tab bar ─────────────────────────────────────────────────────────────
+     shape.svg IS the bar: a 347x67 pill with an arched top and a lighter inner edge, stretched to
+     whatever width the phone has, so the arch keeps its proportions rather than being redrawn in
+     CSS and drifting from the artwork. Nothing recolours the icons — they arrive already drawn.
+
+     The tab you are on lifts out of the bar into a white disc and is the only one that says its
+     name. One thing raised, one thing labelled, everything else quiet. */
+  .tabbar { position: fixed; z-index: 46; left: 0; right: 0; bottom: 0;
+    padding: 26px calc(10px + var(--sal)) calc(6px + var(--sab)) calc(10px + var(--sar));
+    pointer-events: none; }                        /* only the buttons take taps, not the gap above */
+  .tb-list { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 2px; width: min(420px, 100%); margin-inline: auto; min-height: 62px; padding: 0 8px;
+    list-style: none; pointer-events: auto;
+    background: url('/img/navbar/shape.svg') center bottom / 100% 100% no-repeat;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,.45)); }
+  .tb-item { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+  .tb-item.on { overflow: visible; }
+  .tb-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%;
+    padding: 0 0 8px; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .tb-mark { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+    transition: transform .2s var(--ease); }
+  .tb-mark img { width: 30px; height: 30px; object-fit: contain; }
+  .tb-btn:active .tb-mark { transform: scale(.92); }
+
+  /* the one you are on: out of the bar, in a disc of its own */
+  .tb-item.on .tb-mark { width: 52px; height: 52px; border-radius: 50%; background: #fff;
+    box-shadow: 0 6px 14px rgba(23,58,94,.28), inset 0 -3px 0 rgba(178,205,249,.5);
+    transform: translateY(-20px); }
+  .tb-item.on .tb-mark img { width: 32px; height: 32px; }
+  /* The name is allowed out of its own tab: a fifth of a phone is not enough for a word like
+     المتصدرين, and only one tab is ever labelled, so there is nothing beside it to collide with. */
+  .tb-name { margin-top: -16px; font-size: 10.5px; font-weight: 800; letter-spacing: .02em;
+    color: #1F4E79; white-space: nowrap; }
+
+  /* Above 1024 the bar is gone and the header row carries the same five marks, larger — see
+     Home / NavIcons. Below it, the row is gone and the bar has them: one set, one place, per size. */
+  @media (min-width: 1024px) { .tabbar { display: none; } }
+  @media (max-width: 1023px) { .home-top-tools { display: none; } }
+  .nav-ico { position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer;
+    transition: transform .14s var(--ease), background .14s; }
+  .nav-ico img { width: 30px; height: 30px; object-fit: contain; }
+  .nav-ico:hover { transform: translateY(-2px); background: rgba(255,255,255,.06); }
+  .nav-ico.on { background: rgba(255,255,255,.1); }
+
   /* ── the notifications ask ───────────────────────────────────────────────────
      Quiet on purpose: it is a question, not an announcement, and it goes away for good the moment
      it is answered either way. Sits below the buttons because nobody opened the app for this. */
@@ -2502,6 +2547,8 @@
        inset pushes the content clear of them — in the installed app there IS no inset, which is
        exactly when the row rode up and landed under language and sound. */
     .app.at-home .home-screen { padding-top: calc(var(--sat) + 54px); }
+    /* the bar is fixed, so every scrolling screen has to stop above it */
+    .app:not(.in-game) .screen { padding-bottom: calc(92px + var(--sab)); }
     /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
     .home-top-tools { gap: 5px; }
     .home-top-tools .acct-tool { width: 32px; height: 32px; }

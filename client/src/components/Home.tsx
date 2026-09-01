@@ -9,6 +9,7 @@ import { adBreak, adDue } from '../lib/ads';
 import { IMG } from '../theme';
 import { Art, GoogleG, Html, Icon, PlayerAvatar } from './ui';
 import { PushPrompt } from './PushPrompt';
+import { NavIcons } from './NavBar';
 
 /**
  * The front door. One thing to press.
@@ -67,15 +68,10 @@ export function Home() {
           <span className="trophy-pill" title={t('lb.trophies')}><Art name="stars" className="size-4" />{s.trophies}</span>
           {/* Every destination, one row, every size. Profile carries the set-once controls
               (characters, rules, sound, language) so they need no buttons of their own here. */}
-          <div className="home-top-tools">
-            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.title')} title={t('lb.title')}><Art name="cupGold" className="size-5" /></button>
-            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'public' })} aria-label={t('home.public')} title={t('home.public')}><Art name="menu" className="size-5" /></button>
-            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'friends' })} aria-label={t('fr.title')} title={t('fr.title')}>
-              <Art name="gamepad" className="size-5" />
-              {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
-            </button>
-            <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'profile' })} aria-label={t('profile.title')} title={t('profile.title')}><Art name="profile" className="size-5" /></button>
-          </div>
+          {/* The same four destinations the tab bar carries, in the same artwork — this row is what a
+              desktop gets instead of the bar, so nobody has to learn two icon sets. Hidden below
+              1024px, where the bar has them. */}
+          <div className="home-top-tools"><NavIcons /></div>
         </div>
 
         <div className="home-hero">
