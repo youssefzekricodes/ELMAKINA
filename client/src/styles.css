@@ -1691,7 +1691,7 @@
      The tab you are on lifts out of the bar into a white disc and is the only one that says its
      name. One thing raised, one thing labelled, everything else quiet. */
   .tabbar { position: fixed; z-index: 46; left: 0; right: 0; bottom: 0;
-    padding: 26px calc(12px + var(--sal)) calc(14px + var(--sab)) calc(12px + var(--sar));
+    padding: 26px calc(12px + var(--sal)) calc(6px + var(--sab)) calc(12px + var(--sar));
     pointer-events: none; }                        /* only the buttons take taps, not the gap above */
   /* 22px of inset, not 8: the bar's ends are a 19px corner radius under an arch, so a mark sitting
      flush to the edge hangs over artwork that has already curved away from underneath it. */
@@ -2593,7 +2593,7 @@
     /* The corner belongs to the switches. Reserve their height here rather than hoping the notch
        inset pushes the content clear of them — in the installed app there IS no inset, which is
        exactly when the row rode up and landed under language and sound. */
-    .app.at-home .home-screen { padding-top: calc(var(--sat) + 54px); }
+    .app.at-home .home-screen { padding-top: 54px; }
     /* The bar has the destinations down here, so the header row must not repeat them. This lives in
        THIS block and not beside the tab bar rules: same specificity as the base .home-top-tools, so
        whichever comes last in the file wins, and up there it lost. */
@@ -2612,14 +2612,23 @@
     /* Every screen but the front door starts below the corner controls, the same 54px the home
        screen already reserves for them — with the head gone there is nothing else holding content
        clear of language, sound and music sitting up there. */
-    .page-screen { padding-block: calc(var(--sat) + 54px) 0; }
-    .lobby-screen { padding-top: calc(var(--sat) + 54px); }
+    /* 54px, NOT --sat + 54: .app already pads the notch, so adding it here charged for it twice —
+       101px of padding under a 47px inset, and content starting 148px down a phone. 54 is what the
+       corner controls actually need (they end at --sat + 46) and nothing more. */
+    .page-screen { padding-block: 54px 0; }
+    .lobby-screen { padding-top: 54px; }
     .page-shell { flex: 1 1 auto; min-height: 0; }
     /* the scrollers: each keeps clear of the fixed bar, and none of them draws a rail */
     .page-body, .home-screen, .lobby-screen {
       overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
       scrollbar-width: none; -ms-overflow-style: none;
       padding-bottom: calc(96px + var(--sab)); }
+    /* Soft edges on the scrollers. With no rail and no header, a list just stopped mid-row at the
+       top and ran under the bar at the bottom, which reads as broken rather than as more-to-come.
+       The mask fades the first 18px and the strip above the bar, so content arrives and leaves. */
+    .page-body {
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 112px), transparent calc(100% - 78px));
+      mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 112px), transparent calc(100% - 78px)); }
     .page-body::-webkit-scrollbar, .home-screen::-webkit-scrollbar, .lobby-screen::-webkit-scrollbar {
       width: 0; height: 0; display: none; }
     /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
