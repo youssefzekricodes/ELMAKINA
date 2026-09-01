@@ -83,8 +83,8 @@ export default function App() {
    * top of the cues that are telling you what just happened to you.
    */
   useEffect(() => {
-    if (!inGame && s.soundOn) music.start(); else music.stop();
-  }, [inGame, s.soundOn]);
+    if (!inGame && s.musicOn) music.start(); else music.stop();
+  }, [inGame, s.musicOn]);
   // Auto-fullscreen when a game begins (best-effort; the start-game clicks also request it within their gesture).
   useEffect(() => { if (inGame) goFullscreen(); }, [inGame]);
   return (

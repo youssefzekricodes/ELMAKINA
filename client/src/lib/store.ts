@@ -34,6 +34,7 @@ export interface Snapshot {
   me: string | null;
   lang: string;
   soundOn: boolean;
+  musicOn: boolean;          // the lobby bed, muted on its own — see lib/music
   profile: Profile;
   name: string;
   autoJoinCode: string | null;
@@ -101,6 +102,7 @@ const loadProfile = (): Profile => { try { return Object.assign({ avatar: 'boy-1
 let snap: Snapshot = {
   screen: 'home', connected: false, net: (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'off' : 'ok', room: null, state: null, me: null,
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
+  musicOn: localStorage.getItem('mekina.music') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
   targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
   account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false,

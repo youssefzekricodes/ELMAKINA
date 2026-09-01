@@ -14,7 +14,7 @@
  * synth bed then never runs. Anything from YouTube needs a licence first; a track being freely
  * playable there does not make it free to ship.
  */
-import { audioChannel, sfx } from './sfx';
+import { audioChannel } from './sfx';
 
 /** The lobby track. Set to null to fall back to the generated bed below. */
 const TRACK: string | null = '/audio/lobby.m4a';
@@ -186,9 +186,10 @@ if (typeof document !== 'undefined') {
 export const music = {
   get playing() { return playing; },
 
-  /** Start the bed, fading in — safe to call twice, and a no-op while sound is off. */
+  /** Start the bed, fading in — safe to call twice. Whether it SHOULD play is the caller's call
+      (App watches store.musicOn): the music switch and the sound switch are separate on purpose. */
   start() {
-    if (playing || !sfx.enabled) return;
+    if (playing) return;
     if (TRACK) {
       el = el || new Audio(TRACK);
       el.loop = true;

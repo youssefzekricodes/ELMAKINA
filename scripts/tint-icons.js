@@ -19,6 +19,7 @@ const RAMP = {
   ember:  ['#FFC79E', '#F2894A', '#CB5F1E'],   // the app's own accent, as a three-step ramp
   green:  ['#CBF0AC', '#92D46C', '#5FA63C'],
   violet: ['#DDC7F7', '#B58EE9', '#8659C7'],
+  teal:   ['#BFF0EC', '#79D3CD', '#3F9E98'],   // music, so it never reads as the sound switch (blue)
 };
 const GREY = ['#DADADA', '#C6C6C6', '#B2B2B2'];
 
@@ -30,6 +31,8 @@ const PLAN = {
   achievements: ['amber'],
   'sound-on': ['blue'],
   'sound-off': ['blue'],
+  music: ['teal'],
+  'music-off': ['teal'],
   // the pad is already part-coloured: its shell greys go green, its lit buttons stay as drawn
   gamepad: ['green', { '#B7B7B7': '#92D46C', '#D7D7D7': '#CBF0AC', '#E1E1E1': '#CBF0AC' }],
 };

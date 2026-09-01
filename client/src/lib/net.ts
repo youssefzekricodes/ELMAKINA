@@ -385,4 +385,17 @@ export function setLanguage(l: string) {
   store.set((s) => ({ lang: i18n.lang, tick: s.tick + 1 }));
 }
 export function toggleSound() { store.set({ soundOn: sfx.toggle() }); }
+/**
+ * Music has its own switch.
+ *
+ * Muting the game used to mute everything, which is the wrong trade for the one sound you might
+ * actually be tired of: the bed loops for as long as you sit in the menu, while the cues are the
+ * game telling you what just happened. Now the track can go quiet and still leave you able to hear
+ * a bluff being called.
+ */
+export function toggleMusic() {
+  const on = !store.get().musicOn;
+  try { localStorage.setItem('mekina.music', on ? 'on' : 'off'); } catch { /* private mode */ }
+  store.set({ musicOn: on });
+}
 export const isConfigured = supabaseConfigured;

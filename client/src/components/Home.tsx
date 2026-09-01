@@ -8,7 +8,7 @@ import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
 import { IMG } from '../theme';
 import { Art, GoogleG, Html, Icon, PlayerAvatar } from './ui';
-import { LangSound } from './QuickControls';
+import { MenuControls } from './QuickControls';
 
 /**
  * The front door. One thing to press.
@@ -72,9 +72,9 @@ export function Home() {
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
             </button>
             <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'profile' })} aria-label={t('profile.title')} title={t('profile.title')}><Art name="profile" className="size-5" /></button>
-            {/* Language and sound live in this row on the front door — the same two buttons that
-                float in the corner everywhere else, in the row that was already here. */}
-            <LangSound cls="acct-tool art-tool" />
+            {/* Language, sound and music live in this row on the front door — the same buttons
+                that float in the corner everywhere else, in the row that was already here. */}
+            <MenuControls cls="acct-tool art-tool" />
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store } from '../lib/store';
 import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow } from '../lib/social';
-import { copyInvite, joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleSound } from '../lib/net';
+import { copyInvite, joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleMusic, toggleSound } from '../lib/net';
 import { disablePush, enablePush, pushStatus } from '../lib/push';
 import { Art, GoogleG, Icon, PlayerAvatar } from './ui';
 import type { ArtName } from '../art';
@@ -270,6 +270,10 @@ export function ProfilePage() {
             <button type="button" className="pf-row" onClick={toggleSound}>
               <Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-6" /><span>{t('top.sound')}</span>
               <span className="pf-val">{t(s.soundOn ? 'profile.on' : 'profile.off')}</span>
+            </button>
+            <button type="button" className="pf-row" onClick={toggleMusic}>
+              <Art name={s.musicOn ? 'musicOn' : 'musicOff'} className="size-6" /><span>{t('top.music')}</span>
+              <span className="pf-val">{t(s.musicOn ? 'profile.on' : 'profile.off')}</span>
             </button>
             <button type="button" className="pf-row" onClick={() => setLanguage(s.lang === 'en' ? 'tn' : 'en')}>
               <Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-6 pf-flag" /><span>{t('top.lang.title')}</span>
