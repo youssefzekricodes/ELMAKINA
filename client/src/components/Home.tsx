@@ -61,6 +61,12 @@ export function Home() {
       <div className="home-stage">
         {/* Status and side rooms. Icon-only: none of it is why anyone opened the app. */}
         <div className="home-top">
+          {/* Settings on their own line, above.
+              Seven circles in one row asked you to read every one of them to find out that three
+              were places to go and three were switches — and the trophy count was in there too.
+              Language, sound and music sit apart now: same size, same shape, different line. */}
+          <div className="home-top-set"><MenuControls cls="acct-tool art-tool" /></div>
+          <div className="home-top-row">
           <span className="trophy-pill" title={t('lb.trophies')}><Art name="stars" className="size-4" />{s.trophies}</span>
           {/* Every destination, one row, every size. Profile carries the set-once controls
               (characters, rules, sound, language) so they need no buttons of their own here. */}
@@ -72,9 +78,7 @@ export function Home() {
               {s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
             </button>
             <button type="button" className="acct-tool art-tool" onClick={() => store.set({ screen: 'profile' })} aria-label={t('profile.title')} title={t('profile.title')}><Art name="profile" className="size-5" /></button>
-            {/* Language, sound and music live in this row on the front door — the same buttons
-                that float in the corner everywhere else, in the row that was already here. */}
-            <MenuControls cls="acct-tool art-tool" />
+          </div>
           </div>
         </div>
 
