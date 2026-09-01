@@ -171,6 +171,18 @@ function attempt() {
 }
 const GESTURES = ['pointerdown', 'touchend', 'keydown'] as const;
 
+/**
+ * Coming back to the app should not mean coming back to silence. Android pauses media when an
+ * installed app goes to the background and does not always resume it, so if the lobby is still up
+ * and still wants music, ask again the moment the app is visible.
+ */
+if (typeof document !== 'undefined') {
+  const revive = () => { if (wanted && el && el.paused && !document.hidden) attempt(); };
+  document.addEventListener('visibilitychange', revive);
+  window.addEventListener('focus', revive);
+  window.addEventListener('pageshow', revive);
+}
+
 export const music = {
   get playing() { return playing; },
 

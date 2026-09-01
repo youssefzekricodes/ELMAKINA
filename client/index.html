@@ -96,6 +96,8 @@
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
     }
     </script>
+    <link rel="preload" as="image" href="/img/bg-portrait-sm.webp?v=2" media="(orientation: portrait)" fetchpriority="high" />
+    <link rel="preload" as="image" href="/img/bg-game-sm.webp?v=2" media="(orientation: landscape)" fetchpriority="high" />
     <!-- ── Boot splash ───────────────────────────────────────────────────────────
          Inline on purpose: this paints from the first byte, before the bundle, the
          stylesheet or a single font has arrived. Without it the app opens on a bare
@@ -103,36 +105,59 @@
          PWA/webview launches this game is mostly played on. Removed by main.tsx once
          React has mounted; see #splash there. -->
     <style>
+      /* The same room the app opens into. A gradient meant the first thing anyone saw was a screen
+         the game never shows again; now the splash lifts off the set it was already standing on.
+         The small variants (46 KB portrait, 31 KB landscape) are used on purpose — this has to
+         paint before the bundle, not compete with it. */
       #splash {
         position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column;
         align-items: center; justify-content: center; gap: 22px;
-        background: radial-gradient(120% 90% at 50% 18%, #1A140E 0%, #0E0B08 62%);
+        background: #0E0B08 url('/img/bg-portrait-sm.webp?v=2') center / cover no-repeat;
         opacity: 1; transition: opacity .32s ease;
       }
+      @media (orientation: landscape) { #splash { background-image: url('/img/bg-game-sm.webp?v=2'); } }
       #splash.gone { opacity: 0; pointer-events: none; }
-      #splash .sp-mark { width: min(38vw, 168px); aspect-ratio: 1; animation: sp-breathe 2.6s ease-in-out infinite; }
-      #splash .sp-mark img { width: 100%; height: 100%; object-fit: contain; }
+      /* The machine is already IN the frame, dead centre — a second copy of the same art on top of
+         it read as a double exposure, and would have drifted into two machines on any aspect ratio
+         the two did not happen to agree on. The wordmark is enough, and it saves 51 KB off the one
+         path that has to paint before anything else. No scrim either: the type carries its own
+         shadow, the way the seat names on the board do. */
       #splash .sp-word {
         font: 700 clamp(26px, 7vw, 40px)/1 system-ui, -apple-system, "Segoe UI", sans-serif;
         letter-spacing: .34em; text-indent: .34em; color: #F3E9D6;
+        text-shadow: 0 2px 10px rgba(0,0,0,.9), 0 0 28px rgba(0,0,0,.6);
       }
       /* A real progress bar, pinned to the bottom of the screen: the art is fetched up front and
          cached, so there IS a number to show and an indeterminate sweep would be a lie. It starts
          as a sweep and switches to a fill the moment the loader reports its first figure. */
-      #splash .sp-foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 0; }
-      #splash .sp-pct { font: 700 15px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .08em; color: #F3E9D6;
-        text-shadow: 0 2px 6px rgba(0,0,0,.8); padding-bottom: 7px; opacity: 0; transition: opacity .2s; }
-      #splash[data-loading] .sp-pct { opacity: 1; }
-      #splash .sp-bar { width: 100%; height: 10px; border-radius: 0; background: rgba(0,0,0,.55); overflow: hidden; }
-      #splash .sp-bar i { display: block; width: 40%; height: 100%; background: linear-gradient(180deg, #F2803A, #E5661A);
+      /* A lit bar off the bottom edge rather than a strip welded to it: a rounded track with a
+         hairline, a fill that glows in the brand orange, and a sheen that keeps travelling across
+         whatever has loaded so far — so the thing reads as alive even while a number holds still. */
+      #splash .sp-foot { position: absolute; left: 0; right: 0; bottom: calc(30px + env(safe-area-inset-bottom));
+        display: flex; flex-direction: column; align-items: center; gap: 11px; }
+      #splash .sp-pct { font: 700 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .18em;
+        font-variant-numeric: tabular-nums; color: #F3E9D6; text-shadow: 0 2px 8px rgba(0,0,0,.9);
+        opacity: 0; transition: opacity .2s; }
+      #splash[data-loading] .sp-pct { opacity: .92; }
+      #splash .sp-bar { position: relative; width: min(66vw, 380px); height: 8px; border-radius: 999px;
+        background: rgba(8,5,3,.66); overflow: hidden;
+        box-shadow: inset 0 0 0 1px rgba(255,240,214,.16), 0 8px 24px rgba(0,0,0,.55); }
+      #splash .sp-bar i { position: relative; display: block; width: 42%; height: 100%; border-radius: 999px;
+        background: linear-gradient(90deg, #E5661A, #F2803A 45%, #FFC46B 100%);
+        box-shadow: 0 0 14px rgba(242,128,58,.8);
         animation: sp-slide 1.15s ease-in-out infinite; }
       /* data-loading is set once the loader knows the total; from then on the width IS the truth. */
-      #splash[data-loading] .sp-bar i { animation: none; transform: none; width: var(--sp, 0%); transition: width .18s ease-out; }
-      @keyframes sp-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+      #splash[data-loading] .sp-bar i { animation: sp-pulse 1.6s ease-in-out infinite; transform: none;
+        width: var(--sp, 0%); transition: width .3s cubic-bezier(.2,.7,.3,1); }
+      #splash[data-loading] .sp-bar i::after { content: ''; position: absolute; inset: 0; border-radius: 999px;
+        background: linear-gradient(100deg, transparent 18%, rgba(255,255,255,.5) 50%, transparent 82%);
+        animation: sp-sheen 1.4s linear infinite; }
       @keyframes sp-slide { 0% { transform: translateX(-105%); } 100% { transform: translateX(355%); } }
+      @keyframes sp-sheen { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+      @keyframes sp-pulse { 0%, 100% { box-shadow: 0 0 12px rgba(242,128,58,.65); } 50% { box-shadow: 0 0 20px rgba(242,128,58,.95); } }
       @media (prefers-reduced-motion: reduce) {
-        #splash .sp-mark, #splash .sp-bar i { animation: none; }
-        #splash .sp-bar i { width: 100%; }
+        #splash .sp-bar i, #splash .sp-bar i::after { animation: none; }
+        #splash:not([data-loading]) .sp-bar i { width: 100%; }
       }
     </style>
     <!-- No JavaScript means nothing will ever take the splash down, and it would bury the
@@ -141,7 +166,6 @@
   </head>
   <body class="bg-background text-foreground">
     <div id="splash" role="status" aria-label="Loading ELMEKINA">
-      <div class="sp-mark"><img src="/img/machine-sm.webp" alt="" fetchpriority="high" decoding="async" /></div>
       <div class="sp-word">ELMEKINA</div>
       <div class="sp-foot"><span class="sp-pct">0%</span><div class="sp-bar"><i></i></div></div>
     </div>

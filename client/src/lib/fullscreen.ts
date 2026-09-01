@@ -12,6 +12,15 @@ type FsDoc = Document & {
   msExitFullscreen?: () => Promise<void> | void;
 };
 
+/** Running as the installed app rather than a tab — where the system bars are ours to remove. */
+export function isInstalled(): boolean {
+  try {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || window.matchMedia('(display-mode: minimal-ui)').matches
+      || (navigator as unknown as { standalone?: boolean }).standalone === true;
+  } catch { return false; }
+}
+
 export function isFullscreen(): boolean {
   const d = document as FsDoc;
   return !!(d.fullscreenElement || d.webkitFullscreenElement);

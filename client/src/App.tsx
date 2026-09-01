@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { Toast } from '@heroui/react';
 import { useStore, store } from './lib/store';
 import { connect, setLanguage } from './lib/net';
-import { goFullscreen } from './lib/fullscreen';
-import { sfx } from './lib/sfx';
+import { goFullscreen, isInstalled } from './lib/fullscreen';
+import { keepAudioAwake, sfx } from './lib/sfx';
 import { initPulse } from './lib/pulse';
 import { initAnalytics, sendPageView } from './lib/analytics';
 import { initAds } from './lib/ads';
@@ -45,6 +45,13 @@ export default function App() {
     if (params.get('lang')) setLanguage(params.get('lang')!); else setLanguage(i18n.lang);
     const unlock = () => sfx.unlock();
     document.addEventListener('pointerdown', unlock, { once: true });
+    keepAudioAwake(); // …and keep it awake: an installed app is suspended and resumed all day long
+    // The installed app is the one place the window is ours to take. Standalone leaves the system
+    // bars in place and paints the strip under the page with the manifest colour, which is the band
+    // showing under the artwork — fullscreen removes the strip rather than trying to paint into it.
+    // Never in a plain tab: taking a browser fullscreen uninvited is somebody else's window.
+    const claim = () => { if (isInstalled()) goFullscreen(); };
+    document.addEventListener('pointerdown', claim, { once: true });
     for (const c of CHARACTERS) { new Image().src = CH[c].card; new Image().src = CH[c].cardSm; }
     connect();
     initPulse();  // heartbeat + clock while a decision is mine to make

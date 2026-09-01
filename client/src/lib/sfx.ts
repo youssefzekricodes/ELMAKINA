@@ -126,6 +126,26 @@ export function audioChannel(gain: number): { ctx: AudioContext; out: GainNode }
   return { ctx: c, out: g };
 }
 
+/**
+ * Keep the audio context awake for the whole session.
+ *
+ * The original unlock was a single listener on the first pointerdown, which is enough for a tab you
+ * open and play in. An installed app is not that: Android suspends the context every time the app
+ * goes to the background, and a suspended context makes `play()` return without a sound and without
+ * a word. Come back to the app and everything is mute until a reload — which is exactly what "no
+ * sound effects and no music in the PWA" looks like.
+ *
+ * So: resume on any gesture, not just the first, and on coming back into view. Both are cheap —
+ * they do nothing at all unless the context has actually gone to sleep.
+ */
+export function keepAudioAwake() {
+  const wake = () => { const c = ensure(); if (c && c.state !== 'running') c.resume().catch(() => {}); };
+  for (const ev of ['pointerdown', 'touchend', 'keydown']) document.addEventListener(ev, wake, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
+  window.addEventListener('pageshow', wake);
+  window.addEventListener('focus', wake);
+}
+
 export const sfx = {
   get enabled() { return on; },
   toggle() {
@@ -149,7 +169,8 @@ export const sfx = {
     if (!on) return;
     const buf = samples[name];
     if (!buf) { this.play(name); return; }
-    const c = ensure(); if (!c || c.state !== 'running') return;
+    const c = ensure(); if (!c) return;
+    if (c.state !== 'running') { c.resume().catch(() => {}); this.play(name); return; }
     const now = Date.now();
     if (now - (last[name] || 0) < 200) return;
     last[name] = now;
@@ -165,7 +186,10 @@ export const sfx = {
     const now = Date.now();
     if (now - (last[name] || 0) < 45) return; // a burst of identical events is one sound, not twelve
     last[name] = now;
-    const c = ensure(); if (!c || c.state !== 'running') return;
+    const c = ensure(); if (!c) return;
+    // Asleep: wake it so the NEXT cue lands. This one is lost either way, but a context that stays
+    // suspended is a game that has gone permanently silent.
+    if (c.state !== 'running') { c.resume().catch(() => {}); return; }
     try {
       if (cue.noise) hiss(c, cue.noise);
       for (const st of cue.steps || []) tone(c, st);
