@@ -8,7 +8,9 @@
  */
 export const ART = {
   timer: '/img/icons/timer.svg',
-  stars: '/img/icons/stars.svg',
+  // The trophy token, in the game's own gold — it replaces the generic stars everywhere a trophy
+  // count is shown, so the thing you win looks like one thing wherever it appears.
+  stars: '/img/icons/tokens.svg',
   coins: '/img/icons/coins.svg',
   cupGold: '/img/icons/cup-gold.svg',
   cupSilver: '/img/icons/cup-silver.svg',

@@ -65,7 +65,14 @@ export function Home() {
             corner they occupy on every other screen (see QuickControls). This row is destinations
             and a score — where you can go and how you are doing. */}
         <div className="home-top">
-          <span className="trophy-pill" title={t('lb.trophies')}><Art name="stars" className="size-4" />{s.trophies}</span>
+          {/* Not a pill any more: the one number on this screen that is YOURS. It opens the board
+              it belongs to, so it reads as a place to go rather than a label sitting there. */}
+          <button type="button" className="trophy-pill" title={t('lb.trophies')}
+            onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.trophies')}>
+            <Art name="stars" className="trophy-ic" />
+            <span className="trophy-n">{s.trophies}</span>
+            <span className="trophy-lbl">{t('lb.trophies')}</span>
+          </button>
           {/* Every destination, one row, every size. Profile carries the set-once controls
               (characters, rules, sound, language) so they need no buttons of their own here. */}
           {/* The same four destinations the tab bar carries, in the same artwork — this row is what a
