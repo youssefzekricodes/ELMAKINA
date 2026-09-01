@@ -1668,12 +1668,7 @@
   .inv-sent { display: inline-flex; align-items: center; gap: 5px; color: var(--success, #6FCF7F); }
 
   /* ── Home top row (trophies + social pages) + sign-in ── */
-  /* Two lines: switches on top, then where you can go. The settings sit over the tools rather than
-     beside them, on the same edge, so the column reads as one block instead of a row of seven
-     circles you have to sort out one at a time. */
-  .home-top { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }
-  .home-top-set { display: inline-flex; align-items: center; gap: 6px; align-self: flex-end; }
-  .home-top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+  .home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
   .home-top-tools { display: inline-flex; align-items: center; gap: 6px; }
   /* Google sign-in: a clean, full-width pill directly under the player badge */
   /* Google's dark-theme button, not the white one. Signing in is optional; as a white slab it was
@@ -2443,10 +2438,13 @@
   .qc .art[src*='flag-'] { border-radius: 50%; }
 
   @media (max-width: 1023px) {
-    .app.at-home .home-screen { padding-top: 10px; }
+    /* The corner belongs to the switches. Reserve their height here rather than hoping the notch
+       inset pushes the content clear of them — in the installed app there IS no inset, which is
+       exactly when the row rode up and landed under language and sound. */
+    .app.at-home .home-screen { padding-top: calc(var(--sat) + 54px); }
     /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
-    .home-top-tools, .home-top-set { gap: 5px; }
-    .home-top-tools .acct-tool, .home-top-set .acct-tool { width: 32px; height: 32px; }
+    .home-top-tools { gap: 5px; }
+    .home-top-tools .acct-tool { width: 32px; height: 32px; }
   }
   /* a flag is a picture of a place, so it reads as a round chip rather than a square glyph */
   .acct-tool.art-tool .art[src*='flag-'], .art-btn .art[src*='flag-'] { width: 22px; height: 22px; border-radius: 50%; }
@@ -2463,10 +2461,7 @@
   .acct-tool.art-tool { padding: 0; }
   .acct-tool.art-tool .art { width: 20px; height: 20px; }
   /* six of them on a phone row now: shed a little more width rather than wrap under the trophy */
-  @media (max-width: 420px) {
-    .home-top-tools, .home-top-set { gap: 4px; }
-    .home-top-tools .acct-tool, .home-top-set .acct-tool { width: 30px; height: 30px; }
-  }
+  @media (max-width: 420px) { .home-top-tools { gap: 4px; } .home-top-tools .acct-tool { width: 30px; height: 30px; } }
   .art-btn .art { width: 20px; height: 20px; }
   .gm-item .art { flex-shrink: 0; }
   .gm-btn .art { width: 20px; height: 20px; }

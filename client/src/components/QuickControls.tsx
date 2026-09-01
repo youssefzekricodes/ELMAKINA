@@ -45,9 +45,10 @@ export function MenuControls({ cls }: { cls: string }) {
 
 export function QuickControls() {
   const s = useStore();
-  // Not in a game — the gear carries both. And not on the home screen, which has a row of icons in
-  // this exact corner: floating a second pair over it put language and sound on top of the
-  // leaderboard and the profile. Home renders them inline instead, in the row that is already there.
-  if (s.screen === 'game' || s.screen === 'home') return null;
+  // Every screen but a game, home included: the switches keep one address. What they must never do
+  // is land on the row of destinations underneath them — the home screen reserves the height for
+  // this corner (see .app.at-home .home-screen), which is what went wrong when the notch inset
+  // vanished in the installed app and the row rode up into it.
+  if (s.screen === 'game') return null;
   return <div className="qc"><MenuControls cls="qc-btn" /></div>;
 }
