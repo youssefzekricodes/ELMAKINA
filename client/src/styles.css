@@ -1670,6 +1670,23 @@
   /* the console says it too, in the one line it has */
   .status-line.out { color: var(--danger); font-weight: 700; }
 
+  /* ── the notifications ask ───────────────────────────────────────────────────
+     Quiet on purpose: it is a question, not an announcement, and it goes away for good the moment
+     it is answered either way. Sits below the buttons because nobody opened the app for this. */
+  .push-ask { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 13px; border-radius: 16px;
+    background: rgba(255,240,214,.05); box-shadow: inset 0 0 0 1px rgba(255,240,214,.12);
+    animation: coach-fade .3s var(--ease); }
+  .push-ask-ic { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; display: inline-flex;
+    align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); }
+  .push-ask-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; line-height: 1.25; text-align: start; }
+  .push-ask-tx b { font-size: 13px; font-weight: 800; }
+  .push-ask-tx span { font-size: 11.5px; color: var(--muted); }
+  .push-ask-btns { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; }
+  @media (max-width: 420px) {
+    .push-ask { flex-wrap: wrap; }
+    .push-ask-btns { width: 100%; justify-content: flex-end; }
+  }
+
   /* ── invite: the room, then the people ───────────────────────────────────────
      Sending somebody a code is half of inviting them, and there was no way to do it from here. */
   .inv-room { display: flex; align-items: center; gap: 10px; padding: 11px 12px; margin-bottom: 6px;

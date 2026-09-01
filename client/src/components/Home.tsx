@@ -8,6 +8,7 @@ import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
 import { IMG } from '../theme';
 import { Art, GoogleG, Html, Icon, PlayerAvatar } from './ui';
+import { PushPrompt } from './PushPrompt';
 
 /**
  * The front door. One thing to press.
@@ -147,6 +148,10 @@ export function Home() {
             </Button>
           </div>
         )}
+
+        {/* Notifications, asked once, on the screen everybody reaches — onboarding only ever
+            covered brand-new players. */}
+        <PushPrompt />
 
         <div className="home-foot-row">
           {s.account && !s.account.isGuest ? (

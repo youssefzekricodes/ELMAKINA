@@ -38,6 +38,8 @@ export function pushStatus(): 'granted' | 'denied' | 'default' | 'unsupported' {
 
 /** Has this player already been asked once? We never ask twice on our own. */
 export const pushAsked = (): boolean => { try { return localStorage.getItem(ASKED) === '1'; } catch { return false; } };
+/** "Not now" is an answer. Remember it so the card never comes back on its own. */
+export const markPushAsked = (): void => { try { localStorage.setItem(ASKED, '1'); } catch { /* private mode */ } };
 
 async function call(op: string, payload: Record<string, unknown> = {}) {
   if (!supabase) return null;
