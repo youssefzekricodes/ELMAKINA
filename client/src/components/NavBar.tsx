@@ -16,14 +16,17 @@ import { useStore, store, type Snapshot } from '../lib/store';
 import { t } from '../i18n';
 
 type Screen = Snapshot['screen'];
+// Home in the middle, where the thumb lands and where a raised disc has room on both sides — it is
+// also the one tab that is never at a rounded corner.
 const TABS: { id: string; screen: Screen; icon: string; label: string }[] = [
-  { id: 'home', screen: 'home', icon: '/img/navbar/home.svg', label: 'nav.home' },
   { id: 'leaderboard', screen: 'leaderboard', icon: '/img/navbar/leaderboard.svg', label: 'lb.title' },
   { id: 'rooms', screen: 'public', icon: '/img/navbar/rooms.svg', label: 'home.public' },
+  { id: 'home', screen: 'home', icon: '/img/navbar/home.svg', label: 'nav.home' },
   { id: 'friends', screen: 'friends', icon: '/img/navbar/friends.svg', label: 'fr.title' },
-  // Settings is the profile screen: characters, rules, sound, music, language, notifications and
-  // the account all already live there, and a sixth screen holding the same rows would be a lie.
-  { id: 'settings', screen: 'profile', icon: '/img/navbar/settings.svg', label: 'profile.title' },
+  // Settings goes to the profile screen — characters, rules, sound, music, language, notifications
+  // and the account all already live there — but it is LABELLED settings, because that is what the
+  // gear promises. Borrowing the profile screen's own title put "your look" under a cog.
+  { id: 'settings', screen: 'profile', icon: '/img/navbar/settings.svg', label: 'set.title' },
 ];
 
 export function NavBar() {
@@ -59,8 +62,9 @@ export function NavIcons() {
         const name = t(tab.label);
         return (
           <button key={tab.id} type="button" className={`nav-ico ${s.screen === tab.screen ? 'on' : ''}`}
-            onClick={() => store.set({ screen: tab.screen })} aria-label={name} title={name}>
+            onClick={() => store.set({ screen: tab.screen })} title={name}>
             <img src={tab.icon} alt="" draggable={false} />
+            <span className="nav-ico-tx">{name}</span>
             {tab.id === 'friends' && s.friendReqs.length > 0 && <span className="acct-badge">{s.friendReqs.length}</span>}
           </button>
         );

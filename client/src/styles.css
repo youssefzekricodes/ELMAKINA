@@ -1692,13 +1692,19 @@
   .tabbar { position: fixed; z-index: 46; left: 0; right: 0; bottom: 0;
     padding: 26px calc(10px + var(--sal)) calc(6px + var(--sab)) calc(10px + var(--sar));
     pointer-events: none; }                        /* only the buttons take taps, not the gap above */
+  /* 22px of inset, not 8: the bar's ends are a 19px corner radius under an arch, so a mark sitting
+     flush to the edge hangs over artwork that has already curved away from underneath it. */
   .tb-list { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
-    gap: 2px; width: min(420px, 100%); margin-inline: auto; min-height: 62px; padding: 0 8px;
+    gap: 2px; width: min(420px, 100%); margin-inline: auto; min-height: 62px; padding: 0 22px;
     list-style: none; pointer-events: auto;
     background: url('/img/navbar/shape.svg') center bottom / 100% 100% no-repeat;
     filter: drop-shadow(0 8px 22px rgba(0,0,0,.45)); }
-  .tb-item { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+  .tb-item { position: relative; flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
   .tb-item.on { overflow: visible; }
+  /* The amber rule along the bottom edge: the second half of "you are here", under the name rather
+     than around it. Clipped by the bar's own bottom curve at the ends, exactly as drawn. */
+  .tb-item.on::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 78%; max-width: 92px; height: 5px; border-radius: 999px 999px 0 0; background: #FFD97A; }
   .tb-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%;
     padding: 0 0 8px; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .tb-mark { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
@@ -1720,12 +1726,18 @@
      Home / NavIcons. Below it, the row is gone and the bar has them: one set, one place, per size. */
   @media (min-width: 1024px) { .tabbar { display: none; } }
   @media (max-width: 1023px) { .home-top-tools { display: none; } }
-  .nav-ico { position: relative; display: inline-flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer;
+  .nav-ico { position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; min-width: 62px; padding: 7px 6px 6px; border: 0; border-radius: 14px; background: none; cursor: pointer;
     transition: transform .14s var(--ease), background .14s; }
   .nav-ico img { width: 30px; height: 30px; object-fit: contain; }
+  /* A desktop has the room to say what each mark is, and no bar to raise the current one out of —
+     so the word does the job the disc does on a phone. */
+  .nav-ico-tx { font-size: 11px; font-weight: 700; letter-spacing: .02em; color: rgba(243,233,214,.72);
+    white-space: nowrap; transition: color .14s; }
   .nav-ico:hover { transform: translateY(-2px); background: rgba(255,255,255,.06); }
+  .nav-ico:hover .nav-ico-tx { color: #F3E9D6; }
   .nav-ico.on { background: rgba(255,255,255,.1); }
+  .nav-ico.on .nav-ico-tx { color: var(--gold); }
 
   /* ── the notifications ask ───────────────────────────────────────────────────
      Quiet on purpose: it is a question, not an announcement, and it goes away for good the moment
