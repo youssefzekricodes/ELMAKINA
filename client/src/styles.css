@@ -948,9 +948,6 @@
   .cm-effect b { color: var(--foreground); font-weight: 800; white-space: nowrap; }
   /* The counter's own explanation reads as the answer to the one above it, so it is tinted with
      the countering card rather than the claimed one. */
-  .cm-effect.counter { border-color: color-mix(in srgb, var(--warning) 34%, transparent);
-    border-inline-start-color: color-mix(in srgb, var(--warning) 70%, transparent);
-    background: color-mix(in srgb, var(--warning) 8%, transparent); }
   /* one column of identical buttons — icon and label always line up */
   /* Pinned to the bottom of the panel. The explanations earn their length, but on a short phone
      they push the verdicts below the fold INSIDE the panel — buttons that exist and cannot be
@@ -958,10 +955,24 @@
   .cm-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;
     position: sticky; bottom: -1px; z-index: 2; padding-top: 10px;
     background: linear-gradient(180deg, rgba(24,17,11,0), rgba(24,17,11,.97) 26%); }
-  .cm-btns .rx { display: grid; grid-template-columns: 30px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 16px; width: 100%; }
+  /* flex: 0 0 auto, against the base .rx's `flex: 1 1 0`: with a zero basis these took their height
+     from the column rather than from what is in them, so the line under the label was simply
+     clipped — 67px of content in a 46px box. Stacked verdicts are sized by their own words. */
+  .cm-btns .rx { display: grid; grid-template-columns: 30px 1fr; align-items: center; justify-items: start; text-align: start; gap: 12px; padding-inline: 16px; width: 100%; flex: 0 0 auto; height: auto; }
   /* One 30px leading column for all three verdicts — the counter's card and the other two icons sit
      in the same slot, so every label starts on the same x instead of stepping in and out. */
   .cm-btns .rx svg { justify-self: center; box-sizing: content-box; width: 17px; height: 17px; padding: 5px; border-radius: 999px; background: color-mix(in srgb, currentColor 15%, transparent); }
+  /* What pressing THIS costs, under the thing you press. Sentences floating above three choices
+     made you hold both in your head and work out which belonged to which; this one cannot be
+     misread. The mark spans both rows so it stays centred against the pair. */
+  .cm-btns .rx { padding-block: 8px; }
+  .cm-btns .rx > svg, .cm-btns .rx > .rx-card { grid-row: 1 / -1; }
+  .cm-btns .rx .rx-why { grid-column: 2; margin-top: 2px; font-family: var(--font-sans); font-style: normal;
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0; text-transform: none; white-space: normal;
+    line-height: 1.25; opacity: .72;
+    /* A caption, not a paragraph: two lines is the most this may ever cost the panel. */
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .cm-btns .rx .rx-why b { font-weight: 800; opacity: 1; white-space: nowrap; }
   .cm-btns .rx.call svg, .cm-btns .rx.let-pass svg { background: rgba(255, 255, 255, .18); }
   /* counter button: the card that does the countering sits where the icon would */
   /* 26px card ≈ 43px tall: fits inside the shared 48px button height, so the verdict stack stays even */
@@ -2455,7 +2466,9 @@
     .app.in-game .prompt:not(.prompt-end) .cm-card .gcard { width: 38px !important; }
     .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-who,
     .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-effect { grid-column: 2; }
-    .app.in-game .prompt:not(.prompt-end) .claim-min > .cm-effect ~ .cm-effect { display: none; }
+    /* Lying down the panel has about 134px of height: the buttons keep their labels and lose the
+       line under them, the same trade the second explanation already made here. */
+    .app.in-game .prompt:not(.prompt-end) .cm-btns .rx-why { display: none; }
     /* buttons: one row, one column each, however many there are */
     .app.in-game .prompt:not(.prompt-end) .cm-btns { margin-top: 0; grid-column: 1 / -1; grid-auto-flow: column;
       grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; padding-top: 4px; }

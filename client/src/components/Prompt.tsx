@@ -14,6 +14,19 @@ import { logActionCard, logCharacter } from './LogPanel';
 
 const logIcon = (e: LogEntry) => (e.key === 'game.win' ? 'win' : e.kind);
 
+/**
+ * The effect line, as a caption rather than a sentence.
+ *
+ * Every effect.* string opens with "if nobody reacts" — which is exactly what the Pass button
+ * means, so under it the words are spent twice. The prefix is a translated key, so this strips
+ * what the current language actually says and quietly does nothing if it says something else.
+ */
+const shortEffect = (text: string) => {
+  const p = t('effect.prefix');
+  const out = p && text.startsWith(p) ? text.slice(p.length) : text;
+  return out.charAt(0).toUpperCase() + out.slice(1);
+};
+
 function Timeline({ limit }: { limit: number }) {
   const s = useStore(); const st = s.state!;
   const from = (st.pending && st.pending.logStart) || 0;
@@ -89,7 +102,7 @@ function TargetPicker() {
 
 /** The counter button leads with the card that does the countering. The art reads faster than
     "Block as Colonel", and it is exactly the card you need to be holding — or to be bluffing. */
-function BlockBtn({ character, label, desc }: { character: string; label: string; desc: string }) {
+function BlockBtn({ character, label, desc, why }: { character: string; label: string; desc: string; why?: string }) {
   const color = CH[character as keyof typeof CH]?.color || 'var(--warning)';
   return (
     <button
@@ -98,6 +111,7 @@ function BlockBtn({ character, label, desc }: { character: string; label: string
     >
       <GameCard c={character} w={26} small className="rx-card" />
       <span>{label}</span>
+      {why && <Html as="i" className="rx-why" html={why} />}
     </button>
   );
 }
@@ -284,29 +298,30 @@ export function Prompt() {
             <Html as="span" className="cm-guess-tx" html={i18n.html('prompt.colonelGuess', { name: actor, target: tgt, character: cname(p!.action.guess) })} />
           </div>
         )}
-        {effect && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
-        {/* …and, when a counter is on offer, what taking it actually does. "Block as Colonel" means
-            nothing to somebody who has not learnt the seven characters, and the button's title
-            attribute is invisible on a phone, which is where they are. */}
-        {canBlock && w.block && (
-          <Html as="div" className="cm-effect counter" html={boldNames(
-            w.block.kind === 'veto' ? t('counter.why.veto', { name: actor })
-            : w.block.kind === 'tax' ? t('counter.why.tax')
-            : t('counter.why.block', { character: cname(w.block.character) }), [actor, tgt])} />
-        )}
+        {/* The consequences moved ONTO the buttons — see cm-btns below. Two sentences floating above
+            three choices made you hold both in your head and work out which belonged to which; a
+            line under the button you are about to press does not. This one stays only for players
+            who have no buttons at all: they still need to know what is about to happen. */}
+        {effect && !(canPass || canBlock || canChallenge) && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
         {canPass || canBlock || canChallenge ? (
           isCounter ? (
             // Counter layout: calling the bluff comes FIRST as a solid red button; letting it pass follows.
             <div className="cm-btns">
-              {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} />}
-              {canChallenge && <button type="button" className="rx call" onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
-              {canPass && <button type="button" className="rx let-pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span></button>}
+              {/* The short form on purpose: counter.why.* was written as a standalone paragraph and ran to
+                  four lines under a button, which pushed the whole panel past the bottom of a 640px
+                  phone. The full version is still a tap away in the rules. */}
+              {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} why={t('prompt.why.block')} />}
+              {canChallenge && <button type="button" className="rx call" onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
+              {canPass && <button type="button" className="rx let-pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
             </div>
           ) : (
           <div className="cm-btns">
-            {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} />}
-            {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
-            {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span></button>}
+            {/* The short form on purpose: counter.why.* was written as a standalone paragraph and ran to
+                  four lines under a button, which pushed the whole panel past the bottom of a 640px
+                  phone. The full version is still a tap away in the rules. */}
+              {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} why={t('prompt.why.block')} />}
+            {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
+            {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
           </div>
           )
         ) : (
