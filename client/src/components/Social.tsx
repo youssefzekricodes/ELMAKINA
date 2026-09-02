@@ -2,10 +2,11 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
-import { useStore, store } from '../lib/store';
+import { useStore, store, type Snapshot } from '../lib/store';
 import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow } from '../lib/social';
 import { copyInvite, joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleMusic, toggleSound } from '../lib/net';
 import { disablePush, enablePush, pushStatus } from '../lib/push';
+import { navIconFor } from './NavBar';
 import { Art, GoogleG, Icon, PlayerAvatar } from './ui';
 import type { ArtName } from '../art';
 
@@ -15,13 +16,25 @@ const home = () => store.set({ screen: 'home' });
 const closeSheet = () => store.set({ modal: null });
 
 /** `art` takes an illustrated mark from the set; `icon` falls back to the line glyphs. */
-function PageHead({ icon, art, title }: { icon?: string; art?: ArtName; title: string }) {
+/**
+ * A screen's own header — desktop only, since the tab bar names the screen on a phone.
+ *
+ * `screen` takes the mark straight from the tab bar's table rather than naming a second icon here:
+ * the head and the header row sat side by side on a desktop showing two different pictures of the
+ * same place, because they were drawing from two different sets.
+ */
+function PageHead({ screen, icon, art, title }: { screen?: Snapshot['screen']; icon?: string; art?: ArtName; title: string }) {
+  const nav = screen ? navIconFor(screen) : undefined;
   return (
     <header className="page-head">
       <button type="button" className="page-back" onClick={home} aria-label={t('page.back')}>
         <Icon name="alt-arrow-left" className="size-5" />
       </button>
-      <h1 className="page-title">{art ? <Art name={art} className="page-art" /> : <Icon name={icon || 'system'} className="size-6" />}{title}</h1>
+      <h1 className="page-title">
+        {nav ? <img className="page-art" src={nav} alt="" draggable={false} />
+          : art ? <Art name={art} className="page-art" /> : <Icon name={icon || 'system'} className="size-6" />}
+        {title}
+      </h1>
       <span className="page-head-sp" />
     </header>
   );
@@ -33,7 +46,7 @@ export function LeaderboardPage() {
   return (
     <section className="screen page-screen">
       <div className="page-shell">
-        <PageHead art="achievements" title={t('lb.title')} />
+        <PageHead screen="leaderboard" title={t('lb.title')} />
         <div className="page-body">
           {rows === null ? <p className="sheet-empty">{t('lb.loading')}</p>
             : rows.length === 0 ? <p className="sheet-empty">{t('lb.empty')}</p>
@@ -62,7 +75,7 @@ export function FriendsPage() {
   return (
     <section className="screen page-screen">
       <div className="page-shell">
-        <PageHead art="gamepad" title={t('fr.title')} />
+        <PageHead screen="friends" title={t('fr.title')} />
         <div className="page-body">
           {s.account?.isGuest && <p className="fr-hint">{t('fr.guest')}</p>}
 
@@ -223,7 +236,7 @@ export function PublicRoomsPage() {
   return (
     <section className="screen page-screen">
       <div className="page-shell">
-        <PageHead art="menu" title={t('pub.title')} />
+        <PageHead screen="public" title={t('pub.title')} />
         <div className="page-body">
           {rooms === null ? <p className="sheet-empty">{t('pub.loading')}</p>
             : rooms.length === 0 ? <p className="sheet-empty">{t('pub.empty')}</p>
@@ -261,7 +274,7 @@ export function ProfilePage() {
   return (
     <section className="screen page-screen">
       <div className="page-shell">
-        <PageHead art="profile" title={t('profile.title')} />
+        <PageHead screen="profile" title={t('profile.title')} />
         <div className="page-body pf-page">
           <div className="pf-card">
             <button type="button" className="pf-face" onClick={() => store.set({ modal: 'avatar' })} aria-label={t('profile.change')}>

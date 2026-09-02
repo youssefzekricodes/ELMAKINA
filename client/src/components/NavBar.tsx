@@ -29,6 +29,9 @@ const TABS: { id: string; screen: Screen; icon: string; label: string }[] = [
   { id: 'settings', screen: 'profile', icon: '/img/navbar/settings.svg', label: 'set.title' },
 ];
 
+/** The mark a screen is known by, so nothing else has to keep its own copy of the mapping. */
+export const navIconFor = (screen: Screen): string | undefined => TABS.find((t) => t.screen === screen)?.icon;
+
 export function NavBar() {
   const s = useStore();
   if (s.screen === 'game' || s.screen === 'lobby' || s.onboarding) return null;
