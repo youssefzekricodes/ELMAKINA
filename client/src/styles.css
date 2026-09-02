@@ -2711,6 +2711,13 @@
       mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 112px), transparent calc(100% - 78px)); }
     .page-body::-webkit-scrollbar, .home-screen::-webkit-scrollbar, .lobby-screen::-webkit-scrollbar {
       width: 0; height: 0; display: none; }
+    /* The lobby and home ARE the .screen, so the blanket `.screen { overflow: hidden }` above wins
+       against the one-class scroller rule and froze them solid — the pages never noticed because
+       their scroller (.page-body) sits inside the screen rather than on it. Same specificity here,
+       later in the file, so auto wins; and flex-basis 0 gives the scroller its own definite height
+       rather than a shrunken one, which is the Safari bug settings already paid for. */
+    .app:not(.in-game) .home-screen,
+    .app:not(.in-game) .lobby-screen { overflow: hidden; overflow-y: auto; flex-basis: 0px; }
     /* six tools on one phone row: tighten the circles rather than let them wrap under the trophy */
     .home-top-tools { gap: 5px; }
     .home-top-tools .acct-tool { width: 32px; height: 32px; }
