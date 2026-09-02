@@ -60,6 +60,29 @@ function makeDb(sb: SupabaseClient) {
     async listStaleMemberRooms(before: number, limit = 200) { const rows = await one(sb.from('room_members').select('code').lt('last_seen', ts(before)).limit(limit)); return [...new Set((rows || []).map((r: any) => r.code))]; },
     async deleteMembers(code: string) { await one(sb.from('room_members').delete().eq('code', code)); },
     async bumpScore(uid: string, delta: number, win: boolean) { const { error } = await sb.rpc('bump_score', { p_uid: uid, p_delta: delta, p_win: win }); if (error) throw error; },
+    // ── the two-call fast path (see migrations/20260902010000_atomic_ops.sql) ──
+    // room.mjs feature-detects these; without them it falls back to the primitives above, which is
+    // also the path the test suite's fake db drives.
+    async loadBundle(code: string) {
+      const b = await one(sb.rpc('game_load', { p_code: code }));
+      return {
+        room: rowToRoom(b?.room || null),
+        members: (b?.members || []).map((m: any) => ({ user_id: m.user_id, last_seen: ms(m.last_seen) })),
+        st: b?.state ? { state: b.state.state, version: b.state.version } : null,
+      };
+    },
+    /** Both CAS writes and the views in one transaction. false = lost the race, nothing written. */
+    async commitAll(room: any, expectedRoomVer: number, state: any, expectedStateVer: number, views: any[]) {
+      const { error } = await sb.rpc('game_commit', {
+        p_code: room.code, p_room: roomToRow(room), p_room_version: expectedRoomVer,
+        p_state: state, p_state_version: expectedStateVer, p_views: views,
+      });
+      if (error) {
+        if (String(error.message || '').includes('mekina_conflict')) return false;
+        throw error;
+      }
+      return true;
+    },
   };
 }
 

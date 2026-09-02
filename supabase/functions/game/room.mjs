@@ -146,12 +146,19 @@ async function dispatch(ctx, op, body) {
   // sequential round-trips before a move's logic even ran, and it is on the path of every click.
   const m = await db.getMembership(uid);
   if (!m) throw fail('Not in a room');
-  const [room, memberRows, st] = await Promise.all([
-    db.getRoom(m.code),
-    db.listMembers(m.code),
-    db.getState(m.code),
-    db.touchMember(m.code, uid, now),   // heartbeat; nothing reads it back in this request
-  ]);
+  let room, memberRows, st;
+  if (db.loadBundle) {
+    // one RPC for the whole read side (room + members + state), heartbeat riding alongside
+    const [bundle] = await Promise.all([db.loadBundle(m.code), db.touchMember(m.code, uid, now)]);
+    ({ room, members: memberRows, st } = bundle);
+  } else {
+    [room, memberRows, st] = await Promise.all([
+      db.getRoom(m.code),
+      db.listMembers(m.code),
+      db.getState(m.code),
+      db.touchMember(m.code, uid, now),   // heartbeat; nothing reads it back in this request
+    ]);
+  }
   if (!room) { await db.removeMember(m.code, uid); throw fail('Room not found'); }
   const me = room.players.find((p) => p.id === uid);
   if (!me) { await db.removeMember(m.code, uid); throw fail('Not in a room'); }
@@ -414,16 +421,22 @@ class RoomOps {
     room.next_due = this.nextDue();
     room.updated_at = this.now;
     const expected = room.version; room.version = expected + 1;
-    if (!(await this.db.updateRoom(room.code, room, expected))) throw CONFLICT();
-    // Award trophies exactly once, when the game first reaches 'ended'. Persist the flag in state so a
-    // retry/tick never double-awards; run the actual DB writes only after state is safely committed.
+    // Award trophies exactly once, when the game first reaches 'ended'. Persist the flag in state so
+    // a retry/tick never double-awards; the actual score writes run only after the commit lands.
     let awards = null;
     if (this.game && this.game.phase === 'ended' && !this.awarded) { awards = trophyAwards(this.game); this.awarded = true; }
     const stExpected = this.version; this.version = stExpected + 1;
     const state = this.game ? { game: this.game.toJSON(), bots: this.sched, awarded: !!this.awarded } : null;
-    if (!(await this.db.saveState(room.code, state, stExpected))) throw CONFLICT();
     const rows = humans(room).map((p) => ({ id: `${room.code}:${p.id}`, code: room.code, user_id: p.id, view: this.game ? this.viewFor(p.id) : null }));
-    await this.db.upsertViews(rows);
+    if (this.db.commitAll) {
+      // One transaction: both CAS writes and the views land together or not at all, so a lost race
+      // leaves nothing behind for the retry to trip over.
+      if (!(await this.db.commitAll(room, expected, state, stExpected, rows))) throw CONFLICT();
+    } else {
+      if (!(await this.db.updateRoom(room.code, room, expected))) throw CONFLICT();
+      if (!(await this.db.saveState(room.code, state, stExpected))) throw CONFLICT();
+      await this.db.upsertViews(rows);
+    }
     if (awards && this.db.bumpScore) {
       for (const a of awards) { try { await this.db.bumpScore(a.id, a.delta, a.win); } catch (e) { /* trophies are best-effort */ } }
     }
