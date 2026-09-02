@@ -1,9 +1,9 @@
 /* Leaderboard + Friends full pages (reached from Home). Read/write the Supabase social tables via lib/social. */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store, type Snapshot } from '../lib/store';
-import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, loadFriends, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow } from '../lib/social';
+import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, LB_PAGE, loadFriends, searchPlayers, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow } from '../lib/social';
 import { copyInvite, joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleMusic, toggleSound } from '../lib/net';
 import { disablePush, enablePush, pushStatus } from '../lib/push';
 import { navIconFor } from './NavBar';
@@ -42,7 +42,37 @@ function PageHead({ screen, icon, art, title }: { screen?: Snapshot['screen']; i
 
 export function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderRow[] | null>(null);
-  useEffect(() => { setRows(null); loadLeaderboard().then(setRows); }, []);
+  const [more, setMore] = useState(true);
+  const sentinel = useRef<HTMLLIElement | null>(null);
+  const busy = useRef(false);
+
+  /**
+   * One page at a time, fetched when the bottom of the list comes into view.
+   *
+   * Guarded by a ref rather than state: the observer can fire twice before React has re-rendered,
+   * and two calls with the same offset would append the same twenty-five rows twice.
+   */
+  const loadMore = useCallback(async () => {
+    if (busy.current || !more) return;
+    busy.current = true;
+    const offset = rows ? rows.length : 0;
+    const page = await loadLeaderboard(offset);
+    setRows((prev) => (prev && offset > 0 ? [...prev, ...page] : page));
+    if (page.length < LB_PAGE) setMore(false);      // a short page is the last page
+    busy.current = false;
+  }, [rows, more]);
+
+  useEffect(() => { setRows(null); setMore(true); busy.current = false; loadLeaderboard(0).then((r) => { setRows(r); if (r.length < LB_PAGE) setMore(false); }); }, []);
+
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !more) return;
+    // rootMargin so the next page is already arriving before the last row is reached
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) loadMore(); }, { rootMargin: '300px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore, more, rows]);
+
   return (
     <section className="screen page-screen">
       <div className="page-shell">
@@ -60,9 +90,71 @@ export function LeaderboardPage() {
                     <span className="lb-trophies"><Art name="stars" className="size-3.5" />{r.trophies}</span>
                   </li>
                 ))}
+                {more && <li className="lb-more" ref={sentinel}><span className="lb-more-dot" /><span className="lb-more-dot" /><span className="lb-more-dot" /></li>}
               </ol>}
         </div>
       </div>
+    </section>
+  );
+}
+
+/**
+ * Find somebody by name and ask to be friends.
+ *
+ * Until now the only way to add anyone was to be sitting at a table with them, which means you
+ * could not add the friend who told you about the game. Two characters before it searches, and it
+ * waits for a pause in the typing rather than querying on every keystroke.
+ */
+function FriendSearch() {
+  const [q, setQ] = useState('');
+  const [hits, setHits] = useState<{ uid: string; name: string; avatar: string | null; avatarData: string | null }[] | null>(null);
+  const [sent, setSent] = useState<Record<string, boolean>>({});
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) { setHits(null); return; }
+    setBusy(true);
+    // Debounced, and the answer is dropped if the query moved on while it was in flight — otherwise
+    // a slow response for "yo" can land on top of the results for "youssef".
+    let live = true;
+    const id = setTimeout(async () => {
+      const r = await searchPlayers(term);
+      if (live) { setHits(r); setBusy(false); }
+    }, 280);
+    return () => { live = false; clearTimeout(id); };
+  }, [q]);
+
+  const add = async (uid: string) => {
+    const r = await sendFriendRequest(uid);
+    if (r.ok) { setSent((m) => ({ ...m, [uid]: true })); notify(t('fr.sent'), true); }
+    else notify(r.error || t('fr.addFail'));
+  };
+
+  return (
+    <section className="fr-sec fr-find">
+      <h3 className="fr-sec-h">{t('fr.find')}</h3>
+      <label className="fr-search">
+        <Icon name="users-group-rounded" className="size-4 fr-search-ic" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('fr.find.ph')}
+          maxLength={24} autoComplete="off" aria-label={t('fr.find')} />
+        {q && <button type="button" className="fr-search-x" onClick={() => setQ('')} aria-label={t('invite.dismiss')}><Icon name="close-circle" className="size-4" /></button>}
+      </label>
+      {q.trim().length >= 2 && (
+        busy ? <p className="sheet-empty">{t('fr.searching')}</p>
+          : hits && hits.length === 0 ? <p className="sheet-empty">{t('fr.noHits')}</p>
+            : (hits || []).map((p) => (
+              <div className="fr-row" key={p.uid}>
+                <PlayerAvatar p={asPlayer(p.uid, p.avatar, p.avatarData)} size="sm" />
+                <span className="fr-name">{p.name}</span>
+                {sent[p.uid]
+                  ? <span className="fr-pending">{t('fr.sent')}</span>
+                  : <Button size="sm" variant="primary" onPress={() => add(p.uid)}>
+                      <Icon name="user-plus-rounded" className="size-4" />{t('fr.addShort')}
+                    </Button>}
+              </div>
+            ))
+      )}
     </section>
   );
 }
@@ -78,6 +170,7 @@ export function FriendsPage() {
         <PageHead screen="friends" title={t('fr.title')} />
         <div className="page-body">
           {s.account?.isGuest && <p className="fr-hint">{t('fr.guest')}</p>}
+          <FriendSearch />
 
           {s.friendReqs.length > 0 && (
             <section className="fr-sec">

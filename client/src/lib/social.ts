@@ -140,6 +140,26 @@ export async function inviteToRoom(toUid: string, code: string): Promise<{ ok: b
   if (!error) supabase.functions.invoke('push', { body: { op: 'invite', toUid, code } }).catch(() => {});
   return { ok: !error };
 }
+/**
+ * Find players by name, to send a friend request to somebody you are not at a table with.
+ *
+ * Anyone already in your friends list (accepted OR pending) is dropped here rather than in the UI,
+ * so the results are only people you can actually act on — and you are never in your own results.
+ */
+export async function searchPlayers(q: string): Promise<{ uid: string; name: string; avatar: string | null; avatarData: string | null }[]> {
+  const term = q.trim();
+  if (!supabase || !curUid || term.length < 2) return [];
+  // escape the LIKE wildcards, or a name with % in it searches for everything
+  const safe = term.replace(/[%_]/g, (m) => '\\' + m);
+  const { data } = await supabase.from('profiles').select('user_id,name,avatar,avatar_data')
+    .ilike('name', `%${safe}%`).neq('user_id', curUid).limit(20);
+  const known = new Set(store.get().friends.map((f) => f.uid));
+  return (data || [])
+    .filter((p: { user_id: string }) => !known.has(p.user_id))
+    .map((p: { user_id: string; name: string; avatar: string | null; avatar_data: string | null }) =>
+      ({ uid: p.user_id, name: p.name || 'Player', avatar: p.avatar, avatarData: p.avatar_data }));
+}
+
 export async function dismissInvite() {
   const inv = store.get().invite; store.set({ invite: null });
   if (supabase && inv) { try { await supabase.from('room_invites').delete().eq('id', inv.id); } catch { /* ignore */ } }
@@ -181,9 +201,15 @@ export async function removeFriend(id: string) {
   loadFriends();
 }
 
-export async function loadLeaderboard(): Promise<LeaderRow[]> {
+/** How many leaderboard rows arrive at a time — see LeaderboardPage, which asks for the next page
+    as the last one comes into view. */
+export const LB_PAGE = 25;
+
+export async function loadLeaderboard(offset = 0, limit = LB_PAGE): Promise<LeaderRow[]> {
   if (!supabase) return [];
-  const { data: sc } = await supabase.from('scores').select('user_id,trophies,wins,games').order('trophies', { ascending: false }).limit(50);
+  const { data: sc } = await supabase.from('scores').select('user_id,trophies,wins,games')
+    .order('trophies', { ascending: false }).order('user_id', { ascending: true })   // a stable tiebreak, or paging repeats rows
+    .range(offset, offset + limit - 1);
   const rows = sc || [];
   const ids = rows.map((r: any) => r.user_id);
   const profs: Record<string, any> = {};

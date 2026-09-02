@@ -1902,6 +1902,27 @@
 
   /* leaderboard rows */
   .lb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  /* The foot of the list: three dots that say another page is on its way. It is also the sentinel
+     the observer watches, so the thing that asks for more rows is the thing that says it is asking. */
+  .lb-more { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 18px 0 6px; }
+  .lb-more-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+    opacity: .35; animation: lb-more-pulse 1.1s ease-in-out infinite; }
+  .lb-more-dot:nth-child(2) { animation-delay: .15s; }
+  .lb-more-dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes lb-more-pulse { 0%, 100% { opacity: .25; transform: scale(.85); } 50% { opacity: .9; transform: scale(1); } }
+
+  /* ── find a friend ───────────────────────────────────────────────────────────
+     Until now the only way to add anybody was to already be at a table with them. */
+  .fr-find { gap: 8px; }
+  .fr-search { position: relative; display: flex; align-items: center; gap: 8px; padding: 0 10px;
+    border-radius: 999px; background: rgba(8,5,3,.45); box-shadow: inset 0 0 0 1px rgba(255,240,214,.16); }
+  .fr-search-ic { flex-shrink: 0; color: var(--muted); }
+  .fr-search input { flex: 1; min-width: 0; padding: 11px 0; border: 0; background: none; outline: none;
+    color: var(--foreground); font-size: 14px; font-weight: 600; }
+  .fr-search input::placeholder { color: rgba(167,154,133,.75); font-weight: 500; }
+  .fr-search-x { flex-shrink: 0; display: inline-flex; padding: 4px; border: 0; background: none;
+    color: var(--muted); cursor: pointer; }
+  .fr-search-x:hover { color: var(--foreground); }
   .lb-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-lg); }
   .lb-row.me { background: var(--accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
   .lb-rank { flex-shrink: 0; width: 24px; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--muted); }
