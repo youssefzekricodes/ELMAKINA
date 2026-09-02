@@ -34,7 +34,7 @@ const buildId = (() => {
 // container and never sends a hit — verified. Hence the inline bootstrap, exactly like Google's
 // snippet, with our two additions: consent defaults, and send_page_view:false because the app
 // reports one page_view per screen itself (see lib/analytics.ts sendPageView).
-const googleTags = (gaId: string, adsClient: string): any[] => [
+const googleTags = (gaId: string, adsClient: string, native: boolean): any[] => [
   { tag: 'script', injectTo: 'head', attrs: { async: true, src: `https://www.googletagmanager.com/gtag/js?id=${gaId}` } },
   {
     tag: 'script',
@@ -48,8 +48,15 @@ const googleTags = (gaId: string, adsClient: string): any[] => [
       `gtag('config',${JSON.stringify(gaId)},{send_page_view:false});`,
     ].join(''),
   },
-  { tag: 'script', injectTo: 'head', attrs: { async: true, crossorigin: 'anonymous', 'data-ad-frequency-hint': '60s', src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsClient}` } },
+  // AdSense is WEB ONLY. Its terms forbid the code inside an application, so the app build must not
+  // merely decline to run it — it must not ship it. See client/src/lib/platform.ts.
+  ...(native ? [] : [{ tag: 'script', injectTo: 'head', attrs: { async: true, crossorigin: 'anonymous', 'data-ad-frequency-hint': '60s', src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsClient}` } }]),
 ];
+
+// The one AdSense reference that lives in index.html rather than being injected: AdSense's site
+// verification crawler reads it from the raw HTML, so it cannot be added at runtime. Cut from the
+// native shell along with the loader, so a store build contains no AdSense string at all.
+const ADSENSE_META = /^[ \t]*<meta\s+name="google-adsense-account"[^>]*>\n?/mi;
 
 // The client is a static Vite + React app that talks to Supabase directly (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
 // from the repo-root .env). `npm run build` writes client/dist — host it on any static host.
@@ -61,6 +68,9 @@ export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, envDir, '');
   const gaId = resolveId(env.VITE_GA_ID, DEFAULT_GA_ID, isGaId);
   const adsClient = resolveId(env.VITE_ADSENSE_CLIENT, DEFAULT_ADSENSE_CLIENT, isAdsClient);
+  // VITE_PLATFORM=native marks a build destined for a Capacitor shell rather than a browser. It
+  // changes exactly one thing here, and it is the one that matters: no AdSense anywhere in the HTML.
+  const native = env.VITE_PLATFORM === 'native';
   return {
   root: here,
   envDir,
@@ -86,7 +96,10 @@ export default defineConfig(({ command, mode }) => {
       name: 'mekina-google-tags',
       transformIndexHtml: {
         order: 'pre' as const,
-        handler: () => (command === 'build' ? googleTags(gaId, adsClient) : []),
+        handler: (html: string) => {
+          const tags = command === 'build' ? googleTags(gaId, adsClient, native) : [];
+          return native ? { html: html.replace(ADSENSE_META, ''), tags } : { html, tags };
+        },
       },
     },
   ],
@@ -109,6 +122,11 @@ export default defineConfig(({ command, mode }) => {
           // vendor, which every page load fetches — measured at +476 KB raw / +156 KB gzipped on the
           // critical path, for a library the game never needs in order to run.
           if (id.includes('@sentry')) return;
+          // Same reasoning, same measurement: @capacitor-community/admob calls registerPlugin() at
+          // module scope, so a static reference survives tree-shaking. lib/ads/admob.ts imports it
+          // dynamically to keep it out of the web build entirely — naming it here would defeat that
+          // by folding it into vendor, which every page load fetches. Measured at +13 KB raw.
+          if (id.includes('@capacitor')) return;
           if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
           if (id.includes('@heroui')) return 'heroui';
           return 'vendor';

@@ -8,6 +8,7 @@ import '@fontsource/ibm-plex-sans-arabic/700.css';
 import './styles.css';
 import App from './App';
 import { preloadAssets } from './lib/assets';
+import { isNative } from './lib/platform';
 import { captureError, initMonitor } from './lib/monitor';
 
 // Keep the last runtime errors reachable for debugging (window.__mekinaErrors) and show a readable fallback.
@@ -99,7 +100,12 @@ function dismissSplash() {
   setTimeout(go, 1200);
 }
 
-// Register the PWA service worker (installable + offline shell). Prod only — no SW in dev.
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Register the PWA service worker (installable + offline shell). Prod only — no SW in dev, and
+// never inside the native shell. There the assets are already local and are replaced by store
+// releases, so a cache in front of them is a SECOND, independent source of staleness — and unlike
+// a browser there is no way for a player to force a refresh out of it. (lib/update.ts needs no
+// such guard: in an app /version.json is the bundled copy, so it always matches BUILD_ID and the
+// "newer build is live" prompt simply never fires.)
+if ('serviceWorker' in navigator && import.meta.env.PROD && !isNative()) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
 }

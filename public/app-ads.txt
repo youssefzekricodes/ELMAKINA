@@ -1,0 +1,14 @@
+# AdMob authorised sellers — the APP counterpart of ads.txt.
+#
+# Same declaration, different file name, and both are needed: crawlers read /ads.txt to authorise
+# sellers for the website and /app-ads.txt to authorise them for the store apps. Netlify serves
+# public/ at the domain root, so this is https://elmekina.com/app-ads.txt.
+#
+# For this file to count, the Play Store and App Store listings must give elmekina.com as the
+# developer website — that link is how Google connects the app to this domain. Without it AdMob
+# treats the inventory as unauthorised and demand drops sharply.
+#
+# The publisher id is the same 16 digits as the AdSense one: an AdMob account created from a Google
+# account that already has AdSense reuses it (AdMob ad units then read ca-app-pub-<these digits>/…).
+# Must stay in sync with DEFAULT_ADSENSE_CLIENT in client/src/lib/google.ts and public/ads.txt.
+google.com, pub-4626982618627963, DIRECT, f08c47fec0942fa0
