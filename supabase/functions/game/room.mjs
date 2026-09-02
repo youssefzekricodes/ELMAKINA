@@ -141,16 +141,22 @@ async function dispatch(ctx, op, body) {
     case 'tick': return tickRoom(ctx, body.code);
     default: break;
   }
-  // room-bound ops
+  // room-bound ops. Everything after the membership row is keyed by the same code, so it travels
+  // as ONE parallel wave instead of four queries in single file — this preamble used to cost four
+  // sequential round-trips before a move's logic even ran, and it is on the path of every click.
   const m = await db.getMembership(uid);
   if (!m) throw fail('Not in a room');
-  const room = await db.getRoom(m.code);
+  const [room, memberRows, st] = await Promise.all([
+    db.getRoom(m.code),
+    db.listMembers(m.code),
+    db.getState(m.code),
+    db.touchMember(m.code, uid, now),   // heartbeat; nothing reads it back in this request
+  ]);
   if (!room) { await db.removeMember(m.code, uid); throw fail('Room not found'); }
   const me = room.players.find((p) => p.id === uid);
   if (!me) { await db.removeMember(m.code, uid); throw fail('Not in a room'); }
-  await db.touchMember(room.code, uid, now);
   const r = new RoomOps(ctx, room);
-  await r.load();
+  r.applyLoaded(memberRows, st);
   r.touch(me);
   switch (op) {
     case 'set_profile': return r.setProfile(me, body.profile, body.name);
@@ -373,9 +379,13 @@ const memberSeen = (m) => (typeof m.last_seen === 'number' ? m.last_seen : (m.la
 class RoomOps {
   constructor(ctx, room) { this.ctx = ctx; this.db = ctx.db; this.now = ctx.now; this.room = room; this.game = null; this.state = null; this.version = 0; this.sched = {}; }
   async load() {
+    const [rows, st] = await Promise.all([this.db.listMembers(this.room.code), this.db.getState(this.room.code)]);
+    this.applyLoaded(rows, st);
+  }
+  /** The synchronous half of load(), so a caller that already fetched in parallel can hand rows in. */
+  applyLoaded(memberRows, st) {
     this.members = {};
-    for (const m of (await this.db.listMembers(this.room.code)) || []) this.members[m.user_id] = memberSeen(m);
-    const st = await this.db.getState(this.room.code);
+    for (const m of memberRows || []) this.members[m.user_id] = memberSeen(m);
     if (st && st.state && st.state.game) { this.version = st.version; this.sched = st.state.bots || {}; this.awarded = !!st.state.awarded; this.game = Game.fromJSON(st.state.game, { now: () => this.now }); }
     else { this.version = st ? st.version : 0; }
   }

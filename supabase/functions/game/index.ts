@@ -63,6 +63,18 @@ function makeDb(sb: SupabaseClient) {
   };
 }
 
+/** The sub of a gateway-verified user JWT, or null for anything else (anon key, expired, garbage). */
+function decodeUid(token: string): string | null {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    if (payload.role !== 'authenticated' || !payload.sub) return null;
+    if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) return null;
+    return String(payload.sub);
+  } catch { return null; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
@@ -76,9 +88,14 @@ Deno.serve(async (req) => {
     let uid: string | null = null, isService = false;
     if (token && token === SERVICE_KEY) isService = true;
     else {
-      const { data, error } = await admin.auth.getUser(token);
-      if (error || !data.user) return json({ ok: false, error: 'Not signed in' }, 401);
-      uid = data.user.id;
+      // The platform already verified this JWT's signature before invoking us (verify_jwt = true in
+      // config.toml — nothing unsigned gets this far). Asking the auth server to getUser() again was
+      // a second HTTP hop on EVERY move a player makes, and it was the single largest share of a
+      // click's latency. Decoding the payload locally is enough, with two checks the gateway does
+      // not make for us: the role must be a signed-in user (the anon key is itself a valid project
+      // JWT with role 'anon' and no sub) and the token must not have expired mid-session.
+      uid = decodeUid(token);
+      if (!uid) return json({ ok: false, error: 'Not signed in' }, 401);
     }
     const res = await handleOp({ db: makeDb(admin), uid, body, now: Date.now(), isService });
     return json(res);

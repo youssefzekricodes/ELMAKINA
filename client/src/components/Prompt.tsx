@@ -104,9 +104,10 @@ function TargetPicker() {
     "Block as Colonel", and it is exactly the card you need to be holding — or to be bluffing. */
 function BlockBtn({ character, label, desc, why }: { character: string; label: string; desc: string; why?: string }) {
   const color = CH[character as keyof typeof CH]?.color || 'var(--warning)';
+  const acting = useStore().acting;
   return (
     <button
-      type="button" className="rx r-block with-card" onClick={block} title={desc}
+      type="button" className="rx r-block with-card" onClick={block} title={desc} disabled={acting}
       style={{ ['--c' as any]: color, ['--ink' as any]: inkOn(color) }}
     >
       <GameCard c={character} w={26} small className="rx-card" />
@@ -235,10 +236,10 @@ export function Prompt() {
                 <div className="cl-who"><PlayerAvatar p={pl(tg.id)} size="xs" /><Html as="span" html={i18n.html('prompt.bw.claimer', { name: pname(tg.id) })} /></div>
               </div>
             </div>
-            {canAct && tg.id !== me && <div className="cl-btns"><button type="button" className="rx call" onClick={() => challengeTarget(tg.id)}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button></div>}
+            {canAct && tg.id !== me && <div className="cl-btns"><button type="button" className="rx call" disabled={s.acting} onClick={() => challengeTarget(tg.id)}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button></div>}
           </div>
         ))}
-        {canAct ? <button type="button" className="rx keep" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.bw.keep')}</span></button>
+        {canAct ? <button type="button" className="rx keep" disabled={s.acting} onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.bw.keep')}</span></button>
           : <div className="p-waiting">{t('prompt.waiting.others')}</div>}
       </div>
     );
@@ -311,8 +312,8 @@ export function Prompt() {
                   four lines under a button, which pushed the whole panel past the bottom of a 640px
                   phone. The full version is still a tap away in the rules. */}
               {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} why={t('prompt.why.block')} />}
-              {canChallenge && <button type="button" className="rx call" onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
-              {canPass && <button type="button" className="rx let-pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
+              {canChallenge && <button type="button" className="rx call" disabled={s.acting} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
+              {canPass && <button type="button" className="rx let-pass" disabled={s.acting} onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
             </div>
           ) : (
           <div className="cm-btns">
@@ -320,8 +321,8 @@ export function Prompt() {
                   four lines under a button, which pushed the whole panel past the bottom of a 640px
                   phone. The full version is still a tap away in the rules. */}
               {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} why={t('prompt.why.block')} />}
-            {w.claim && <button type="button" className="rx call" disabled={!canChallenge} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
-            {canPass && <button type="button" className="rx pass" onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
+            {w.claim && <button type="button" className="rx call" disabled={!canChallenge || s.acting} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
+            {canPass && <button type="button" className="rx pass" disabled={s.acting} onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
           </div>
           )
         ) : (

@@ -351,8 +351,28 @@ export function startAction(type: string) {
   }
   store.set({ targeting: a, targetId: null });
 }
-/** Emit a game move and apply the server's returned view immediately (snappy, no Realtime wait). */
-async function move(op: string, data?: any) { const r = await emit(op, data); if (r && r.view) applyView(r.view); return r; }
+/**
+ * Emit a game move and apply the server's returned view immediately (snappy, no Realtime wait).
+ *
+ * One move at a time. A second tap while the first is in flight used to go all the way to the
+ * server, arrive after the window had already resolved, and come back as an error toast — the
+ * player being scolded for pressing a button that had not visibly reacted yet. Now the repeat tap
+ * is swallowed here, and store.acting lets every verdict button hold still until the answer lands.
+ */
+let inFlight = false;
+async function move(op: string, data?: any) {
+  if (inFlight) return { ok: false, error: 'busy' };
+  inFlight = true;
+  store.set({ acting: true });
+  try {
+    const r = await emit(op, data);
+    if (r && r.view) applyView(r.view);
+    return r;
+  } finally {
+    inFlight = false;
+    store.set({ acting: false });
+  }
+}
 const BASIC = ['income', 'loan', 'paidkill'];
 export async function sendAction(payload: any) {
   store.set({ targeting: null, targetId: null });

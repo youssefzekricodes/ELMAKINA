@@ -39,6 +39,7 @@ export interface Snapshot {
   name: string;
   autoJoinCode: string | null;
   targeting: ActionDef | null;
+  acting: boolean;              // a move is in flight — buttons hold still until it answers
   targetId: string | null;
   logOpen: boolean;
   logCollapsed: boolean;
@@ -104,7 +105,7 @@ let snap: Snapshot = {
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   musicOn: localStorage.getItem('mekina.music') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
-  targeting: null, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
+  targeting: null, acting: false, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, tour: false, learn: loadLearn(), reactions: [],
   account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false,
   // No saved name = a brand-new player: the full-screen onboarding runs until a name exists.
   onboarding: !(localStorage.getItem('mekina.name') || '').trim(), updateReady: false, pushOn: false, tick: 0,
