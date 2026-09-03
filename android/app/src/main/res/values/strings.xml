@@ -4,4 +4,7 @@
     <string name="title_activity_main">ELMEKINA</string>
     <string name="package_name">com.elmekina.game</string>
     <string name="custom_url_scheme">com.elmekina.game</string>
+    <string name="widget_desc">Your ELMEKINA day streak, on your home screen.</string>
+    <!-- Shown until the app pushes a localized nudge of its own (first install, before any game). -->
+    <string name="widget_default">Start your streak</string>
 </resources>

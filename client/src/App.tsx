@@ -8,7 +8,6 @@ import { initPulse } from './lib/pulse';
 import { initAnalytics, sendPageView } from './lib/analytics';
 import { initAds } from './lib/ads';
 import { initUpdateCheck } from './lib/update';
-import { music } from './lib/music';
 import { i18n } from './i18n';
 import { CH, CHARACTERS } from './theme';
 import { Background } from './components/Background';
@@ -22,6 +21,7 @@ import { Console } from './components/Console';
 import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, ConfirmDialog, RulesModal } from './components/Modals';
+import { StreakCine, StreakModal } from './components/Streaks';
 import { Onboarding } from './components/Onboarding';
 import { UpdateGate } from './components/UpdateGate';
 import { LeaderboardPage, FriendsPage, ProfilePage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
@@ -71,7 +71,7 @@ export default function App() {
     initAnalytics();
     initAds(); // fetch the ad script early so the first break is not what loads it
     initUpdateCheck(); // a stale PWA is the one bug a user cannot work around
-    (window as any).__mekina = { store, music, sfx }; // debugging hook (inspect / inject state from the console)
+    (window as any).__mekina = { store, sfx }; // debugging hook (inspect / inject state from the console)
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') store.set({ logOpen: false, modal: null }); }; // Esc also dismisses any sheet
     document.addEventListener('keydown', esc);
     return () => document.removeEventListener('keydown', esc);
@@ -80,15 +80,6 @@ export default function App() {
   // automatic page_view would fire exactly once for a whole session.
   useEffect(() => { sendPageView('/' + s.screen); }, [s.screen]);
   const inGame = s.screen === 'game' && !!s.state;
-  /**
-   * The bed plays over the whole front of house — the door, the lobby, the pages off it — and stops
-   * when a hand starts. It lived in the lobby alone, which meant the only way to hear the game's own
-   * music was to open a room first; the front door is where it belongs. In a game it would sit on
-   * top of the cues that are telling you what just happened to you.
-   */
-  useEffect(() => {
-    if (!inGame && s.musicOn) music.start(); else music.stop();
-  }, [inGame, s.musicOn]);
   // Auto-fullscreen when a game begins (best-effort; the start-game clicks also request it within their gesture).
   useEffect(() => { if (inGame) goFullscreen(); }, [inGame]);
   return (
@@ -131,6 +122,8 @@ export default function App() {
       <UpdateGate />
       {/* The gate goes on top of everything: no header, no modals, no way to play nameless. */}
       {s.onboarding && <Onboarding />}
+      <StreakModal />
+      <StreakCine />
       <ConfirmDialog />
       <RulesModal />
       <CharactersModal />

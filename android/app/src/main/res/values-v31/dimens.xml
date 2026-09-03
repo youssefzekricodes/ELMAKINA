@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Android 12+: match whatever the launcher rounds its own widgets to, so ours sits in the grid
+       rather than beside it. -->
+  <dimen name="widget_radius">@android:dimen/system_app_widget_background_radius</dimen>
+</resources>

@@ -329,6 +329,11 @@ export class Game {
 
     this.clearDue();
     const action = { type, actorId: actor.id, targetId: target ? target.id : null, guess: a.guess || null, slot, character: ACTION_CHARACTER[type] || null };
+    // The Colonel's guess is judged against the hand AS IT WAS when the guess was made. Between now
+    // and resolution the target may lose a card to a failed challenge — chosen at random, so it can
+    // be the very card that was guessed — and a check at resolution would then call a right guess
+    // wrong. This flag never reaches a view: viewFor whitelists the action's fields explicitly.
+    if (type === 'colonel') action.guessHeld = target.cards.includes(a.guess);
     this.pending = { stage: 'resolving', actorId: actor.id, action, window: null, logStart: this.seq };
     const tn = target ? target.name : '';
     // A basic move opens no claim window, so nothing on the table would show it. Announce it as an
@@ -446,6 +451,11 @@ export class Game {
         if (target.cards.includes(action.guess)) {
           this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: true });
           this.addLog('loss', 'colonel.right', { target: target.name, guess: action.guess }); this.loseSpecificCard(target, action.guess, 'colonel_correct', actor.id);
+        } else if (action.guessHeld) {
+          // Right when it was said — the guessed card has since fallen to the challenge the target
+          // lost. That loss IS the penalty: no second card, and the 4 coins stay with the bank.
+          this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: true });
+          this.addLog('loss', 'colonel.right.fell', { target: target.name, guess: action.guess });
         } else {
           this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: false });
           // A wrong guess costs the actor no card: the 4 coins they already paid to play Colonel are the whole penalty, and they go to the target.

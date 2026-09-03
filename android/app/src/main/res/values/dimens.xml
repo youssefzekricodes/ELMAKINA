@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Pre-Android-12 launchers do not round widgets for us, so we pick the radius ourselves. -->
+  <dimen name="widget_radius">22dp</dimen>
+</resources>

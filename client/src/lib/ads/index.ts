@@ -68,6 +68,16 @@ function due(): boolean {
  * must not burn the gap, or a publisher with no fill would ask once and then stay silent for the
  * rest of the session.
  */
+/**
+ * One rewarded ad, at the player's request. No frequency policy applies — they asked — and the
+ * caller grants its reward ONLY on 'earned'. Never blocks anything: 'unavailable' should read to
+ * the player as "not right now", not as an error.
+ */
+export function rewardedAd(): Promise<'earned' | 'dismissed' | 'unavailable'> {
+  if (!adsEnabled()) return Promise.resolve('unavailable');
+  return provider().showRewarded().catch(() => 'unavailable' as const);
+}
+
 export function adBreak(type: BreakType): Promise<void> {
   if (!due()) return Promise.resolve();
   return new Promise<void>((resolve) => {

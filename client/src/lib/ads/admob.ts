@@ -21,6 +21,15 @@ const ENV: Record<string, string> = {
   android: (import.meta.env.VITE_ADMOB_INTERSTITIAL_ANDROID as string | undefined) || '',
   ios: (import.meta.env.VITE_ADMOB_INTERSTITIAL_IOS as string | undefined) || '',
 };
+const ENV_REWARDED: Record<string, string> = {
+  android: (import.meta.env.VITE_ADMOB_REWARDED_ANDROID as string | undefined) || '',
+  ios: (import.meta.env.VITE_ADMOB_REWARDED_IOS as string | undefined) || '',
+};
+/** Google's public rewarded test units — same rules as TEST_INTERSTITIAL in lib/google.ts. */
+const TEST_REWARDED: Record<'android' | 'ios', string> = {
+  android: 'ca-app-pub-3940256099942544/5224354917',
+  ios: 'ca-app-pub-3940256099942544/1712485313',
+};
 
 /**
  * Which unit to ask for, or '' when ads are simply off.
@@ -44,6 +53,17 @@ function unit(): string {
   const live = (ENV[p] || '').trim();
   if (isAdUnit(live)) return live;
   if (live.toLowerCase() === 'test') return TEST_INTERSTITIAL[p];
+  return '';
+}
+
+/** Same resolution for the rewarded unit; 'test' on the interstitial var covers this one too, so a
+ *  dev build does not need two switches to exercise both formats. */
+function rewardedUnit(): string {
+  const p = platformName();
+  if (p === 'web') return '';
+  const live = (ENV_REWARDED[p] || '').trim();
+  if (isAdUnit(live)) return live;
+  if (live.toLowerCase() === 'test' || (ENV[p] || '').trim().toLowerCase() === 'test') return TEST_REWARDED[p];
   return '';
 }
 
@@ -163,14 +183,56 @@ export const admob: AdProvider = {
 
   ready: () => loaded,
 
+  /**
+   * One rewarded video, prepared on demand rather than preloaded: rewarded moments are rare (a
+   * streak at risk, an end screen) and holding a loaded video for minutes wastes the fill.
+   * 'earned' is taken from the SDK's Rewarded event, not from showRewardVideoAd resolving —
+   * resolving only means the video opened; the event fires when the watch actually completed.
+   */
+  async showRewarded() {
+    const adId = rewardedUnit();
+    if (!adId) return 'unavailable' as const;
+    try {
+      const { AdMob, RewardAdPluginEvents } = await plugin();
+      let earned = false;
+      const sub = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => { earned = true; });
+      try {
+        await AdMob.prepareRewardVideoAd({ adId, npa });
+        await new Promise<void>((resolve) => {
+          let over = false;
+          const finish = () => { if (!over) { over = true; resolve(); } };
+          AdMob.addListener(RewardAdPluginEvents.Dismissed, finish).then((d: any) => setTimeout(() => d.remove(), 90_000));
+          AdMob.showRewardVideoAd().catch(finish);
+          setTimeout(finish, 90_000);   // a video is ~30s; a minute and a half means something hung
+        });
+      } finally {
+        sub.remove();
+      }
+      return earned ? ('earned' as const) : ('dismissed' as const);
+    } catch {
+      return 'unavailable' as const;
+    }
+  },
+
   async show(_type: BreakType) {
     // AdMob has no break-type vocabulary — an interstitial is an interstitial. The distinction
     // still matters upstream, where it names the placement, so the parameter stays in the shape.
     if (!loaded) return false;
     loaded = false;                       // consumed either way; never show the same object twice
     try {
-      const { AdMob } = await plugin();
-      await AdMob.showInterstitial();     // resolves when the player dismisses it
+      const { AdMob, InterstitialAdPluginEvents } = await plugin();
+      // showInterstitial() resolves when the ad OPENS, not when it closes. Treating that as "done"
+      // let the caller start the game — and its 60s first-turn clock — while the ad still covered
+      // the screen; the player came back to a hand already in progress. The break is over only on
+      // the Dismissed event (or FailedToShow, which means there was nothing to wait out).
+      await new Promise<void>((resolve) => {
+        let over = false;
+        const finish = () => { if (!over) { over = true; resolve(); } };
+        AdMob.addListener(InterstitialAdPluginEvents.Dismissed, finish).then((h: any) => setTimeout(() => h.remove(), 90_000));
+        AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, finish).then((h: any) => setTimeout(() => h.remove(), 90_000));
+        AdMob.showInterstitial().catch(finish);
+        setTimeout(finish, 90_000);       // an interstitial is seconds; a minute and a half means something hung
+      });
       void preload();                     // get the next one ready while they are back in the game
       return true;
     } catch {

@@ -23,7 +23,7 @@ const TABS: { id: string; screen: Screen; icon: string; label: string }[] = [
   { id: 'rooms', screen: 'public', icon: '/img/navbar/rooms.svg', label: 'home.public' },
   { id: 'home', screen: 'home', icon: '/img/navbar/home.svg', label: 'nav.home' },
   { id: 'friends', screen: 'friends', icon: '/img/navbar/friends.svg', label: 'fr.title' },
-  // Settings goes to the profile screen — characters, rules, sound, music, language, notifications
+  // Settings goes to the profile screen — characters, rules, sound, language, notifications
   // and the account all already live there — but it is LABELLED settings, because that is what the
   // gear promises. Borrowing the profile screen's own title put "your look" under a cog.
   { id: 'settings', screen: 'profile', icon: '/img/navbar/settings.svg', label: 'set.title' },

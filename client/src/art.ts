@@ -21,8 +21,6 @@ export const ART = {
   soundOff: '/img/icons/sound-off-c.svg',
   // Teal, where the sound switch is blue: two mute buttons side by side have to be told apart
   // before they are read.
-  musicOn: '/img/icons/music-c.svg',
-  musicOff: '/img/icons/music-off-c.svg',
   profile: '/img/icons/profile-c.svg',
   menu: '/img/icons/menu-c.svg',
   home: '/img/icons/home-c.svg',

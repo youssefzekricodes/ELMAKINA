@@ -90,6 +90,30 @@ export const h5: AdProvider = {
 
   ready: () => cleared && !blocked,
 
+  /** The Placement API's 'reward' break. beforeReward hands us a function that actually starts the
+   *  video; adViewed fires only on a completed watch, which is the only path that resolves 'earned'. */
+  showRewarded() {
+    return new Promise<'earned' | 'dismissed' | 'unavailable'>((resolve) => {
+      let settled = false;
+      const done = (v: 'earned' | 'dismissed' | 'unavailable') => { if (!settled) { settled = true; resolve(v); } };
+      const bail = setTimeout(() => done('unavailable'), 4000);
+      load().then(() => {
+        const ab = (window as any).adsbygoogle;
+        if (blocked || !(ab && ab.loaded) || !cleared) return done('unavailable');
+        try {
+          (window as any).adBreak({
+            type: 'reward',
+            name: 'streak-or-boost',
+            beforeReward: (showAdFn: () => void) => { clearTimeout(bail); showAdFn(); },
+            adViewed: () => done('earned'),
+            adDismissed: () => done('dismissed'),
+            adBreakDone: () => done('unavailable'),   // no fill: adViewed/adDismissed never fired
+          });
+        } catch { done('unavailable'); }
+      }).catch(() => done('unavailable'));
+    });
+  },
+
   show(type: BreakType) {
     return new Promise<boolean>((resolve) => {
       let settled = false;

@@ -6,7 +6,8 @@ import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
 import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
 import { validTargets } from '../lib/rules';
-import { adBreak } from '../lib/ads';
+import { adBreak, rewardedAd } from '../lib/ads';
+import { claimTrophyBoost } from '../lib/streaks';
 import { ask } from '../lib/ask';
 import { sfx } from '../lib/sfx';
 import {Art, CardBack, GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
@@ -55,6 +56,35 @@ function Timeline({ limit }: { limit: number }) {
 /** Every valid target as a tappable chip inside the prompt — mirrors tapping a seat. On phones some
     seats are cramped or hidden entirely (yourself!), so the prompt always offers the full list.
     After picking a police target the row grows big slot buttons so nobody hunts tiny card-backs. */
+/**
+ * "Watch a video → better trophies", on the end screen.
+ *
+ * The wording is the delta's: +N offers to double, 0 offers a consolation +1, −1 offers the undo.
+ * The reward is claimed server-side (claim_trophy_boost) against the ticket bump_score left, so a
+ * second press — or a replayed request — finds the ticket spent and gets nothing.
+ */
+function TrophyBoost({ places, me, scored }: { places: Place[]; me: string; scored: boolean }) {
+  const [state, setState] = useState<'idle' | 'busy' | 'done' | 'gone'>('idle');
+  const [bonus, setBonus] = useState(0);
+  const mine = places.find((p) => p.id === me);
+  if (!scored || !mine || state === 'gone') return null;
+  if (state === 'done') return <p className="boost-done">{t('boost.done', { n: bonus })}<Art name="stars" className="size-4" /></p>;
+  const label = mine.delta > 0 ? t('boost.double', { n: mine.delta }) : mine.delta === 0 ? t('boost.plus') : t('boost.undo');
+  const claim = async () => {
+    setState('busy');
+    const r = await rewardedAd();
+    if (r === 'dismissed') { setState('idle'); return; }   // walked out of the video: offer stands
+    const b = await claimTrophyBoost();
+    if (b == null) { setState('gone'); return; }           // ticket already spent, or nothing to claim
+    setBonus(b); setState('done');
+  };
+  return (
+    <Button size="md" variant="outline" className="boost-btn" isPending={state === 'busy'} onPress={claim}>
+      <Icon name="videocamera" className="size-4" />{label}
+    </Button>
+  );
+}
+
 function TargetPicker() {
   const s = useStore(); const st = s.state!; const me = s.me;
   const a = s.targeting;
@@ -208,6 +238,10 @@ export function Prompt() {
         )}
         {/* A table with a bot in it pays nothing — say so, rather than showing deltas that never land. */}
         {st.standings && st.standings.some((r) => r.isBot) && <p className="st-note">{t('end.noTrophies')}</p>}
+        {/* The rewarded boost: a win doubles, a zero becomes +1, a −1 is refunded. Only where
+            trophies were actually paid (a real table), and the server's claim ticket makes it
+            once per game no matter how the button is mashed. */}
+        <TrophyBoost places={places} me={me} scored={scored} />
         <div className="win-actions">
           {/* Between games is the other moment with no server clock running, so the interstitial sits
               in front of both ways out of the end screen. adBreak always resolves. */}

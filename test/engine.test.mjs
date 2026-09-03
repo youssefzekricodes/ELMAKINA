@@ -328,6 +328,28 @@ await test('politician proven by challenge: the shown card is not replaced twice
   assert.equal(g.deck.length + g.players.reduce((n, p) => n + p.cards.length, 0), 21, 'cards conserved');
 });
 
+await test('colonel: a right guess stays right when the challenge takes the guessed card first', () => {
+  const g = newGame(3); g.start();
+  const a = g.active, b = g.players.find((p) => p.id !== a.id);
+  a.coins = 10; giveCard(g, a.id, 'colonel');
+  // b holds exactly one thief, plus something else — so losing the thief to the challenge removes
+  // the guessed card entirely, which is the reported case
+  withoutCard(g, b.id, 'thief'); giveCard(g, b.id, 'thief');
+  assert.equal(b.cards.filter((c) => c === 'thief').length, 1);
+  const thiefAt = b.cards.indexOf('thief'), had = b.cards.length;
+  const bank = a.coins, bCoins = b.coins;
+  g.declareAction(a.id, { type: 'colonel', targetId: b.id, guess: 'thief' });
+  // b calls the bluff — and a really is the Colonel. The card b loses is random: force it to be the thief.
+  const rnd = Math.random; Math.random = () => thiefAt / b.cards.length;
+  try { g.challenge(b.id); } finally { Math.random = rnd; }
+  assert.ok(!b.cards.includes('thief'), 'the challenge took the guessed card');
+  const guess = g.events.find((e) => e.type === 'guess' && e.playerId === a.id);
+  assert.ok(guess && guess.right === true, 'the guess was right when it was made and must be judged so');
+  assert.equal(b.cards.length, had - 1, 'the challenge loss is the whole penalty — no second card');
+  assert.equal(a.coins, bank - 4, 'the 4 coins were spent'); assert.equal(b.coins, bCoins, 'and none of them went to the target');
+  assert.ok(g.log.some((l) => l.key === 'colonel.right.fell'), 'says why no card left the hand');
+});
+
 await test('elimination & win; disconnected player auto-skips', () => {
   const g = newGame(2); g.start();
   const a = g.active, b = g.players.find((p) => p.id !== a.id);

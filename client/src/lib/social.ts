@@ -6,6 +6,7 @@ import { store, type Account, type Friend } from './store';
 import { track } from './analytics';
 import { pushOnline } from './push';
 import { setMonitorUser } from './monitor';
+import { initStreaks } from './streaks';
 
 export interface LeaderRow { uid: string; name: string; avatar: string | null; avatarData: string | null; trophies: number; wins: number; games: number; me: boolean }
 
@@ -41,7 +42,7 @@ export async function initSocial(uid: string) {
   }
   try { localStorage.removeItem('mekina.adoptName'); } catch { /* ignore */ }
   await syncProfile();
-  await Promise.all([loadTrophies(), loadFriends()]);
+  await Promise.all([loadTrophies(), loadFriends(), initStreaks()]);
   subscribeFriends();
   subscribeInvites();
   // Refresh the push subscription and announce that we are here — which is what makes a friend's

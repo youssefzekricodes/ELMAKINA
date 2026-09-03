@@ -11,7 +11,7 @@
  * They are not harmless: they are megabytes of download on the install, which is the number that
  * decides whether someone on a Tunisian mobile connection finishes installing.
  *
- * privacy.html deliberately STAYS. Home.tsx links to it and a reachable privacy policy is a hard
+ * privacy/ deliberately STAYS. Home.tsx links to it and a reachable privacy policy is a hard
  * Play requirement — deleting it to save 6 KB would fail review.
  */
 const fs = require('fs');

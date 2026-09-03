@@ -418,6 +418,12 @@
   .ob-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(22px, 5vw, 30px); color: var(--foreground); }
   .ob-sub { color: var(--muted); font-size: 14px; margin-top: -8px; }
   .ob-face { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  /* Nothing in this card may be squashed to make room.
+     The card is a flex column that scrolls, so its children default to flex-shrink: 1 and give up
+     height when the space does — which is exactly what an Android keyboard does to the viewport.
+     The start button lost 16 of its 36px the moment the keyboard opened. Fixed sizes and a
+     scrolling card is the behaviour the overflow-y was always asking for. */
+  .ob-card > * { flex: 0 0 auto; }
   .ob-start { width: 100%; }
   /* On a phone the gate IS the screen: edge to edge, no card floating in a void. */
   @media (max-width: 560px) {
@@ -1831,7 +1837,12 @@
   .inv-sent { display: inline-flex; align-items: center; gap: 5px; color: var(--success, #6FCF7F); }
 
   /* ── Home top row (trophies + social pages) + sign-in ── */
-  .home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+  /* Two groups, and it may wrap between them. Three loose children could not fit a 380px column —
+     the nav icons alone are 294px of it — so the row overflowed its card rather than reflowing. */
+  .home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px 12px;
+    width: 100%; flex-wrap: wrap; }
+  .home-top-stats { display: inline-flex; align-items: center; gap: 8px; flex: 0 1 auto; min-width: 0; }
+  .home-top-stats > * { flex: 0 0 auto; }
   .home-top-tools { display: inline-flex; align-items: center; gap: 6px; }
   /* Google sign-in: a clean, full-width pill directly under the player badge */
   /* Google's dark-theme button, not the white one. Signing in is optional; as a white slab it was
@@ -2832,6 +2843,112 @@
   .pf-row .pf-chev { flex: none; opacity: .5; }
   .pf-row .pf-flag { border-radius: 50%; }
   .pf-acct { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 2px; }
+
+  /* ── daily streak ──────────────────────────────────────────────────────────── */
+  /* The flame on the home screen. Lit is the resting state; cold (not yet played today) drains the
+     colour as its own quiet nudge; risk pulses blue, because that state is one tap from rescue. */
+  .streak-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; cursor: pointer;
+    border-radius: 999px; border: 1px solid rgba(255,240,214,.22);
+    background: linear-gradient(180deg, rgba(62,46,30,.92), rgba(32,23,15,.92));
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 3px 0 #150f0a, 0 8px 18px rgba(0,0,0,.45); }
+  .streak-fire { width: 22px; height: 22px; }
+  .streak-n { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: #FFB13B; }
+  .streak-pill.cold .streak-fire { filter: grayscale(.9) brightness(.8); }
+  .streak-pill.cold .streak-n { color: var(--muted); }
+  /* No streak yet: present but plainly unlit, so it reads as something to start rather than
+     something broken. Same treatment as cold, one notch quieter. */
+  .streak-pill.none { opacity: .78; }
+  .streak-pill.none .streak-fire { filter: grayscale(1) brightness(.75); }
+  .streak-pill.none .streak-n { color: var(--muted); }
+  .streak-pill.risk { border-color: #6FB7FF; }
+  .streak-pill.risk .streak-fire { filter: hue-rotate(170deg) saturate(1.4); }
+  .streak-pill.risk .streak-n { color: #9CD1FF; }
+  .streak-pill.risk { animation: streak-throb 1.6s ease-in-out infinite; }
+  @keyframes streak-throb { 50% { box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 3px 0 #150f0a, 0 0 18px rgba(111,183,255,.55); } }
+
+  /* The card: the uploaded scene as the hero, the number over it. The freeze state swaps to the
+     blue art and pushes a cold cast over everything — the whole card reads "on ice". */
+  .streak-dialog { overflow: hidden; }
+  /* Inset from the dialog edge, not bled to it.
+     Full-bleed art put the picture underneath the close control, which then had to be read against
+     whatever pixel happened to be behind it. Insetting gives the control its corner back and lets
+     the art carry its own rounded frame — the same radius the cards in the game use. */
+  .streak-hero { position: relative; margin: 46px 16px 0; min-height: 156px; display: grid; place-items: center;
+    border-radius: var(--radius-2xl); overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,240,214,.12), 0 10px 26px rgba(0,0,0,.42); }
+  .streak-hero-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .streak-hero::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(14,11,8,.15), rgba(14,11,8,.78)); }
+  .streak-hero.freeze::after { background: linear-gradient(180deg, rgba(20,44,74,.35), rgba(10,16,26,.82)); }
+  /* The close control sits above the art in the strip the margin just cleared for it. */
+  .streak-dialog [data-slot='modal-close-trigger'],
+  .streak-dialog button[aria-label='Close'],
+  .streak-dialog button[slot='close'] { z-index: 3; }
+  .streak-hero-body { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 2px; padding: 16px 0 14px; width: 100%; }
+  .streak-big-ic { width: 52px; height: 52px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
+  /* line-height 1 on a display face still leaves the glyph's own descent below the box, which was
+     landing on the caption underneath. A tighter box plus explicit spacing separates them. */
+  .streak-count { font-family: var(--font-display); font-size: 52px; font-weight: 800; line-height: .92; color: #FFD97A;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7); margin-bottom: 6px; }
+  .streak-hero.freeze .streak-count { color: #9CD1FF; }
+  /* The caption has to survive the artwork behind it AND the longest line any language throws at
+     it — "Your streak is about to burn out!" ran off the edge of the frame as one line. */
+  .streak-sub { font-size: 13px; font-weight: 600; color: var(--paper, #F3E9D6); opacity: .95;
+    text-align: center; padding-inline: 18px; max-width: 100%; text-wrap: balance;
+    text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 14px rgba(0,0,0,.8); }
+  .streak-body { display: flex; flex-direction: column; gap: 12px; padding-top: 14px; }
+  .streak-stats { display: flex; justify-content: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  /* Each record is its own chip: the icon says which streak idea it counts, so the two numbers stop
+     needing to be read together to be told apart. */
+  .streak-stat { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px;
+    border: 1px solid rgba(255,240,214,.12); background: rgba(28,20,14,.55); }
+  .streak-stat-ic { width: 18px; height: 18px; flex: none; }
+  .streak-stats b { color: var(--foreground); font-size: 16px; }
+  .streak-stats .has-freeze b { color: #6FB7FF; }
+  .streak-stats .has-freeze { border-color: rgba(111,183,255,.35); background: rgba(23,42,66,.5); }
+  .streak-pinned { display: inline-flex; align-items: center; justify-content: center; gap: 7px; margin: 0;
+    font-size: 13px; font-weight: 600; color: var(--success, #7FD1A0); }
+  .streak-how { margin: 0; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.5; }
+
+  /* The full-screen beat. One flame, one number, nothing else competing — the vibration under it
+     is in Streaks.tsx, since CSS cannot buzz. */
+  /* A SCREEN, fully opaque. The first version was a translucent radial over whatever was behind it,
+     and behind it was the winner sheet — two moments on top of each other, neither readable. Now
+     the app's scene is the ground, covered by a scrim heavy enough that only the flame and the
+     number are on screen. The warm glow stays as a glow on that ground, not as a window. */
+  .streak-cine { position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 2px; cursor: pointer; overflow: hidden;
+    background: #0E0B08 url('/img/bg-portrait-sm.webp?v=2') center / cover no-repeat;
+    animation: sc-in .3s var(--ease); }
+  @media (orientation: landscape) { .streak-cine { background-image: url('/img/bg-game-sm.webp?v=2'); } }
+  .streak-cine::before { content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(226,85,26,.34), rgba(14,11,8,.86) 46%, rgba(14,11,8,.94) 100%); }
+  .streak-cine > * { position: relative; }
+  .streak-cine.out { animation: sc-out .26s var(--ease) forwards; }
+  @keyframes sc-in { from { opacity: 0; } }
+  @keyframes sc-out { to { opacity: 0; } }
+  .sc-flame { width: min(46vw, 260px); aspect-ratio: 1; position: relative; }
+  .sc-flame svg { position: absolute; inset: 0; }
+  .sc-flame-fallback { position: absolute; inset: 18%; width: 64%; height: 64%; }
+  .sc-flame:has(svg) .sc-flame-fallback { display: none; }
+  .sc-count { font-family: var(--font-display); font-size: clamp(64px, 20vw, 110px); font-weight: 800; line-height: 1;
+    color: #FFD97A; text-shadow: 0 4px 30px rgba(226,85,26,.6); animation: sc-pop .5s var(--ease); margin-top: -12px; }
+  @keyframes sc-pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
+  .sc-title { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--foreground); letter-spacing: .04em; text-transform: uppercase; }
+  .sc-sub { font-size: 14px; color: var(--muted); }
+  .sc-continue { margin-top: 26px; min-height: 52px; padding: 0 40px; border-radius: 14px; border: 0; cursor: pointer;
+    font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: .06em; text-transform: uppercase;
+    color: #1B120A; background: var(--accent);
+    border-bottom: 6px solid color-mix(in srgb, var(--accent) 52%, #000);
+    border-left: 6px solid color-mix(in srgb, var(--accent) 60%, #000);
+    box-shadow: inset 0 2px 0 color-mix(in srgb, #fff 26%, transparent), 0 12px 26px rgba(0,0,0,.45); }
+  .sc-continue:active { transform: translate(-2px, 2px); border-bottom-width: 3px; border-left-width: 3px; }
+  @media (prefers-reduced-motion: reduce) { .sc-count { animation: none; } .streak-pill.risk { animation: none; } }
+
+  .boost-btn { align-self: center; }
+  .boost-done { display: inline-flex; align-items: center; gap: 6px; align-self: center; margin: 0;
+    font-weight: 800; color: var(--gold); }
 
   /* ── the update gate ───────────────────────────────────────────────────────── */
   .upd-gate { position: fixed; inset: 0; z-index: 130; display: grid; place-items: center; padding: 20px;

@@ -228,7 +228,7 @@ ${(o.jsonLd || []).map((d) => `<script type="application/ld+json">${JSON.stringi
 ${o.body}
   <footer>
     <span>${esc(c.footer)}</span>
-    <a class="sp" href="/privacy.html">${esc(c.privacy)}</a>
+    <a class="sp" href="/privacy/">${esc(c.privacy)}</a>
     <a href="/play/">${esc(c.play)}</a>
   </footer>
 </div>
@@ -442,7 +442,7 @@ export function buildPages(dist: string, adsClient = '') {
 
   // The sitemap is generated from the same list, so a new page can never be forgotten in it.
   const today = new Date().toISOString().slice(0, 10);
-  const urls = ['/', '/how-to-play/', '/characters/', '/ar/', '/ar/how-to-play/', '/ar/characters/', '/play/', '/privacy.html'];
+  const urls = ['/', '/how-to-play/', '/characters/', '/ar/', '/ar/how-to-play/', '/ar/characters/', '/play/', '/privacy/'];
   fs.writeFileSync(path.join(dist, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
     urls.map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${today}</lastmod><priority>${u === '/' ? '1.0' : u === '/play' ? '0.9' : '0.6'}</priority></url>`).join('\n') +

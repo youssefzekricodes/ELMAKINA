@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n';
 import { ask } from '../lib/ask';
 import { useStore, store } from '../lib/store';
-import { leaveRoom, setLanguage, toggleMusic, toggleSound } from '../lib/net';
+import { leaveRoom, setLanguage, toggleSound } from '../lib/net';
 import { Art, Icon } from './ui';
 
 /**
@@ -86,9 +86,6 @@ export function GameMenu() {
             {item('question-circle', t('top.rules'), () => store.set({ modal: 'guide' }))}
             <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); toggleSound(); }}>
               <Art name={s.soundOn ? 'soundOn' : 'soundOff'} className="size-5" /><span className="gm-tx">{t('top.sound')}</span>
-            </button>
-            <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); toggleMusic(); }}>
-              <Art name={s.musicOn ? 'musicOn' : 'musicOff'} className="size-5" /><span className="gm-tx">{t('top.music')}</span>
             </button>
             <button type="button" className="gm-item" role="menuitem" onClick={() => { setOpen(false); setLanguage(s.lang === 'en' ? 'tn' : 'en'); }}>
               <Art name={s.lang === 'en' ? 'flagTn' : 'flagEn'} className="size-5" /><span className="gm-tx">{t('top.lang.title')}</span>

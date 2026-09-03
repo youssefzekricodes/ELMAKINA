@@ -28,6 +28,18 @@ export interface AdProvider {
   ready(): boolean;
 
   /**
+   * Show one REWARDED ad — the opt-in kind, watched in exchange for something in the game.
+   *
+   * Resolves 'earned' only when the network confirms the reward was actually earned (the video ran
+   * to its end), 'dismissed' when the player backed out early, 'unavailable' when there was nothing
+   * to show. The caller grants the reward on 'earned' and nothing else — a dismissed video that
+   * still pays out teaches everyone to dismiss.
+   *
+   * Deliberately OUTSIDE the interstitial frequency policy: the player asked for this one.
+   */
+  showRewarded(): Promise<'earned' | 'dismissed' | 'unavailable'>;
+
+  /**
    * Show one interstitial.
    *
    * Resolves TRUE when a break actually ran, which is what starts the cooldown. Resolves FALSE

@@ -6,6 +6,7 @@ import { createRoom, joinRoom, playSolo, quickMatch, notify, setLanguage, toggle
 import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
+import { StreakPill } from './Streaks';
 import { IMG } from '../theme';
 import { Art, GoogleG, Html, Icon, PlayerAvatar } from './ui';
 import { PushPrompt } from './PushPrompt';
@@ -61,18 +62,25 @@ export function Home() {
     <section className="screen home-screen">
       <div className="home-stage">
         {/* Status and side rooms. Icon-only: none of it is why anyone opened the app. */}
-        {/* Language, sound and music are NOT here: they live in the screen's top corner, the same
+        {/* Language and sound are NOT here: they live in the screen's top corner, the same
             corner they occupy on every other screen (see QuickControls). This row is destinations
             and a score — where you can go and how you are doing. */}
         <div className="home-top">
-          {/* Not a pill any more: the one number on this screen that is YOURS. It opens the board
-              it belongs to, so it reads as a place to go rather than a label sitting there. */}
-          <button type="button" className="trophy-pill" title={t('lb.trophies')}
-            onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.trophies')}>
-            <Art name="stars" className="trophy-ic" />
-            <span className="trophy-n">{s.trophies}</span>
-            <span className="trophy-lbl">{t('lb.trophies')}</span>
-          </button>
+          {/* Both scores travel together as one group. Loose in the row they were a third flex
+              child competing with the nav icons for a 380px column, and the row simply overflowed —
+              it already did before the streak joined it. Grouped, the row has two things to place
+              and can wrap between them instead of running off the edge. */}
+          <div className="home-top-stats">
+            {/* Not a pill any more: the one number on this screen that is YOURS. It opens the board
+                it belongs to, so it reads as a place to go rather than a label sitting there. */}
+            <button type="button" className="trophy-pill" title={t('lb.trophies')}
+              onClick={() => store.set({ screen: 'leaderboard' })} aria-label={t('lb.trophies')}>
+              <Art name="stars" className="trophy-ic" />
+              <span className="trophy-n">{s.trophies}</span>
+              <span className="trophy-lbl">{t('lb.trophies')}</span>
+            </button>
+            <StreakPill />
+          </div>
           {/* Every destination, one row, every size. Profile carries the set-once controls
               (characters, rules, sound, language) so they need no buttons of their own here. */}
           {/* The same four destinations the tab bar carries, in the same artwork — this row is what a
@@ -172,7 +180,7 @@ export function Home() {
             <button type="button" className="home-howto" onClick={() => store.set({ modal: 'guide' })}>{t('coach.rules')}</button>
             {/* A reachable privacy policy is a hard requirement for both AdSense and Analytics.
                 It is a static page under public/ so crawlers (and the AdSense reviewer) can read it. */}
-            <a className="home-privacy" href="/privacy.html" target="_blank" rel="noopener">{t('home.privacy')}</a>
+            <a className="home-privacy" href="/privacy/" target="_blank" rel="noopener">{t('home.privacy')}</a>
           </span>
         </div>
       </div>

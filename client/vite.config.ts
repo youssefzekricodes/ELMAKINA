@@ -144,6 +144,10 @@ export default defineConfig(({ command, mode }) => {
           // dynamically to keep it out of the web build entirely — naming it here would defeat that
           // by folding it into vendor, which every page load fetches. Measured at +13 KB raw.
           if (id.includes('@capacitor')) return;
+          // And again: lottie-web is dynamically imported by the streak celebration only. Folding
+          // it into vendor put 170 KB on every first paint for an animation most sessions never
+          // fire. Left unnamed, it becomes its own chunk fetched at celebration time.
+          if (id.includes('lottie-web')) return;
           if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
           if (id.includes('@heroui')) return 'heroui';
           return 'vendor';

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The game's own scene as the widget's ground.
+
+  The bitmap is pre-darkened (widget_scene.webp) rather than dimmed with a scrim layer here: a shape
+  drawn over a bitmap cannot round the bitmap's corners with it, so baking the darkening in keeps
+  this to a single layer whose edges cannot disagree with anything.
+
+  No stroke. The launcher clips whatever sits at @android:id/background to its own corner radius on
+  Android 12+, and an outline drawn inside that clip reads as a second, smaller frame sitting on the
+  art rather than as the widget's edge.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item>
+    <bitmap android:src="@drawable/widget_scene" android:gravity="fill" />
+  </item>
+</layer-list>

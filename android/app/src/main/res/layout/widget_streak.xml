@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  android:id="@android:id/background" is load-bearing, not decoration: from Android 12 the launcher
+  uses that id to clip the widget to the system corner radius and draw its backing. A custom id
+  there is how a widget lands on the home screen with no visible background at all.
+
+  No frame around the flame any more — it sits straight on the scene at full size, and the number
+  is the loudest thing on the widget.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:background="@drawable/widget_bg"
+    android:padding="10dp">
+
+  <ImageView
+      android:id="@+id/widget_fire"
+      android:layout_width="56dp"
+      android:layout_height="56dp"
+      android:src="@drawable/widget_fire"
+      android:contentDescription="@null" />
+
+  <LinearLayout
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:layout_marginStart="10dp"
+      android:gravity="center_vertical">
+    <TextView
+        android:id="@+id/widget_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="42sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:textColor="#FFC24A"
+        android:shadowColor="#8CE2551A"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="14"
+        android:text="0" />
+    <TextView
+        android:id="@+id/widget_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:textColor="#E8D9C0"
+        android:shadowColor="#CC000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="4"
+        android:text="" />
+  </LinearLayout>
+</LinearLayout>

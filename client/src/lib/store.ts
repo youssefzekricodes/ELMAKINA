@@ -34,7 +34,6 @@ export interface Snapshot {
   me: string | null;
   lang: string;
   soundOn: boolean;
-  musicOn: boolean;          // the lobby bed, muted on its own — see lib/music
   profile: Profile;
   name: string;
   autoJoinCode: string | null;
@@ -46,7 +45,7 @@ export interface Snapshot {
   unread: number;
   banner: { text: string; id: number; cls?: string } | null;
   cine: Cine | null;            // the full-screen cut-scene playing right now (attack / verdict), or null
-  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | null;
+  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | 'streak' | null;
   // The app's own replacement for window.confirm(); driven through lib/ask.ts.
   ask: { body: string; ok: string; danger: boolean } | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews (one game, from the guide)
@@ -54,6 +53,10 @@ export interface Snapshot {
   reactions: FloatingReaction[]; // ephemeral in-game emoji reactions (broadcast, not persisted)
   account: Account | null;   // signed-in identity (Google) or guest
   trophies: number;          // my trophy total
+  // Daily play streak (lib/streaks.ts). null until the server has answered.
+  streak: { count: number; best: number; freezes: number; today: boolean; atRisk: boolean } | null;
+  // A just-extended streak waiting for its full-screen moment; StreakCine consumes and clears it.
+  streakCine: { count: number; froze: boolean } | null;
   friends: Friend[];         // accepted friends
   friendReqs: Friend[];      // incoming pending requests
   invite: RoomInvite | null; // a friend invited me to their room (live push)
@@ -105,10 +108,9 @@ const loadProfile = (): Profile => { try { return Object.assign({ avatar: 'boy-1
 let snap: Snapshot = {
   screen: 'home', connected: false, net: (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'off' : 'ok', room: null, state: null, me: null,
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
-  musicOn: localStorage.getItem('mekina.music') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
   targeting: null, acting: false, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, ask: null, tour: false, learn: loadLearn(), reactions: [],
-  account: null, trophies: 0, friends: [], friendReqs: [], invite: null, searching: false,
+  account: null, trophies: 0, streak: null, streakCine: null, friends: [], friendReqs: [], invite: null, searching: false,
   // No saved name = a brand-new player: the full-screen onboarding runs until a name exists.
   onboarding: !(localStorage.getItem('mekina.name') || '').trim(), updateReady: false, pushOn: false, tick: 0,
 };

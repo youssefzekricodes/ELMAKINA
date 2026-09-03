@@ -9,6 +9,7 @@ import { sfx } from './sfx';
 import { processEvents, resetEvents, banner, playedCard } from './fx';
 import { track } from './analytics';
 import { countGame } from './ads';
+import { tickStreak } from './streaks';
 import { voiceOnRoomGone } from './voice';
 import { initSocial, syncProfile } from './social';
 import { validTargets } from './rules';
@@ -92,6 +93,7 @@ function applyView(v: any) {
   // never names, room codes or the signed-in email.
   if (v.phase === 'ended' && prev.state && prev.state.phase !== 'ended') {
     countGame();
+    tickStreak();   // any finished game keeps the flame lit, solo included — a habit is a habit
     track('game_end', { players: v.players.length, won: v.winnerId === me });
   }
   // "Play again" goes ended -> playing without ever passing through the lobby, which is the only
@@ -422,16 +424,10 @@ export function setLanguage(l: string) {
 }
 export function toggleSound() { store.set({ soundOn: sfx.toggle() }); }
 /**
- * Music has its own switch.
  *
  * Muting the game used to mute everything, which is the wrong trade for the one sound you might
  * actually be tired of: the bed loops for as long as you sit in the menu, while the cues are the
  * game telling you what just happened. Now the track can go quiet and still leave you able to hear
  * a bluff being called.
  */
-export function toggleMusic() {
-  const on = !store.get().musicOn;
-  try { localStorage.setItem('mekina.music', on ? 'on' : 'off'); } catch { /* private mode */ }
-  store.set({ musicOn: on });
-}
 export const isConfigured = supabaseConfigured;

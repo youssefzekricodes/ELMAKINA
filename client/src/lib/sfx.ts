@@ -133,7 +133,7 @@ export function audioChannel(gain: number): { ctx: AudioContext; out: GainNode }
  * open and play in. An installed app is not that: Android suspends the context every time the app
  * goes to the background, and a suspended context makes `play()` return without a sound and without
  * a word. Come back to the app and everything is mute until a reload — which is exactly what "no
- * sound effects and no music in the PWA" looks like.
+ * sound effects in the PWA" looks like.
  *
  * So: resume on any gesture, not just the first, and on coming back into view. Both are cheap —
  * they do nothing at all unless the context has actually gone to sleep.

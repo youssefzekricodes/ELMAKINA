@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Device-locale fallback only. Once the app runs it pushes the nudge in the language the
+         PLAYER chose, which is a store setting rather than the device locale. -->
+    <string name="widget_default">ابدا السلسلة</string>
+</resources>
