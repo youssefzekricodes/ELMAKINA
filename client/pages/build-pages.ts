@@ -232,6 +232,22 @@ ${o.body}
     <a href="/play/">${esc(c.play)}</a>
   </footer>
 </div>
+<script>
+/* The game boots from localStorage 'mekina.lang' (client/src/i18n.ts) and this site shares its
+   origin, so the landing can hand its language over instead of the two disagreeing.
+   Two different strengths on purpose:
+   - the flag chip is an EXPLICIT choice, so it always writes;
+   - the Play links only write when no choice exists yet — someone who set the game to Derja and
+     later read the English rules page must not have their game silently flipped by clicking Play. */
+(function () {
+  var mine = '${lang === 'tn' ? 'tn' : 'en'}', other = '${lang === 'tn' ? 'en' : 'tn'}';
+  var put = function (v, always) {
+    try { if (always || !localStorage.getItem('mekina.lang')) localStorage.setItem('mekina.lang', v); } catch (e) { /* private mode */ }
+  };
+  document.querySelectorAll('a.lang').forEach(function (a) { a.addEventListener('click', function () { put(other, true); }); });
+  document.querySelectorAll('a[href="/play/"]').forEach(function (a) { a.addEventListener('click', function () { put(mine, false); }); });
+})();
+</script>
 </body>
 </html>`;
 }
