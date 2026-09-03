@@ -2738,7 +2738,11 @@
     /* The padding has to be DEEPER than the fade, or the last row lands inside it and the end of the
        list arrives dimmed — a mask cannot know it has nothing left to soften. 30px of floor against
        a 24px fade leaves the final row clear by six. */
-    .app.at-leaderboard .page-body { padding-bottom: 30px; }
+    /* Scoped to with-pin: when the pin retires (your row is on screen, or you scrolled past it),
+       the list runs the full shell again and needs the ordinary tab-bar clearance back — 30px of
+       floor would slide the last rows under the bar. The mask below works for both paddings, since
+       its fade lives inside whichever padding is in force. */
+    .app.at-leaderboard .page-body.with-pin { padding-bottom: 30px; }
     .app.at-leaderboard .page-body {
       -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%);
       mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%); }

@@ -44,6 +44,11 @@ export function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderRow[] | null>(null);
   const [more, setMore] = useState(true);
   const [mine, setMine] = useState<{ rank: number; row: LeaderRow } | null>(null);
+  // Where my OWN row in the list currently is, relative to the scroller: below the fold, on screen,
+  // or already scrolled past. Decides whether the pin has anything left to do.
+  const [rowPos, setRowPos] = useState<'below' | 'visible' | 'above' | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const meRowRef = useRef<HTMLLIElement | null>(null);
   const sentinel = useRef<HTMLLIElement | null>(null);
   const busy = useRef(false);
 
@@ -70,6 +75,39 @@ export function LeaderboardPage() {
   // pinning it is not having to.
   useEffect(() => { loadMyRank().then(setMine); }, []);
 
+  /**
+   * Watch my own row in the list, so the pin can retire itself.
+   *
+   * The pin exists to answer "where am I?" without scrolling. The moment the real row is on screen
+   * the answer is right there and the copy below it is noise — and once you have scrolled PAST it,
+   * you have seen it, and the pin would only cover rows you are actually reading. So it shows only
+   * while the row is still below the fold (or not even loaded yet, pages being twenty-five rows).
+   *
+   * The observer clips through the scroller (IntersectionObserver honours overflow ancestors), and
+   * above-vs-below is judged against the scroller's own box rather than the viewport, because on a
+   * phone the list starts 54px down and is masked at the edges.
+   */
+  useEffect(() => {
+    const el = meRowRef.current, sc = bodyRef.current;
+    if (!el || !sc) { setRowPos(null); return; }
+    // One classifier, read from live geometry, fed by BOTH signals. The observer alone is not
+    // enough: it fires only when the intersection CHANGES, and a hard fling can carry the row from
+    // above the scroller to below it between two frames without ever intersecting — verified, the
+    // state then sticks at 'above' and the pin stays retired when it should have come back. The
+    // scroll listener closes that gap; the observer still covers what scrolling cannot see, like
+    // the row arriving in a freshly loaded page.
+    const classify = () => {
+      const r = el.getBoundingClientRect(), b = sc.getBoundingClientRect();
+      setRowPos(r.bottom <= b.top ? 'above' : r.top >= b.bottom ? 'below' : 'visible');
+    };
+    classify();
+    const io = new IntersectionObserver(classify);
+    io.observe(el);
+    sc.addEventListener('scroll', classify, { passive: true });
+    window.addEventListener('scroll', classify, { passive: true }); // desktop: the document scrolls, not .page-body
+    return () => { io.disconnect(); sc.removeEventListener('scroll', classify); window.removeEventListener('scroll', classify); };
+  }, [rows]);
+
   useEffect(() => {
     const el = sentinel.current;
     if (!el || !more) return;
@@ -79,16 +117,21 @@ export function LeaderboardPage() {
     return () => io.disconnect();
   }, [loadMore, more, rows]);
 
+  // If my row is among the loaded pages, the pin defers to the observer's verdict — including the
+  // brief null before it speaks, so a top-ranked player never sees the pin flash on for a frame.
+  // If my row has not even been loaded yet, it is by definition below everything on screen.
+  const rowsHasMe = !!rows?.some((r) => r.me);
+  const showPin = !!mine && (rowsHasMe ? rowPos === 'below' : true);
   return (
     <section className="screen page-screen">
       <div className="page-shell">
         <PageHead screen="leaderboard" title={t('lb.title')} />
-        <div className="page-body">
+        <div className={`page-body ${showPin ? 'with-pin' : ''}`} ref={bodyRef}>
           {rows === null ? <p className="sheet-empty">{t('lb.loading')}</p>
             : rows.length === 0 ? <p className="sheet-empty">{t('lb.empty')}</p>
               : <ol className="lb-list">
                 {rows.map((r, i) => (
-                  <li key={r.uid} className={`lb-row ${r.me ? 'me' : ''}`}>
+                  <li key={r.uid} className={`lb-row ${r.me ? 'me' : ''}`} ref={r.me ? meRowRef : undefined}>
                     <span className={`lb-rank r${i + 1}`}>{i + 1}</span>
                     <PlayerAvatar p={asPlayer(r.uid, r.avatar, r.avatarData)} size="sm" />
                     <span className="lb-name">{r.name}{r.me && <span className="lb-you">{t('lobby.you')}</span>}</span>
@@ -102,7 +145,7 @@ export function LeaderboardPage() {
         {/* Pinned outside .page-body, not sticky inside it. The leaderboard fades its own scroll
             edges with a mask, and a sticky child would be faded by it exactly where it matters —
             and would sit under the fixed tab bar besides. As a sibling it is simply always there. */}
-        {mine && (
+        {showPin && (
           <div className="lb-pin">
             <span className={`lb-rank r${mine.rank}`}>{mine.rank}</span>
             <PlayerAvatar p={asPlayer(mine.row.uid, mine.row.avatar, mine.row.avatarData)} size="sm" />
