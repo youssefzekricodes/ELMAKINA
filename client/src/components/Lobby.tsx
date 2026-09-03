@@ -1,5 +1,6 @@
 import { Button, Tooltip } from '@heroui/react';
 import { t } from '../i18n';
+import { ask } from '../lib/ask';
 import { useStore, store } from '../lib/store';
 import { copyInvite, kickPlayer, leaveRoom, setRoomPublic, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
@@ -95,7 +96,7 @@ export function Lobby() {
                   {canKick && (
                     <button
                       type="button" className="pcard-badge kick" title={kickLabel} aria-label={kickLabel}
-                      onClick={(e) => { e.stopPropagation(); if (confirm(t('lobby.kickConfirm', { name: p.name }))) kickPlayer(p.id); }}
+                      onClick={async (e) => { e.stopPropagation(); if (await ask(t('lobby.kickConfirm', { name: p.name }), { ok: kickLabel, danger: true })) kickPlayer(p.id); }}
                     >
                       <Icon name="user-minus-rounded" className="size-4" />
                     </button>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n';
+import { ask } from '../lib/ask';
 import { useStore, store } from '../lib/store';
 import { leaveRoom, setLanguage, toggleMusic, toggleSound } from '../lib/net';
 import { Art, Icon } from './ui';
@@ -50,7 +51,7 @@ export function GameMenu() {
     else el.style.transform = '';
   };
   const onLeave = async () => {
-    if (s.state && s.state.phase === 'playing' && !confirm(t('toast.leave'))) return;
+    if (s.state && s.state.phase === 'playing' && !(await ask(t('toast.leave'), { ok: t('lobby.leave'), danger: true }))) return;
     await leaveRoom();
   };
   const item = (icon: string, label: string, onPress: () => void, cls = '', tail?: React.ReactNode) => (

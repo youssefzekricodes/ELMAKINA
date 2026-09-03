@@ -624,9 +624,19 @@ export class Game {
       this.addLog('challenge', 'bluff.true', { challenger: challenger.name, name: claimer.name, character: ch });
       this.flash = { playerId: claimer.id, character: ch, ts: this.now() };
       this.event('reveal', { playerId: claimer.id, character: ch, challengerId: challenger.id });
-      const idx = claimer.cards.indexOf(ch); claimer.cards.splice(idx, 1); this.deck.push(ch); claimer.cards.push(this.deck.shift());
-      this.event('swap', { playerId: claimer.id, n: 1 }); // proven: that card goes back under the deck, a new one is dealt
-      this.addLog('reveal', 'bluff.replace', { name: claimer.name, character: ch });
+      // Proving a claim normally costs you the card you showed: it goes under the deck and a fresh
+      // one comes off the top, so the table does not get to keep the knowledge of what you hold.
+      //
+      // EXCEPT when the action you just proved is the Politician's, whose whole effect is to hand
+      // back every card and draw again — which happens a moment later. Doing both replaced the same
+      // card twice and played two swap animations for one event, and the second replacement makes
+      // the first pointless anyway: the hand it produced is handed straight back.
+      const swapsAnyway = w.claim.kind === 'action' && ch === 'politician';
+      if (!swapsAnyway) {
+        const idx = claimer.cards.indexOf(ch); claimer.cards.splice(idx, 1); this.deck.push(ch); claimer.cards.push(this.deck.shift());
+        this.event('swap', { playerId: claimer.id, n: 1 });
+        this.addLog('reveal', 'bluff.replace', { name: claimer.name, character: ch });
+      }
       this.challengeLoss(challenger.id, 'lost_challenge', claimer.id, { result: 'true', claimerId: claimer.id, challengerId: challenger.id, character: ch }, block ? { k: 'reopenBlock', block, cbs } : cbs.onProceed);
     } else {
       this.addLog('challenge', 'bluff.caught', { challenger: challenger.name, name: claimer.name, character: ch });

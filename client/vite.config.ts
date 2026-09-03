@@ -6,6 +6,7 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import { CONSENT_REGIONS, DEFAULT_ADSENSE_CLIENT, DEFAULT_GA_ID, isAdsClient, isGaId, resolveId } from './src/lib/google';
+import { buildPages } from './pages/build-pages';
 
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -90,6 +91,22 @@ export default defineConfig(({ command, mode }) => {
           const sw = path.resolve(here, 'dist', 'sw.js');
           if (fs.existsSync(sw)) fs.writeFileSync(sw, fs.readFileSync(sw, 'utf8').split('__BUILD_ID__').join(buildId));
         } catch { /* a missing version file just means no update prompt */ }
+      },
+    },
+    {
+      // The website around the game: a landing page at /, the rules and the character dossier as
+      // real crawlable HTML, and the game moved to /play. Generated from the SAME strings the game
+      // renders, so the site cannot drift from it. See pages/build-pages.ts for why it exists.
+      //
+      // NEVER for a native build. Capacitor's webDir needs index.html at the root — moving it to
+      // /play would leave the app booting into nothing, and a store app has no use for a landing
+      // page telling it to visit the store.
+      name: 'mekina-pages',
+      apply: 'build' as const,
+      closeBundle() {
+        if (native) return;
+        try { console.log(`\n  ✔ site: ${buildPages(path.resolve(here, 'dist'), adsClient)} static pages + sitemap, game at /play`); }
+        catch (e) { console.error('  ✖ static pages failed:', e); throw e; }
       },
     },
     {

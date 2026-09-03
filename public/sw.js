@@ -5,7 +5,10 @@
 /* The cache name carries the build: a new deploy activates a new SW, which drops every cache that
    is not its own on activate (below), so the shell can never outlive the build it came from. */
 const CACHE = 'mekina-__BUILD_ID__';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/img/pwa-192.png', '/img/pwa-512.png', '/img/favicon.png'];
+/* The GAME is the shell, and it lives at /play — the site root is a landing page now, which is
+   worth nothing offline. An installed app starts at /play (see manifest start_url), so that is what
+   has to survive losing the network. */
+const SHELL = ['/play/', '/play/index.html', '/manifest.webmanifest', '/img/pwa-192.png', '/img/pwa-512.png', '/img/favicon.png'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -75,7 +78,9 @@ self.addEventListener('fetch', (e) => {
 
   // App shell: network-first so online players always get the latest build; cached index when offline.
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
+    // Offline, ANY navigation lands on the game rather than the marketing page. Someone who opened
+    // the app without a network wants to play a solo hand, not read about the game they installed.
+    e.respondWith(fetch(req).catch(() => caches.match('/play/index.html')));
     return;
   }
 

@@ -21,7 +21,7 @@ import { Table } from './components/Table';
 import { Console } from './components/Console';
 import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
-import { AvatarPicker, CharactersModal, RulesModal } from './components/Modals';
+import { AvatarPicker, CharactersModal, ConfirmDialog, RulesModal } from './components/Modals';
 import { Onboarding } from './components/Onboarding';
 import { UpdateGate } from './components/UpdateGate';
 import { LeaderboardPage, FriendsPage, ProfilePage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
@@ -131,6 +131,7 @@ export default function App() {
       <UpdateGate />
       {/* The gate goes on top of everything: no header, no modals, no way to play nameless. */}
       {s.onboarding && <Onboarding />}
+      <ConfirmDialog />
       <RulesModal />
       <CharactersModal />
       <Guide />

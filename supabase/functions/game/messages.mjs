@@ -3,7 +3,7 @@
 
 const names = {
   en: { taxman: 'Tax Man', businesswoman: 'Business Woman', police: 'Police', terrorist: 'Terrorist', colonel: 'Colonel', politician: 'Politician', thief: 'Thief' },
-  tn: { taxman: 'القبّاض', businesswoman: 'مرا بزنس', police: 'البوليس', terrorist: 'الإرهابي', colonel: 'الكولونال', politician: 'السياسي', thief: 'السارق' },
+  tn: { taxman: 'القبّاض', businesswoman: 'امرأة أعمال', police: 'البوليس', terrorist: 'الإرهابي', colonel: 'الكولونال', politician: 'السياسي', thief: 'السارق' },
 };
 const reasons = {
   en: { paidkill: 'Paid Kill', terrorist: 'Terrorist', colonel_correct: 'Colonel guessed correctly', lost_challenge: 'lost challenge', caught_bluffing: 'caught bluffing', wrong_guess: 'wrong Colonel guess', paidkill_timeout: 'Paid Kill, timed out', terrorist_timeout: 'Terrorist, timed out', lost_challenge_timeout: 'lost challenge, timed out', caught_bluffing_timeout: 'caught bluffing, timed out', left: 'left the game' },
@@ -90,7 +90,7 @@ const log = {
     'paidkill': '{name} خلّص 7 دينار باش يقتل كارطة متاع {target}. {target} ينجم يخلّص 9 دينار و ينجى.',
     'claim.terrorist': '{name} قال راهو الإرهابي و خلّص 3 دينار باش يقتل كارطة متاع {target}.',
     'claim.colonel': '{name} قال راهو الكولونال و خلّص 4 دينار: "{target} عندو {guess}!"',
-    'claim.businesswoman': '{name} قالت/قال راهو مرا بزنس باش ياخو 4 دينار. القبّاض ينجم ياخو واحد منهم.',
+    'claim.businesswoman': '{name} قالت/قال راهو امرأة أعمال باش ياخو 4 دينار. القبّاض ينجم ياخو واحد منهم.',
     'claim.taxman': '{name} قال راهو القبّاض باش يقبض ضريبة (دينار) من {target}.',
     'claim.police.self': '{name} قال راهو البوليس باش يشوف كارطة من كروتو.',
     'claim.police': '{name} قال راهو البوليس باش يشوف كارطة متاع {target}.',
@@ -101,7 +101,7 @@ const log = {
     'block.ok': '{What} تصدّت.',
     'block.fail': 'الصدّ ما نجحش — {what} تكمّل.',
     'bw.out': '{name} خرج — ما ثمّا شي ياخوه.',
-    'bw.take4': '{name} خذا 4 دينار كمرا بزنس ({gain}).',
+    'bw.take4': '{name} خذا 4 دينار كامرأة أعمال ({gain}).',
     'bw.taxed': '{name} خلّى {kept} من الـ4 دينار ({gain})؛ حصّة القبّاض: {parts}.',
     'bw.taxclaim': '{name} قال راهو القبّاض و مدّ يدّو لدينار من الـ4 متاع {target}!',
     'actor.out': '{name} خرج — الحركة ملغاة.',

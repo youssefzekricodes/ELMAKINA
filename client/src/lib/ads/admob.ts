@@ -63,6 +63,9 @@ function unit(): string {
 let sdk: Promise<typeof import('@capacitor-community/admob')> | null = null;
 const plugin = () => (sdk ||= import('@capacitor-community/admob'));
 
+/** Set to a device id to make the REAL ad units serve test creatives on that device only. */
+const TEST_DEVICE = ((import.meta.env.VITE_ADMOB_TEST_DEVICE as string | undefined) || '').trim();
+
 let loaded = false;    // an interstitial is prepared and can be shown right now
 let starting = false;  // the init handshake has run once
 let npa = false;       // request NON-personalised ads (see consent below)
@@ -128,10 +131,21 @@ async function start(): Promise<void> {
     // in Info.plist crashes the app on launch — and there is no iOS project yet to put that key in.
     // Wire it when the iOS platform is added, before the first TestFlight build, not after.
 
-    // initializeForTesting is for registering test DEVICES and is unrelated to the test ad units
-    // above, which work on a normal initialisation.
+    // Registering THIS device as a test device — a different thing from the test ad units above,
+    // solving a different problem.
+    //
+    // Test units prove the code path works. They cannot prove YOUR ad unit works, because they are
+    // Google's units, not yours: a wrong unit id, one that has not activated yet, or an app id that
+    // does not match all look identical to success. A registered test device closes that gap — the
+    // REAL unit is requested, so the whole configuration is exercised end to end, but Google returns
+    // a test creative. Clicks cost nothing and count as nothing, which is the point, because
+    // clicking your own live ads is invalid traffic and AdMob suspends accounts for it.
+    //
+    // The id is printed by the SDK on first run; see VITE_ADMOB_TEST_DEVICE in .env.example.
     const { AdMob } = await plugin();
-    await AdMob.initialize({ initializeForTesting: false });
+    await AdMob.initialize(TEST_DEVICE
+      ? { initializeForTesting: true, testingDevices: [TEST_DEVICE] }
+      : { initializeForTesting: false });
     if (await consent()) await preload();
   } catch { /* leave loaded false; every break then resolves instantly */ }
 }

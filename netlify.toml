@@ -22,6 +22,31 @@
   SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_ANON_KEY,VITE_GA_ID,VITE_ADSENSE_CLIENT,VITE_TURN_USERNAME,VITE_TURN_CREDENTIAL"
 
 # Single-page app: every route falls back to index.html.
+# Invite links made before the game moved: elmekina.com/?room=ABCD still has to work, because
+# they were shared in chats that outlive any deploy. Query-matched, so a plain / is untouched.
+[[redirects]]
+  from = "/"
+  query = { room = ":code" }
+  to = "/play/?room=:code"
+  status = 301
+  force = true
+
+# The game is a single page with no client-side router, but a refresh on any /play path must still
+# land on it rather than a 404 or, worse, the landing page. BOTH rules are needed: /play/* does not
+# match a bare /play, and relying on the host to resolve a directory index is how the marketing page
+# ends up being served to someone who clicked "play".
+[[redirects]]
+  from = "/play"
+  to = "/play/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/play/*"
+  to = "/play/index.html"
+  status = 200
+
+# Everything else falls back to the landing page. No `force`, so real files — the generated pages,
+# /privacy.html, /.well-known/assetlinks.json — are always served first.
 [[redirects]]
   from = "/*"
   to = "/index.html"

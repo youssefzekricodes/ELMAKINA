@@ -205,6 +205,33 @@ export async function removeFriend(id: string) {
     as the last one comes into view. */
 export const LB_PAGE = 25;
 
+/**
+ * Where you actually stand, whether or not you are on a page that has been loaded.
+ *
+ * The list pages in twenty-fives, so somebody sitting at 400th would have to scroll for a minute to
+ * find out. This asks the database instead: count everyone ordered ABOVE you, add one.
+ *
+ * "Above" has to mean the same thing here as it does in the list, or the number would disagree with
+ * the position you would scroll to. The list orders by (trophies desc, user_id asc), so a player
+ * outranks you if they have more trophies, OR the same trophies and a lower id — the tiebreak the
+ * paging already relies on. head:true means the rows are counted server-side and never sent.
+ */
+export async function loadMyRank(): Promise<{ rank: number; row: LeaderRow } | null> {
+  if (!supabase || !curUid) return null;
+  const { data: mine } = await supabase.from('scores').select('user_id,trophies,wins,games').eq('user_id', curUid).maybeSingle();
+  if (!mine) return null;                       // never played a scoring game — no rank to pin
+  const [{ count }, { data: prof }] = await Promise.all([
+    supabase.from('scores').select('user_id', { count: 'exact', head: true })
+      .or(`trophies.gt.${mine.trophies},and(trophies.eq.${mine.trophies},user_id.lt.${curUid})`),
+    supabase.from('profiles').select('name,avatar,avatar_data').eq('user_id', curUid).maybeSingle(),
+  ]);
+  return {
+    rank: (count || 0) + 1,
+    row: { uid: curUid, name: prof?.name || 'Player', avatar: prof?.avatar || null, avatarData: prof?.avatar_data || null,
+           trophies: mine.trophies, wins: mine.wins, games: mine.games, me: true },
+  };
+}
+
 export async function loadLeaderboard(offset = 0, limit = LB_PAGE): Promise<LeaderRow[]> {
   if (!supabase) return [];
   const { data: sc } = await supabase.from('scores').select('user_id,trophies,wins,games')

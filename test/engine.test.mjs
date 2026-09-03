@@ -315,6 +315,19 @@ await test('police: look and swap; politician swaps all', () => {
   assert.equal(g.deck.length + 6, 21);
 });
 
+await test('politician proven by challenge: the shown card is not replaced twice', () => {
+  const g = newGame(3); g.start();
+  const a = g.active, b = g.players.find((p) => p.id !== a.id);
+  giveCard(g, a.id, 'politician');
+  const hand = a.cards.length;
+  g.declareAction(a.id, { type: 'politician' });
+  g.challenge(b.id);                       // proven: a really holds it
+  const swaps = g.events.filter((e) => e.type === 'swap' && e.playerId === a.id);
+  assert.equal(swaps.length, 1, 'one exchange, not a replacement followed by an exchange');
+  assert.equal(swaps[0].n, hand, 'and it is the whole hand, not the single shown card');
+  assert.equal(g.deck.length + g.players.reduce((n, p) => n + p.cards.length, 0), 21, 'cards conserved');
+});
+
 await test('elimination & win; disconnected player auto-skips', () => {
   const g = newGame(2); g.start();
   const a = g.active, b = g.players.find((p) => p.id !== a.id);

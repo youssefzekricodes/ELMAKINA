@@ -7,8 +7,9 @@ import { useStore, type LogEntry } from '../lib/store';
 import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
 import { validTargets } from '../lib/rules';
 import { adBreak } from '../lib/ads';
+import { ask } from '../lib/ask';
 import { sfx } from '../lib/sfx';
-import { Art, GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
+import {Art, CardBack, GameCard, Html, Icon, PickBanner, PlayerAvatar, Ring, TimerBar } from './ui';
 import { cupFor } from '../art';
 import { logActionCard, logCharacter } from './LogPanel';
 
@@ -62,6 +63,8 @@ function TargetPicker() {
   if (!ids.length) return null;
   const chosen = s.targetId;
   const chosenP = chosen ? st.players.find((p) => p.id === chosen) : null;
+  // Only where the count changes the answer: both kills cost the target exactly one card.
+  const showCards = a.type === 'terrorist' || a.type === 'paidkill';
   return (
     <div className="target-picker">
       <div className="tp-row" role="group" aria-label={t('pick.player')}>
@@ -72,6 +75,15 @@ function TargetPicker() {
             <button key={id} type="button" className={`tp-chip ${sel ? 'selected' : ''}`} aria-pressed={sel} onClick={() => tapTarget(id)}>
               <PlayerAvatar p={p} size="xs" />
               <span className="tp-name">{id === me ? t('game.you') : p.name}</span>
+              {/* How much is left of them. A kill takes ONE card, so the choice between somebody on
+                  two and somebody on their last is the whole decision — and it was only readable by
+                  counting the fans out on the board while a clock ran. Card backs rather than a
+                  number, because that is what a hand looks like everywhere else in the game. */}
+              {showCards && (
+                <span className="tp-cards" title={t('pick.cards', { n: p.cardCount })} aria-label={t('pick.cards', { n: p.cardCount })}>
+                  {Array.from({ length: p.cardCount }, (_, k) => <CardBack key={k} />)}
+                </span>
+              )}
               {sel && <Icon name="check-circle" className="size-4 tp-check" />}
             </button>
           );
@@ -202,7 +214,7 @@ export function Prompt() {
           {isHost ? <Button size="lg" variant="primary" onPress={async () => { await adBreak('next'); newGame(); }}><Icon name="restart" className="size-5" />{t('end.new')}</Button> : <div className="p-waiting">{t('end.wait')}</div>}
           <Button size="lg" variant="outline" className="win-leave" onPress={async () => { await adBreak('next'); leaveRoom(); }}><Icon name="logout-2" className="size-5" />{t('lobby.leave')}</Button>
           {isHost && (
-            <Button size="lg" variant="outline" className="win-close" onPress={() => { if (confirm(t('end.closeConfirm'))) closeRoom(); }}>
+            <Button size="lg" variant="outline" className="win-close" onPress={async () => { if (await ask(t('end.closeConfirm'), { ok: t('end.close'), danger: true })) closeRoom(); }}>
               <Icon name="close-circle" className="size-5" />{t('end.close')}
             </Button>
           )}

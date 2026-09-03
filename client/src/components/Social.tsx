@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { useStore, store, type Snapshot } from '../lib/store';
-import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, LB_PAGE, loadFriends, searchPlayers, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow } from '../lib/social';
-import { copyInvite, joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleMusic, toggleSound } from '../lib/net';
+import { acceptFriend, removeFriend, sendFriendRequest, loadLeaderboard, LB_PAGE, loadFriends, searchPlayers, inviteToRoom, dismissInvite, signInWithGoogle, signOutAccount, type LeaderRow, loadMyRank} from '../lib/social';
+import { copyInvite, joinRoom, leaveRoom, listPublicRooms, notify, setLanguage, toggleMusic, toggleSound, createRoom} from '../lib/net';
 import { disablePush, enablePush, pushStatus } from '../lib/push';
 import { navIconFor } from './NavBar';
 import { Art, GoogleG, Icon, PlayerAvatar } from './ui';
@@ -43,6 +43,7 @@ function PageHead({ screen, icon, art, title }: { screen?: Snapshot['screen']; i
 export function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderRow[] | null>(null);
   const [more, setMore] = useState(true);
+  const [mine, setMine] = useState<{ rank: number; row: LeaderRow } | null>(null);
   const sentinel = useRef<HTMLLIElement | null>(null);
   const busy = useRef(false);
 
@@ -63,6 +64,11 @@ export function LeaderboardPage() {
   }, [rows, more]);
 
   useEffect(() => { setRows(null); setMore(true); busy.current = false; loadLeaderboard(0).then((r) => { setRows(r); if (r.length < LB_PAGE) setMore(false); }); }, []);
+
+  // Your standing, fetched alongside the first page. It is a separate query on purpose: at 400th you
+  // would have to page through sixteen screens before your own row appeared, and the whole point of
+  // pinning it is not having to.
+  useEffect(() => { loadMyRank().then(setMine); }, []);
 
   useEffect(() => {
     const el = sentinel.current;
@@ -93,6 +99,18 @@ export function LeaderboardPage() {
                 {more && <li className="lb-more" ref={sentinel}><span className="lb-more-dot" /><span className="lb-more-dot" /><span className="lb-more-dot" /></li>}
               </ol>}
         </div>
+        {/* Pinned outside .page-body, not sticky inside it. The leaderboard fades its own scroll
+            edges with a mask, and a sticky child would be faded by it exactly where it matters —
+            and would sit under the fixed tab bar besides. As a sibling it is simply always there. */}
+        {mine && (
+          <div className="lb-pin">
+            <span className={`lb-rank r${mine.rank}`}>{mine.rank}</span>
+            <PlayerAvatar p={asPlayer(mine.row.uid, mine.row.avatar, mine.row.avatarData)} size="sm" />
+            <span className="lb-name">{mine.row.name}<span className="lb-you">{t('lobby.you')}</span></span>
+            <span className="lb-stat">{t('lb.wins', { n: mine.row.wins })}</span>
+            <span className="lb-trophies"><Art name="stars" className="size-3.5" />{mine.row.trophies}</span>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -326,11 +344,32 @@ export function PublicRoomsPage() {
     setBusy(null);
     if (!r || r.ok === false) load(); // it filled up or closed while the list was on screen
   };
+  /**
+   * Open a room from the page that lists them.
+   *
+   * PUBLIC, unlike the private room the home screen makes: somebody standing in front of the open
+   * rooms asking for one of their own means a room other people can walk into. The lobby's toggle
+   * still takes it back off if that was not the intent.
+   */
+  const create = async () => {
+    const name = (s.name || '').trim();
+    if (!name) { notify(t('toast.name')); store.set({ screen: 'home' }); return; }
+    setBusy('new');
+    await createRoom(name, true);
+    setBusy(null);
+  };
   return (
     <section className="screen page-screen">
       <div className="page-shell">
         <PageHead screen="public" title={t('pub.title')} />
         <div className="page-body">
+          {/* The home screen's own create-room button — the wood panel with the door on it — turned
+              along one line. Stacked it is 46px of icon above its label, which above a list would
+              push the first room off the fold. */}
+          <button type="button" className="hm-opt pub-create" onClick={create} disabled={busy === 'new'}>
+            <span className="hm-ic"><Art name="dungeon" className="hm-art" /></span>
+            <span className="hm-tx">{t('home.create')}</span>
+          </button>
           {rooms === null ? <p className="sheet-empty">{t('pub.loading')}</p>
             : rooms.length === 0 ? <p className="sheet-empty">{t('pub.empty')}</p>
               : <ul className="pub-list">

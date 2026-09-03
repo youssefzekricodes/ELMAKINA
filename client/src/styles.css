@@ -311,6 +311,16 @@
   .hp-tx { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.05; }
   .hp-tx b { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
   .hp-tx i { font-style: normal; font-size: 11.5px; font-weight: 500; opacity: .8; letter-spacing: .01em; }
+  /* The create-room button, turned along one line for the rooms page.
+     Only the axis changes — the wood panel, the sunk icon tile, the hard 3px shadow and the press
+     that drops it 3px all come from .hm-opt untouched, so it is the same object in both places.
+     flex-basis auto because on the home screen it is one of three in a grid track; here it is on
+     its own and would otherwise refuse to fill the row. */
+  /* TWO classes on purpose. .hm-opt sets flex-direction: column and is declared LATER in this file,
+     so a single-class .pub-create loses the tie and the button comes out stacked. Specificity, not
+     position — the same trap .home-top-tools fell into. */
+  .hm-opt.pub-create { flex: 0 0 auto; width: 100%; flex-direction: row; justify-content: center;
+    gap: 12px; padding: 10px 16px; margin-bottom: 14px; font-size: 15px; }
   .home-more { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   /* Quiet next to Play, but still plainly buttons — they sit on busy background art, so they need
      a surface of their own rather than a hairline outline. */
@@ -621,6 +631,10 @@
   .tp-chip.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
   .tp-chip .pavatar { flex-shrink: 0; }
   .tp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14ch; }
+  /* The candidate's remaining hand, inside the chip. Small enough not to make the pill a card row,
+     big enough to count at a glance without leaning in. */
+  .tp-cards { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; margin-inline-start: 1px; }
+  .tp-cards .cardback { width: 13px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255,246,232,.7), 0 1px 3px rgba(0,0,0,.6); }
   .tp-check { color: var(--accent); flex-shrink: 0; }
   /* Police picks a card, so the picker IS cards — face-down for other players, face-up for your
      own hand. The gold ring + pulse is the same "tap me" language the board cards use. */
@@ -1935,6 +1949,15 @@
   .lb-name .lb-you { margin-inline-start: 6px; }
   .lb-you { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--accent-soft-foreground); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
   .lb-stat { font-size: 11.5px; color: var(--muted); flex-shrink: 0; }
+  /* Your own standing, always on screen.
+     It borrows .lb-row's shape but is NOT one — it sits outside the scroller, so the leaderboard's
+     edge-fade mask cannot dim it and it never scrolls away. The top rule and the solid ground are
+     what stop it reading as just another row that happens to be stuck. */
+  .lb-pin { display: flex; align-items: center; gap: 10px; padding: 10px; flex: 0 0 auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: color-mix(in srgb, var(--accent-soft) 70%, rgba(16,11,7,.92));
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 45%, transparent), 0 -10px 24px rgba(0,0,0,.35); }
   .lb-trophies { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-size: 14px; color: var(--gold); flex-shrink: 0; }
 
   /* friends */
@@ -2709,9 +2732,21 @@
     /* Soft edges, on the leaderboard alone. It is the one screen with a list long enough to be cut
        mid-row at either end; everywhere else the fade had nothing to soften and just dimmed the
        last row for no reason. */
+    /* With the pinned row taking the foot of the shell, the list no longer ends behind the tab bar
+       — so it stops reserving 96px for one, and the bottom fade moves down to the list's real edge.
+       Leaving both as they were would have parked the fade a hundred pixels above the last row. */
+    /* The padding has to be DEEPER than the fade, or the last row lands inside it and the end of the
+       list arrives dimmed — a mask cannot know it has nothing left to soften. 30px of floor against
+       a 24px fade leaves the final row clear by six. */
+    .app.at-leaderboard .page-body { padding-bottom: 30px; }
     .app.at-leaderboard .page-body {
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 112px), transparent calc(100% - 78px));
-      mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 112px), transparent calc(100% - 78px)); }
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%); }
+    /* The bar is fixed and overlays the shell, so the pin carries its own clearance.
+       110px, measured rather than guessed: the bar's box is 111px tall and its RAISED active disc
+       tops out 103px above the bottom — the disc, not the pill, is the thing to clear. --sab is
+       added because the bar pads itself by it, so the whole bar grows on a phone with a home bar. */
+    .lb-pin { margin-bottom: calc(110px + var(--sab)); }
     .page-body::-webkit-scrollbar, .home-screen::-webkit-scrollbar, .lobby-screen::-webkit-scrollbar {
       width: 0; height: 0; display: none; }
     /* The lobby and home ARE the .screen, so the blanket `.screen { overflow: hidden }` above wins
@@ -2880,3 +2915,9 @@
     .app.in-game .my-cards .mc-label { font-size: 10px; }
   }
 }
+
+/* The app's own confirm dialog (lib/ask.ts). Deliberately plain: it is a question, not a screen. */
+.ask-body { padding-block: 22px 6px; font-size: 15px; line-height: 1.5; text-align: center; }
+.ask-btns { display: flex; gap: 10px; justify-content: center; }
+/* Equal widths, so neither answer is the one your thumb finds first by being bigger. */
+.ask-btns > * { flex: 1 1 0; min-width: 0; }

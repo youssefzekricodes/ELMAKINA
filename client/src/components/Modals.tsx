@@ -5,6 +5,7 @@ import { CHARACTERS, IMG } from '../theme';
 import { i18n, t } from '../i18n';
 import { useStore, store, mvAvatar, type Profile } from '../lib/store';
 import { commitProfile, notify } from '../lib/net';
+import { answerAsk } from '../lib/ask';
 import { GameCard, Html, Icon, PlayerAvatar } from './ui';
 
 export function RulesModal() {
@@ -161,6 +162,38 @@ export function AvatarPicker() {
             </div>
           </Modal.Body>
           <Modal.Footer><Button variant="primary" onPress={close}>{t('profile.done')}</Button></Modal.Footer>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
+  );
+}
+
+/**
+ * The app's own confirmation, replacing window.confirm() — see lib/ask.ts for why.
+ *
+ * Every way out except the confirm button answers NO: backdrop, Escape, the close control. Both
+ * things this guards are destructive and unrecoverable (you cannot un-leave a game in progress, or
+ * un-remove a player), so an ambiguous gesture must never be read as consent.
+ */
+export function ConfirmDialog() {
+  const s = useStore();
+  const a = s.ask;
+  // The question survives its own dismissal. Answering clears store.ask immediately, but the modal
+  // takes a beat to animate out — and rendering `a?.body` directly meant the text vanished on the
+  // first frame and the box faded away EMPTY. Hold the last question and keep drawing it; only
+  // `isOpen` follows the store.
+  const last = useRef(a);
+  if (a) last.current = a;
+  const shown = a || last.current;
+  return (
+    <Modal.Backdrop isOpen={!!a} onOpenChange={(o) => { if (!o) answerAsk(false); }}>
+      <Modal.Container size="sm">
+        <Modal.Dialog aria-label={shown?.body || t('ask.ok')}>
+          <Modal.Body className="ask-body">{shown?.body}</Modal.Body>
+          <Modal.Footer className="ask-btns">
+            <Button variant="outline" onPress={() => answerAsk(false)}>{t('ask.cancel')}</Button>
+            <Button variant={shown?.danger ? 'danger' : 'primary'} onPress={() => answerAsk(true)}>{shown?.ok}</Button>
+          </Modal.Footer>
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>
