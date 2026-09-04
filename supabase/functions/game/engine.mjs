@@ -452,8 +452,10 @@ export class Game {
           this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: true });
           this.addLog('loss', 'colonel.right', { target: target.name, guess: action.guess }); this.loseSpecificCard(target, action.guess, 'colonel_correct', actor.id);
         } else if (action.guessHeld) {
-          // Right when it was said — the guessed card has since fallen to the challenge the target
-          // lost. That loss IS the penalty: no second card, and the 4 coins stay with the bank.
+          // Right when it was said, and the guessed card has since left the hand anyway. The
+          // challenge penalty spares the named card (see challenge()), so this is only reached
+          // when nothing else was there to give — the hand was that one card, and it is gone.
+          // No second card, and the 4 coins stay with the bank.
           this.event('guess', { playerId: actor.id, targetId: target.id, character: action.guess, right: true });
           this.addLog('loss', 'colonel.right.fell', { target: target.name, guess: action.guess });
         } else {
@@ -505,12 +507,19 @@ export class Game {
    * of for 9 coins. That waits for `settleDebts` to ask.
    */
   owedBy(id) { return this.owed.filter((d) => d.playerId === id); }
-  owe(p, reason, killerId = null, canPay = false) {
+  /**
+   * `avoid`: a character the random pick must spare if the hand holds anything else. The one
+   * caller is the Colonel's own target losing a challenge: the Colonel has just named a card in
+   * that hand, and if the challenge penalty took that very card by chance the guess would resolve
+   * against a hand it was never about. The penalty comes out of the rest of the hand, and the
+   * guess is then judged on the card it named — two losses, the way the table would rule it.
+   */
+  owe(p, reason, killerId = null, canPay = false, avoid = null) {
     if (!p || !p.alive) return;
     this.owed.push({ playerId: p.id, reason, killerId: killerId || null, canPay: !!canPay });
     const debts = this.owedBy(p.id);
     if (debts.some((d) => d.canPay) && p.coins >= 9) return; // a real choice — settleDebts will ask
-    this.payDebts(p.id, this.randomIndices(p, Math.min(debts.length, p.cards.length)));
+    this.payDebts(p.id, this.randomIndices(p, Math.min(debts.length, p.cards.length), avoid));
     this.checkGameOver();
   }
   /** Hand over the chosen cards (highest index first so the earlier indices stay valid). */
@@ -522,9 +531,12 @@ export class Game {
     idx.forEach((i, k) => { const d = debts[k] || debts[debts.length - 1] || {}; this.loseCardAt(p, i, d.reason || 'lost', d.killerId || null); });
   }
   /** Random cards, used when the clock runs out or a player walks away mid-decision. */
-  randomIndices(p, n) {
+  randomIndices(p, n, avoid = null) {
+    // The pool is every index, minus the spared character when something else is left to give.
+    let pool = p.cards.map((_, i) => i);
+    if (avoid) { const rest = pool.filter((i) => p.cards[i] !== avoid); if (rest.length >= Math.min(n, p.cards.length)) pool = rest; }
     const idx = [];
-    while (idx.length < Math.min(n, p.cards.length)) { const r = Math.floor(Math.random() * p.cards.length); if (!idx.includes(r)) idx.push(r); }
+    while (idx.length < Math.min(n, pool.length)) { const r = pool[Math.floor(Math.random() * pool.length)]; if (!idx.includes(r)) idx.push(r); }
     return idx;
   }
   /**
@@ -580,9 +592,9 @@ export class Game {
     return this.run(then);
   }
   /** A lost challenge costs a card too — it joins the same bill, so being hit twice is still one pick. */
-  challengeLoss(loserId, reason, winnerId, pauseData, then) {
+  challengeLoss(loserId, reason, winnerId, pauseData, then, avoid = null) {
     const p = this.player(loserId);
-    if (p && p.alive) { this.owe(p, reason, winnerId, false); if (this.checkGameOver()) return; }
+    if (p && p.alive) { this.owe(p, reason, winnerId, false, avoid); if (this.checkGameOver()) return; }
     this.pause('challenge', pauseData, then || null);
   }
   killChoice(c, choice) {
@@ -647,7 +659,11 @@ export class Game {
         this.event('swap', { playerId: claimer.id, n: 1 });
         this.addLog('reveal', 'bluff.replace', { name: claimer.name, character: ch });
       }
-      this.challengeLoss(challenger.id, 'lost_challenge', claimer.id, { result: 'true', claimerId: claimer.id, challengerId: challenger.id, character: ch }, block ? { k: 'reopenBlock', block, cbs } : cbs.onProceed);
+      // The Colonel's own target calling the bluff: the card the challenge costs them must not be
+      // the one the Colonel named, or the guess would be judged on a hand it no longer describes.
+      const act = this.pending && this.pending.action;
+      const spare = w.claim.kind === 'action' && ch === 'colonel' && act && act.targetId === challenger.id ? act.guess : null;
+      this.challengeLoss(challenger.id, 'lost_challenge', claimer.id, { result: 'true', claimerId: claimer.id, challengerId: challenger.id, character: ch }, block ? { k: 'reopenBlock', block, cbs } : cbs.onProceed, spare);
     } else {
       this.addLog('challenge', 'bluff.caught', { challenger: challenger.name, name: claimer.name, character: ch });
       this.event('bluff', { playerId: claimer.id, character: ch, challengerId: challenger.id });

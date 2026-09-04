@@ -16,6 +16,9 @@ const errs: string[] = ((window as any).__mekinaErrors = []);
 const push = (e: any) => { errs.push(String((e && (e.stack || e.message)) || e)); };
 window.addEventListener('error', (e) => push(e.error || e.message));
 window.addEventListener('unhandledrejection', (e) => push(e.reason));
+// Dev only: the store on window, so a screen can be put into any state from the console or a
+// driving script without playing the game into it. Folded out of production builds.
+if (import.meta.env.DEV) import('./lib/store').then((m) => { (window as any).__store = m.store; });
 
 class Boundary extends React.Component<{ children: React.ReactNode }, { err: any }> {
   state = { err: null as any };

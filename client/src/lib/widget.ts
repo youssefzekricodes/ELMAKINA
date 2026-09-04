@@ -34,9 +34,25 @@ function nudge(count: number, today: boolean): string {
   return t(pool[day % pool.length]);
 }
 
-export function updateStreakWidget(count: number, today = false) {
+export interface WidgetStreak { count: number; today: boolean; played: string[]; frozen: string[]; freezes: number; atRisk: boolean }
+
+/**
+ * Push the streak to the launcher. Along with the count go the DAYS played, not just "today":
+ * the widget checks the device's own calendar, so the nudge under the number flips from "Lit
+ * today" to the cold line the next morning without the app being opened — which is why two
+ * labels travel with it. `mood` picks the banner: the frozen one whenever the streak is on ice or
+ * one ad from being lost, the same rule the in-app card uses.
+ */
+export function updateStreakWidget(st: WidgetStreak) {
   if (!isNative()) return;
-  plugin()?.update({ count, label: nudge(count, today) }).catch(() => { /* widget missing is fine */ });
+  plugin()?.update({
+    count: st.count,
+    label: nudge(st.count, st.today),
+    labelCold: nudge(st.count, false),
+    played: st.played.join(','),
+    frozen: st.frozen.join(','),
+    mood: st.atRisk || st.freezes > 0 ? 'freeze' : 'warm',
+  }).catch(() => { /* widget missing is fine */ });
 }
 
 /** The system pin sheet, directly on Android; elsewhere just surface the in-app card. */

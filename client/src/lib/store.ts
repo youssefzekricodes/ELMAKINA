@@ -54,7 +54,9 @@ export interface Snapshot {
   account: Account | null;   // signed-in identity (Google) or guest
   trophies: number;          // my trophy total
   // Daily play streak (lib/streaks.ts). null until the server has answered.
-  streak: { count: number; best: number; freezes: number; today: boolean; atRisk: boolean } | null;
+  streak: { count: number; best: number; freezes: number; today: boolean; atRisk: boolean;
+            // The week view: the player's local day (YYYY-MM-DD) and the recent days played / frozen.
+            day: string; played: string[]; frozen: string[] } | null;
   // A just-extended streak waiting for its full-screen moment; StreakCine consumes and clears it.
   streakCine: { count: number; froze: boolean } | null;
   friends: Friend[];         // accepted friends

@@ -18,13 +18,22 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "StreakWidget")
 public class StreakWidgetPlugin extends Plugin {
 
+  /**
+   * Everything the widget draws, in one push: the count, both nudge lines, the played and frozen
+   * days as comma-joined ISO dates, and which banner (warm / freeze). Nothing is interpreted
+   * here — StreakWidget.build reads the calendar and decides.
+   */
   @PluginMethod
   public void update(PluginCall call) {
-    int count = call.getInt("count", 0);
-    String label = call.getString("label", "");
     Context ctx = getContext();
-    ctx.getSharedPreferences(StreakWidget.PREFS, Context.MODE_PRIVATE)
-       .edit().putInt(StreakWidget.KEY_COUNT, count).putString(StreakWidget.KEY_LABEL, label).apply();
+    ctx.getSharedPreferences(StreakWidget.PREFS, Context.MODE_PRIVATE).edit()
+       .putInt(StreakWidget.KEY_COUNT, call.getInt("count", 0))
+       .putString(StreakWidget.KEY_LABEL, call.getString("label", ""))
+       .putString(StreakWidget.KEY_LABEL_COLD, call.getString("labelCold", ""))
+       .putString(StreakWidget.KEY_PLAYED, call.getString("played", ""))
+       .putString(StreakWidget.KEY_FROZEN, call.getString("frozen", ""))
+       .putString(StreakWidget.KEY_MOOD, call.getString("mood", "warm"))
+       .apply();
     StreakWidget.refreshAll(ctx);
     call.resolve();
   }

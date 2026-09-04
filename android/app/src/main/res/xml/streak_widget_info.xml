@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 2x1 launcher cells. updatePeriodMillis 0 on purpose: the number can only move by playing, and
-     playing opens the app, which pushes the new value. No alarms, no battery cost.
-     previewLayout (API 31+) shows the real widget in the picker instead of a flat screenshot. -->
+<!-- 2x1 launcher cells: a strip, not a card. updatePeriodMillis 0 on purpose: the number can only
+     move by playing, and playing opens the app, which pushes; the one thing that changes on its own,
+     the date, is handled by the widget's own midnight alarm (StreakWidget.java). No polling, no
+     battery cost. previewLayout (API 31+) shows the real widget in the picker. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="110dp"
     android:minHeight="40dp"

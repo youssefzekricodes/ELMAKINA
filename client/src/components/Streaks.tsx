@@ -2,10 +2,13 @@
  * The streak, everywhere it shows its face.
  *
  *   <StreakPill/>   the flame + count on the home screen; grey until today's game is played,
- *                   pulsing blue when the streak is one rewarded ad from being lost.
+ *                   pulsing blue when the streak is one rewarded ad from being lost. Just the
+ *                   number: the week lives in the card behind it and on the launcher widget.
  *   <StreakModal/>  the card behind the pill: the uploaded scene art (warm when alive, the blue
  *                   variant when frozen/at risk), count, best, the save-with-an-ad offer, and —
  *                   on Android — the "pin it to your home screen" button.
+ *   <StreakWeek/>   inside the card: the current week, Monday to Sunday, each day lit, frozen,
+ *                   missed or still ahead — so the streak reads as a calendar, not just a number.
  *   <StreakCine/>   the full-screen beat when the streak grows: the Lottie flame, the number
  *                   punching in, and the phone buzzing under it. Lottie is lazy-loaded — the
  *                   player is ~60KB gzipped and most sessions never extend a streak.
@@ -17,12 +20,52 @@ import { Button, Modal } from '@heroui/react';
 import { useStore, store } from '../lib/store';
 import { t } from '../i18n';
 import { rewardedAd } from '../lib/ads';
-import { saveStreak } from '../lib/streaks';
+import { saveStreak, isoDay } from '../lib/streaks';
 import { canPinWidget, isWidgetPinned, promptPinWidget } from '../lib/widget';
 import { notify } from '../lib/net';
 import { Icon } from './ui';
 
 const FIRE = '/img/streaks/fire.svg';
+const FREEZE = '/img/streaks/Streak-freeze.webp';
+const WEEK = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
+type DayState = 'played' | 'frozen' | 'missed' | 'today' | 'future';
+
+/**
+ * The current week as seven states. Monday-first (Tunisia's week), built from the server's idea of
+ * the player's local day so no strip can ever disagree with the count about what "today" is. A day
+ * is lit if a game was finished, iced if the freeze covered it, hollow if it slipped by, and
+ * "today" only while today is still waiting for its game.
+ */
+function weekDays(day: string, played: string[], frozen: string[]) {
+  const today = new Date(day + 'T00:00:00');
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));   // getDay: Sun=0 → Monday-based offset
+  return WEEK.map((name, i) => {
+    const d = new Date(monday); d.setDate(monday.getDate() + i);
+    const key = isoDay(d);
+    const state: DayState = played.includes(key) ? 'played' : frozen.includes(key) ? 'frozen'
+      : key === day ? 'today' : d < today ? 'missed' : 'future';
+    return { name, key, state, isToday: key === day };
+  });
+}
+
+export function StreakWeek({ day, played, frozen }: { day: string; played: string[]; frozen: string[] }) {
+  const days = weekDays(day, played, frozen);
+  return (
+    <div className="streak-week" role="list" aria-label={t('streak.week')}>
+      {days.map((d) => (
+        <div key={d.key} role="listitem" className={`sw-day ${d.state} ${d.isToday ? 'is-today' : ''}`}>
+          <span className="sw-name">{t(`week.${d.name}`)}</span>
+          <span className="sw-dot">
+            {d.state === 'played' && <img src={FIRE} alt="" draggable={false} />}
+            {d.state === 'frozen' && <img src={FREEZE} alt="" draggable={false} />}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function StreakPill() {
   const s = useStore();
@@ -85,20 +128,21 @@ export function StreakModal() {
             <img className="streak-hero-art" src={blue ? '/img/streaks/banner-freeze.webp' : '/img/streaks/banner-warm.webp'} alt="" />
             <div className="streak-hero-body">
               {blue
-                ? <img src="/img/streaks/Streak-freeze.webp" alt="" className="streak-big-ic" draggable={false} />
+                ? <img src={FREEZE} alt="" className="streak-big-ic" draggable={false} />
                 : <img src={FIRE} alt="" className="streak-big-ic" draggable={false} />}
               <div className="streak-count">{st?.count ?? 0}</div>
               <div className="streak-sub">{t(st?.atRisk ? 'streak.riskSub' : frozen ? 'streak.frozenSub' : 'streak.sub')}</div>
             </div>
           </div>
           <Modal.Body className="streak-body">
+            {st && <StreakWeek day={st.day} played={st.played} frozen={st.frozen} />}
             <div className="streak-stats">
               <span className="streak-stat">
                 <img src={FIRE} alt="" className="streak-stat-ic" draggable={false} />
                 <b>{st?.best ?? 0}</b> {t('streak.best')}
               </span>
               <span className={`streak-stat ${frozen ? 'has-freeze' : ''}`}>
-                <img src="/img/streaks/Streak-freeze.webp" alt="" className="streak-stat-ic" draggable={false} />
+                <img src={FREEZE} alt="" className="streak-stat-ic" draggable={false} />
                 <b>{st?.freezes ?? 0}</b> {t('streak.freezes')}
               </span>
             </div>

@@ -215,14 +215,18 @@ test/                                   engine tests + in-memory end-to-end flow
   **Tax Man** take 1 from a player with >7 coins; **Police** peek one card of any player (self allowed),
   keep or swap with the front of the deck, blocked by Police (target);
   **Terrorist** pay 3, kill one card, blocked by Colonel (target);
-  **Colonel** pay 4, guess a card — right: target loses that exact card, wrong: Colonel loses a random
-  card and target gets the 4 coins; **Politician** return all cards to the back, draw the same number;
+  **Colonel** pay 4, guess a card — right: target loses that exact card, wrong: the 4 coins go to
+  the target; **Politician** return all cards to the back, draw the same number;
   **Thief** steal 2 (or what they have), blocked by Thief (target).
 * Challenges: the first challenger (server arrival order) is the official one. Lying claimer → loses
   a random card, action/block fails. Truthful claimer → challenger loses a random card, the proven card
   is shown in the log, returned to the back of the deck and replaced from the front; the action proceeds.
 * Terrorist special case: if the target challenges a truthful Terrorist they lose 2 cards total
   (one for the challenge, then one for the kill — which they still choose, and may still try to block).
+* Colonel special case: if the target challenges a truthful Colonel, the card they lose for the
+  challenge is never the one the Colonel guessed (as long as they hold anything else), so the guess is
+  then judged on the card it named — a right guess takes that card too, 2 cards total. A proven
+  Politician is not replaced card-by-card first: the whole hand is exchanged once.
 * Killed players (Terrorist / Paid Kill) secretly choose which card to lose; challenge losses and wrong
   A wrong Colonel guess costs only the 4 coins paid (they go to the target). Lost cards are never revealed.
 * Elimination on the last card. The eliminated player's **coins go to the player who took that last

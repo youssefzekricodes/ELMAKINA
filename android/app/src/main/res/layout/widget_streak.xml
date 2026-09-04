@@ -4,59 +4,86 @@
   uses that id to clip the widget to the system corner radius and draw its backing. A custom id
   there is how a widget lands on the home screen with no visible background at all.
 
-  No frame around the flame any more — it sits straight on the scene at full size, and the number
-  is the loudest thing on the widget.
+  One row: the banner art behind (centerCrop, so it keeps its proportions in any box the launcher
+  gives — the sides crop, nothing stretches), a light veil, and the flame + number + nudge centred
+  as one group. StreakWidget.java swaps the art between the warm and the frozen banner.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:gravity="center"
-    android:background="@drawable/widget_bg"
-    android:padding="10dp">
+    android:background="@drawable/widget_bg">
 
   <ImageView
-      android:id="@+id/widget_fire"
-      android:layout_width="56dp"
-      android:layout_height="56dp"
-      android:src="@drawable/widget_fire"
+      android:id="@+id/widget_art"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:scaleType="centerCrop"
+      android:src="@drawable/widget_warm"
+      android:contentDescription="@null" />
+
+  <!-- An ImageView, not a View: RemoteViews refuses to inflate a bare View ("Class not allowed"). -->
+  <ImageView
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:scaleType="fitXY"
+      android:src="@drawable/widget_scrim"
       android:contentDescription="@null" />
 
   <LinearLayout
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:orientation="vertical"
-      android:layout_marginStart="10dp"
-      android:gravity="center_vertical">
-    <TextView
-        android:id="@+id/widget_count"
+      android:layout_gravity="center"
+      android:orientation="horizontal"
+      android:gravity="center_vertical"
+      android:paddingStart="12dp"
+      android:paddingEnd="12dp"
+      android:paddingTop="8dp"
+      android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/widget_fire"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:src="@drawable/widget_fire"
+        android:contentDescription="@null" />
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="42sp"
-        android:textStyle="bold"
-        android:includeFontPadding="false"
-        android:textColor="#FFC24A"
-        android:shadowColor="#8CE2551A"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="14"
-        android:text="0" />
-    <TextView
-        android:id="@+id/widget_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:includeFontPadding="false"
-        android:textColor="#E8D9C0"
-        android:shadowColor="#CC000000"
-        android:shadowDx="0"
-        android:shadowDy="1"
-        android:shadowRadius="4"
-        android:text="" />
+        android:orientation="vertical"
+        android:layout_marginStart="8dp"
+        android:gravity="center_vertical">
+      <TextView
+          android:id="@+id/widget_count"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:textSize="40sp"
+          android:textStyle="bold"
+          android:includeFontPadding="false"
+          android:textColor="#FFC24A"
+          android:shadowColor="#8CE2551A"
+          android:shadowDx="0"
+          android:shadowDy="0"
+          android:shadowRadius="14"
+          android:text="0" />
+      <TextView
+          android:id="@+id/widget_label"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="1dp"
+          android:maxLines="2"
+          android:maxWidth="130dp"
+          android:ellipsize="end"
+          android:textSize="11sp"
+          android:textStyle="bold"
+          android:includeFontPadding="false"
+          android:textColor="#F3E9D6"
+          android:shadowColor="#CC000000"
+          android:shadowDx="0"
+          android:shadowDy="1"
+          android:shadowRadius="4"
+          android:text="" />
+    </LinearLayout>
   </LinearLayout>
-</LinearLayout>
+</FrameLayout>

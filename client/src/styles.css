@@ -269,8 +269,13 @@
   .home-privacy { color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; opacity: .75; }
   .home-privacy:hover { color: var(--foreground); opacity: 1; }
   /* ─── home: title screen + player badge ─── */
-  .home-screen { align-items: center; justify-content: center; padding: 28px 20px calc(28px + var(--sab)); }
-  .home-stage { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+  /* Centred by auto margins, not justify-content: center. On a short phone the stage is taller than
+     the screen (the push prompt alone adds a card), and flex centering clips the overflow equally at
+     BOTH ends — the top row with the scores sat 24px above the viewport with no way to scroll to
+     it. Auto margins take up free space when there is some and collapse to zero when there is none. */
+  .home-screen { align-items: center; justify-content: flex-start; padding: 28px 20px calc(28px + var(--sab)); }
+  .home-stage { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center;
+    margin-block: auto; }
   .home-hero { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .home-emblem { position: relative; width: 92px; height: 92px; display: inline-flex; align-items: center; justify-content: center; }
   .home-emblem::before { content: ""; position: absolute; inset: -34%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--accent) 42%, transparent) 0%, transparent 62%); }
@@ -2873,10 +2878,14 @@
      Full-bleed art put the picture underneath the close control, which then had to be read against
      whatever pixel happened to be behind it. Insetting gives the control its corner back and lets
      the art carry its own rounded frame — the same radius the cards in the game use. */
-  .streak-hero { position: relative; margin: 46px 16px 0; min-height: 156px; display: grid; place-items: center;
+  .streak-hero { position: relative; margin: 46px 16px 0; min-height: 188px; display: grid; place-items: center;
     border-radius: var(--radius-2xl); overflow: hidden;
     box-shadow: inset 0 0 0 1px rgba(255,240,214,.12), 0 10px 26px rgba(0,0,0,.42); }
-  .streak-hero-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* The scene is a wide strip (760×234); at the card's width it only just covers the frame, so the
+     art is pushed a little larger than cover and the frame made deeper. A thicker banner with the
+     scene filling it, rather than a thin ribbon with the number cramped on top. */
+  .streak-hero-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    transform: scale(1.12); transform-origin: center; }
   .streak-hero::after { content: ''; position: absolute; inset: 0;
     background: linear-gradient(180deg, rgba(14,11,8,.15), rgba(14,11,8,.78)); }
   .streak-hero.freeze::after { background: linear-gradient(180deg, rgba(20,44,74,.35), rgba(10,16,26,.82)); }
@@ -2898,6 +2907,26 @@
     text-align: center; padding-inline: 18px; max-width: 100%; text-wrap: balance;
     text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 14px rgba(0,0,0,.8); }
   .streak-body { display: flex; flex-direction: column; gap: 12px; padding-top: 14px; }
+  /* The week: seven columns, Monday first (the app's RTL flips the order for Arabic on its own).
+     Lit days carry the flame, iced ones the freeze, a missed day is a hollow ring, and today —
+     if still unplayed — is the one ring with a pulse, so the eye lands on what is left to do. */
+  .streak-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 10px 6px 8px;
+    border-radius: var(--radius-xl); border: 1px solid rgba(255,240,214,.1); background: rgba(28,20,14,.45); }
+  .sw-day { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+  .sw-name { font-size: 10.5px; font-weight: 700; letter-spacing: .02em; color: var(--muted);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sw-day.is-today .sw-name { color: var(--foreground); }
+  .sw-dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    border: 2px solid rgba(255,240,214,.14); background: rgba(14,11,8,.5); }
+  .sw-dot img { width: 20px; height: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+  .sw-day.played .sw-dot { border-color: rgba(255,177,59,.55); background: rgba(217,88,11,.22);
+    box-shadow: 0 0 12px rgba(255,177,59,.28); }
+  .sw-day.frozen .sw-dot { border-color: rgba(111,183,255,.6); background: rgba(23,42,66,.7);
+    box-shadow: 0 0 12px rgba(111,183,255,.3); }
+  .sw-day.missed .sw-dot { border-style: dashed; opacity: .55; }
+  .sw-day.future .sw-dot { opacity: .35; }
+  .sw-day.today .sw-dot { border-color: var(--accent); animation: sw-today 1.8s ease-in-out infinite; }
+  @keyframes sw-today { 50% { box-shadow: 0 0 0 5px rgba(240,138,29,.18); } }
   .streak-stats { display: flex; justify-content: center; gap: 10px; font-size: 13px; color: var(--muted); }
   /* Each record is its own chip: the icon says which streak idea it counts, so the two numbers stop
      needing to be read together to be told apart. */
@@ -2944,7 +2973,7 @@
     border-left: 6px solid color-mix(in srgb, var(--accent) 60%, #000);
     box-shadow: inset 0 2px 0 color-mix(in srgb, #fff 26%, transparent), 0 12px 26px rgba(0,0,0,.45); }
   .sc-continue:active { transform: translate(-2px, 2px); border-bottom-width: 3px; border-left-width: 3px; }
-  @media (prefers-reduced-motion: reduce) { .sc-count { animation: none; } .streak-pill.risk { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .sc-count { animation: none; } .streak-pill.risk { animation: none; } .sw-day.today .sw-dot { animation: none; } }
 
   .boost-btn { align-self: center; }
   .boost-done { display: inline-flex; align-items: center; gap: 6px; align-self: center; margin: 0;
