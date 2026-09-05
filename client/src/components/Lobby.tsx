@@ -1,12 +1,32 @@
-import { Button, Tooltip } from '@heroui/react';
+import { Button } from '@heroui/react';
 import { t } from '../i18n';
 import { ask } from '../lib/ask';
 import { useStore, store } from '../lib/store';
 import { copyInvite, kickPlayer, leaveRoom, setRoomPublic, startGame, toggleReady } from '../lib/net';
 import { goFullscreen } from '../lib/fullscreen';
 import { Art, Icon, PlayerAvatar } from './ui';
-import { AddFriendButton } from './Social';
+import { sendFriendRequest } from '../lib/social';
+import { useState } from 'react';
 import { useVoice, speakingOf, inCall } from '../lib/voice';
+
+/**
+ * The friend action on a seat, with its state written out: "Add friend" is a button, "Friend" and
+ * "Requested" are facts. The icon-only dot it replaces looked the same in all three states and
+ * nobody could tell whether it was a button or a badge.
+ */
+function FriendChip({ uid, name }: { uid: string; name: string }) {
+  const s = useStore();
+  const already = s.friends.some((f) => f.uid === uid);
+  const [sent, setSent] = useState(false);
+  if (already) return <span className="pact done"><Icon name="check-circle" className="size-3.5" />{t('lobby.act.friend')}</span>;
+  if (sent) return <span className="pact done muted"><Icon name="check-circle" className="size-3.5" />{t('lobby.act.requested')}</span>;
+  return (
+    <button type="button" className="pact" title={t('fr.add', { name })}
+      onClick={async (e) => { e.stopPropagation(); const r = await sendFriendRequest(uid); if (r.ok || r.error === 'already') setSent(true); }}>
+      <Icon name="user-plus-rounded" className="size-3.5" />{t('lobby.act.addFriend')}
+    </button>
+  );
+}
 
 export function Lobby() {
   const s = useStore();
@@ -63,9 +83,17 @@ export function Lobby() {
               {room.code.split('').map((ch, i) => <span key={i} className="ivc">{ch}</span>)}
             </div>
           </div>
-          <Button variant="primary" size="lg" className="invite-copy" onPress={() => copyInvite(room.code)}>
-            <Icon name="link-round-angle" className="size-5" />{t('lobby.copy')}
-          </Button>
+          {/* Two ways to fill the seats, side by side where the code is: the link for anyone, the
+              friends list for the people already in the app. "Invite friends" used to be an
+              unlabelled icon in the bottom bar, a long way from the code it belongs with. */}
+          <div className="invite-actions">
+            <Button variant="primary" size="lg" className="invite-copy" onPress={() => copyInvite(room.code)}>
+              <Icon name="link-round-angle" className="size-5" />{t('lobby.copy')}
+            </Button>
+            <Button variant="secondary" size="lg" className="invite-friends" onPress={() => store.set({ modal: 'invite' })}>
+              <Icon name="users-group-rounded" className="size-5" />{t('lobby.invite')}
+            </Button>
+          </div>
         </div>
 
         {/* seats — place-cards around the table */}
@@ -75,41 +103,41 @@ export function Lobby() {
             const talking = speakingOf(p.id);
             const mine = p.id === room.you;
             const canKick = isHost && !mine;
-            const editLabel = t('profile.editSeat');
             const kickLabel = t('lobby.kick', { name: p.name });
             return (
               <li
                 key={p.id}
-                className={`pcard ${ready ? 'ready' : 'waiting'} ${p.connected ? '' : 'off'} ${mine ? 'me editable' : ''}`}
-                {...(mine ? { role: 'button', tabIndex: 0, title: editLabel, 'aria-label': editLabel, onClick: openEditor, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditor(); } } } : {})}
+                className={`pcard ${ready ? 'ready' : 'waiting'} ${p.connected ? '' : 'off'} ${mine ? 'me' : ''}`}
               >
                 <span className="pcard-num">{i + 1}</span>
                 {ready && <span className="pcard-stamp">{t('lobby.readyTag')}</span>}
                 <span className={`pcard-av ${inCall(p.id) ? 'in-call' : ''} ${talking ? 'speaking' : ''}`}>
                   <PlayerAvatar p={p} size="lg" />
                   {inCall(p.id) && <span className="seat-mic"><Icon name={p.id in v.peers && v.peers[p.id].muted ? 'microphone-off' : 'microphone'} className="size-3" /></span>}
-                  {mine && (
-                    <button type="button" className="pcard-badge edit" title={editLabel} aria-label={editLabel} onClick={(e) => { e.stopPropagation(); openEditor(); }}>
-                      <Icon name="pen" className="size-4" />
-                    </button>
-                  )}
-                  {canKick && (
-                    <button
-                      type="button" className="pcard-badge kick" title={kickLabel} aria-label={kickLabel}
-                      onClick={async (e) => { e.stopPropagation(); if (await ask(t('lobby.kickConfirm', { name: p.name }), { ok: kickLabel, danger: true })) kickPlayer(p.id); }}
-                    >
-                      <Icon name="user-minus-rounded" className="size-4" />
-                    </button>
-                  )}
                 </span>
-                {!p.isBot && !mine && <AddFriendButton uid={p.id} name={p.name} />}
                 <div className="pcard-name">{p.name}</div>
                 <div className="pcard-tags">
                   {p.isHost && <span className="ptag host"><Icon name="crown" className="size-3" />{t('lobby.host')}</span>}
                   {p.isBot && <span className="ptag bot"><Icon name="cpu-bolt" className="size-3" />{t('seat.bot')}</span>}
                   {mine && <span className="ptag you">{t('lobby.you')}</span>}
-                  {mine && <span className="ptag edit"><Icon name="pen" className="size-3" />{t('lobby.editTag')}</span>}
                   {!ready && <span className="ptag wait">{t('lobby.notreadyTag')}</span>}
+                </div>
+                {/* What you can do to THIS seat, written out. Yours: change your look. Someone else's:
+                    befriend them, and — as host — remove them. Each is a small labelled button, not a
+                    pencil or a minus floating on the avatar's shoulder. */}
+                <div className="pcard-actions">
+                  {mine && (
+                    <button type="button" className="pact" onClick={(e) => { e.stopPropagation(); openEditor(); }}>
+                      <Icon name="pen" className="size-3.5" />{t('lobby.act.edit')}
+                    </button>
+                  )}
+                  {!p.isBot && !mine && <FriendChip uid={p.id} name={p.name} />}
+                  {canKick && (
+                    <button type="button" className="pact danger" title={kickLabel}
+                      onClick={async (e) => { e.stopPropagation(); if (await ask(t('lobby.kickConfirm', { name: p.name }), { ok: kickLabel, danger: true })) kickPlayer(p.id); }}>
+                      <Icon name="user-minus-rounded" className="size-3.5" />{t('lobby.act.remove')}
+                    </button>
+                  )}
                 </div>
               </li>
             );
@@ -135,18 +163,12 @@ export function Lobby() {
       {/* action bar */}
       <div className="lobby-bar">
         <div className="lobby-bar-left">
-          <Tooltip delay={400}>
-            <Button isIconOnly size="md" variant="secondary" aria-label={t('profile.editSeat')} onPress={openEditor}><Icon name="pen" className="size-5" /></Button>
-            <Tooltip.Content>{t('profile.editSeat')}</Tooltip.Content>
-          </Tooltip>
-          <Tooltip delay={400}>
-            <Button isIconOnly size="md" variant="tertiary" aria-label={t('top.chars')} onPress={() => store.set({ modal: 'chars' })} className="art-btn"><Art name="cards" className="size-5" /></Button>
-            <Tooltip.Content>{t('top.chars')}</Tooltip.Content>
-          </Tooltip>
-          <Tooltip delay={400}>
-            <Button isIconOnly size="md" variant="secondary" aria-label={t('lobby.invite')} onPress={() => store.set({ modal: 'invite' })}><Icon name="users-group-rounded" className="size-5" /></Button>
-            <Tooltip.Content>{t('lobby.invite')}</Tooltip.Content>
-          </Tooltip>
+          {/* One secondary action, and it says what it opens. The bar used to hold three icons — a
+              pen, a card, two heads — that read as decoration; the pen is on your own seat now and
+              the invite sits with the room code. */}
+          <Button size="md" variant="tertiary" className="lobby-chars" onPress={() => store.set({ modal: 'chars' })}>
+            <Art name="cards" className="size-5" />{t('top.chars')}
+          </Button>
         </div>
         {!isHost && (
           <Button size="lg" variant={meP?.ready ? 'secondary' : 'primary'} className="lobby-cta" onPress={toggleReady}>

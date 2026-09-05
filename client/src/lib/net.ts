@@ -201,7 +201,9 @@ function lobbyFromRow(r: any) {
   const players = (r.players || []).map((p: any) => ({ id: p.id, name: p.name, ready: !!p.ready, connected: !!p.connected, isHost: p.id === r.host_id, isBot: !!p.isBot, avatar: p.avatar, avatarData: p.avatar === 'custom' ? p.avatarData || null : null, color: p.color }));
   const canStart = r.phase === 'lobby' && players.length >= 2 && players.every((p: any) => p.ready || p.isHost) && players.filter((p: any) => p.connected).length >= 2;
   const rs = (r.settings && r.settings.reactionSecs) || 12;
-  return { code: r.code, hostId: r.host_id, phase: r.phase, minPlayers: 2, maxPlayers: 6, players, canStart, reactionSecs: rs, minReactionSecs: 5, maxReactionSecs: 60 };
+  // isPublic was missing here, so every live row update — a player joining, a ready toggle —
+  // rebuilt the room as private and the switch snapped back a moment after the host flipped it.
+  return { code: r.code, hostId: r.host_id, phase: r.phase, minPlayers: 2, maxPlayers: 6, players, canStart, isPublic: !!r.is_public, reactionSecs: rs, minReactionSecs: 5, maxReactionSecs: 60 };
 }
 
 /** Fetch the current room + view (on load, reconnect, and after subscribing). */
