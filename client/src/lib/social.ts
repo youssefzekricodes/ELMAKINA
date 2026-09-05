@@ -7,6 +7,7 @@ import { track } from './analytics';
 import { pushOnline } from './push';
 import { setMonitorUser } from './monitor';
 import { initStreaks } from './streaks';
+import { isNative } from './platform';
 
 export interface LeaderRow { uid: string; name: string; avatar: string | null; avatarData: string | null; trophies: number; wins: number; games: number; me: boolean }
 
@@ -41,6 +42,7 @@ export async function initSocial(uid: string) {
     if (nm) { store.set({ name: nm }); try { localStorage.setItem('mekina.name', nm); } catch { /* private mode */ } }
   }
   try { localStorage.removeItem('mekina.adoptName'); } catch { /* ignore */ }
+  if (!isGuest) await adoptProfile();
   await syncProfile();
   await Promise.all([loadTrophies(), loadFriends(), initStreaks()]);
   subscribeFriends();
@@ -48,6 +50,29 @@ export async function initSocial(uid: string) {
   // Refresh the push subscription and announce that we are here — which is what makes a friend's
   // phone light up. Only ever for a player who already granted permission; it never asks.
   pushOnline();
+}
+
+/**
+ * A signed-in account carries its face and name with it.
+ *
+ * The profile row used to be write-only from the device: sign in on a second phone and
+ * syncProfile pushed THAT phone's fresh random avatar over the one chosen on the first, so the
+ * account looked different everywhere and the leaderboard showed whichever device spoke last.
+ * For a Google account the row is the source of truth: read it first and wear it here, and only
+ * then let syncProfile write. Guests are still device-bound — there is no account to follow.
+ */
+async function adoptProfile() {
+  if (!supabase || !curUid) return;
+  try {
+    const { data } = await supabase.from('profiles').select('name,avatar,avatar_data').eq('user_id', curUid).maybeSingle();
+    if (!data || !data.avatar) return;   // first sign-in anywhere: nothing to adopt, this device's choice becomes the account's
+    const cur = store.get().profile;
+    const next = { ...cur, avatar: data.avatar, avatarData: data.avatar === 'custom' ? data.avatar_data || null : null };
+    store.set({ profile: next });
+    try { localStorage.setItem('mekina.profile', JSON.stringify(next)); } catch { /* private mode */ }
+    const nm = (data.name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (nm) { store.set({ name: nm }); try { localStorage.setItem('mekina.name', nm); } catch { /* private mode */ } }
+  } catch { /* the row is a nicety; the game does not wait on it */ }
 }
 
 /** Upsert my public profile row (name + avatar) so friends and leaderboards can show me. */
@@ -167,13 +192,48 @@ export async function dismissInvite() {
 }
 
 // ── actions ──
+/** Where Google sends the app back to. Must be on the Supabase redirect allow-list. */
+const NATIVE_REDIRECT = 'com.elmekina.game://auth/callback';
+
 export async function signInWithGoogle() {
   // Consumed by initSocial after the round trip: signing in is the one moment the account's own
   // name should win over whatever was typed at the front door.
   try { localStorage.setItem('mekina.adoptName', '1'); } catch { /* private mode */ }
   if (!supabase) return;
   track('sign_in', { method: 'google' }); // the event only — the account's email is never sent to GA
-  await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+  if (!isNative()) {
+    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+    return;
+  }
+  // In the shell the round trip cannot happen in the WebView: Google refuses to sign in inside
+  // one ("disallowed_useragent"), and a redirect to https://localhost would land on the web site.
+  // So: build the URL without following it, open it in the system's Custom Tab, and let Supabase
+  // send the phone back to our own scheme (see the intent-filter in AndroidManifest.xml). The
+  // code arrives in appUrlOpen below and is exchanged here, where the PKCE verifier lives.
+  const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true } });
+  if (error || !data?.url) return;
+  const { Browser } = await import('@capacitor/browser');
+  await Browser.open({ url: data.url, presentationStyle: 'popover' });
+}
+
+/**
+ * The way back in from the Custom Tab. Registered once at startup on native; a no-op elsewhere.
+ * Exchanging the code signs the session in; a reload then does what a fresh start does — the
+ * profile, trophies, friends and streak of the account, not of the guest it replaced.
+ */
+export async function listenForAuthReturn() {
+  if (!isNative() || !supabase) return;
+  try {
+    const { App } = await import('@capacitor/app');
+    App.addListener('appUrlOpen', async ({ url }) => {
+      if (!url || !url.startsWith(NATIVE_REDIRECT)) return;
+      try { const { Browser } = await import('@capacitor/browser'); await Browser.close(); } catch { /* already closed */ }
+      const code = new URL(url).searchParams.get('code');
+      if (!code) return;
+      const { error } = await supabase!.auth.exchangeCodeForSession(code);
+      if (!error) location.reload();
+    });
+  } catch { /* plugin missing: the web sign-in path still works */ }
 }
 
 export async function signOutAccount() {

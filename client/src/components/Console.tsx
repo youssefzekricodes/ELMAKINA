@@ -115,7 +115,6 @@ export function Console() {
    * the console measures itself and the panel anchors above it.
    */
   const handBar = useRef<HTMLDivElement>(null);
-  const [handOpen, setHandOpen] = useState(false);
   useEffect(() => {
     const publish = () => {
       const el = handBar.current;
@@ -179,22 +178,9 @@ export function Console() {
       {/* MY CARDS: one card per physical card in your grip (duplicates show twice), so you never
           have to decode a "×2" badge on the board below. Hidden while spectating / eliminated. */}
       {!selfPick && meP.alive && you.cards.length > 0 && (
-        /* On a phone this is a drawer parked off the side of the screen: the tab stays in reach and
-           the hand only comes out when you pull it, so a full-screen claim never buries it and it
-           never eats board height while you are just watching. On wider screens it is a plain
-           strip, as before — `open` and the tab do nothing there. */
-        <div className={`my-cards ${handOpen ? 'open' : ''}`} ref={handBar}>
-          {/* Two card backs poking out of a slim grip: the shape says "a hand" without a word to
-              read at 8px, the count says how many are yours, and the chevron says which way it
-              goes next. The cards themselves stay hidden until you pull. */}
-          <button type="button" className="mc-tab" aria-expanded={handOpen} aria-controls="my-hand"
-            onClick={() => setHandOpen((v) => !v)} aria-label={t('board.mycards')}>
-            <span className="mc-tab-mark">
-              <span className="mc-tab-fan" aria-hidden="true"><i className="cardback" /><i className="cardback" /></span>
-              <span className="mc-tab-n">{you.cards.length}</span>
-            </span>
-            <Icon name="alt-arrow-left" className="mc-tab-chev size-3.5" />
-          </button>
+        /* A strip in the console's own flow, on every size: your cards are the one thing you must
+           be able to see while a claim is on the table, so they are never parked in a drawer. */
+        <div className="my-cards" ref={handBar}>
           <div className="mc-head">
             <span className="mc-label"><Icon name="card-recive" className="size-3.5" />{t('board.mycards')}</span>
             {coaching && (

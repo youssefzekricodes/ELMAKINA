@@ -5,8 +5,8 @@ import { Button } from '@heroui/react';
 import { enablePush } from '../lib/push';
 import { t } from '../i18n';
 import { useStore, store, mvAvatar } from '../lib/store';
-import { commitProfile, notify } from '../lib/net';
-import { Icon, PlayerAvatar } from './ui';
+import { commitProfile, notify, setLanguage } from '../lib/net';
+import { Art, Icon, PlayerAvatar } from './ui';
 import { MV_SET, randSeed } from './Modals';
 
 export function Onboarding() {
@@ -41,6 +41,17 @@ export function Onboarding() {
   return (
     <div className="ob-screen" role="dialog" aria-modal="true" aria-label={t('ob.title')}>
       <div className="ob-card">
+        {/* The language, first: the rest of this screen is words, and a player who reads Derja should
+            not have to get through an English gate to reach the switch. Two flags, the active one lit —
+            a choice to make, not a toggle to decode. */}
+        <div className="ob-lang" role="radiogroup" aria-label={t('top.lang.title')}>
+          <button type="button" role="radio" aria-checked={s.lang === 'tn'} className={`ob-lang-opt ${s.lang === 'tn' ? 'on' : ''}`} onClick={() => setLanguage('tn')}>
+            <Art name="flagTn" className="size-5" /><span>تونسي</span>
+          </button>
+          <button type="button" role="radio" aria-checked={s.lang === 'en'} className={`ob-lang-opt ${s.lang === 'en' ? 'on' : ''}`} onClick={() => setLanguage('en')}>
+            <Art name="flagEn" className="size-5" /><span>English</span>
+          </button>
+        </div>
         <h2 className="ob-title">{t('ob.title')}</h2>
         <p className="ob-sub">{t('ob.sub')}</p>
         <div className="ob-face">

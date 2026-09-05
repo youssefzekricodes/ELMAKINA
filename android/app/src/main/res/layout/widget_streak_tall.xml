@@ -4,10 +4,10 @@
   uses that id to clip the widget to the system corner radius and draw its backing. A custom id
   there is how a widget lands on the home screen with no visible background at all.
 
-  The one-row form, for a launcher that gives a single row or a player who dragged it down to
-  one. One row: the banner art behind (centerCrop, so it keeps its proportions in any box the launcher
-  gives — the sides crop, nothing stretches), a light veil, and the flame + number + nudge centred
-  as one group. StreakWidget.java swaps the art between the warm and the frozen banner.
+  The two-row form (the default): the same strip, taller and larger — flame and number as a
+  headline with the nudge under them, centred on the banner art (centerCrop, so nothing
+  stretches). StreakWidget.java picks this or the one-row form from the size the launcher reports,
+  and swaps the art between the warm and the frozen banner.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
@@ -37,15 +37,15 @@
       android:layout_gravity="center"
       android:orientation="horizontal"
       android:gravity="center_vertical"
-      android:paddingStart="12dp"
-      android:paddingEnd="12dp"
-      android:paddingTop="8dp"
-      android:paddingBottom="8dp">
+      android:paddingStart="14dp"
+      android:paddingEnd="14dp"
+      android:paddingTop="10dp"
+      android:paddingBottom="10dp">
 
     <ImageView
         android:id="@+id/widget_fire"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
+        android:layout_width="78dp"
+        android:layout_height="78dp"
         android:src="@drawable/widget_fire"
         android:contentDescription="@null" />
 
@@ -53,20 +53,20 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="10dp"
         android:gravity="center_vertical">
       <TextView
           android:id="@+id/widget_count"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:textSize="40sp"
+          android:textSize="60sp"
           android:textStyle="bold"
           android:includeFontPadding="false"
           android:textColor="#FFC24A"
           android:shadowColor="#8CE2551A"
           android:shadowDx="0"
           android:shadowDy="0"
-          android:shadowRadius="14"
+          android:shadowRadius="18"
           android:text="0" />
       <TextView
           android:id="@+id/widget_label"
@@ -74,9 +74,9 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="1dp"
           android:maxLines="2"
-          android:maxWidth="130dp"
+          android:maxWidth="170dp"
           android:ellipsize="end"
-          android:textSize="11sp"
+          android:textSize="13sp"
           android:textStyle="bold"
           android:includeFontPadding="false"
           android:textColor="#F3E9D6"

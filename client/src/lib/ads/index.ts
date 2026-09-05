@@ -73,6 +73,15 @@ function due(): boolean {
  * caller grants its reward ONLY on 'earned'. Never blocks anything: 'unavailable' should read to
  * the player as "not right now", not as an error.
  */
+/**
+ * The rewarded OFFERS — "watch a video to save your streak", "watch a video to double your
+ * trophies" — are switched off for now. The buttons are simply not rendered (the streak card
+ * and the end screen both check this), so nothing is offered that cannot be delivered; the
+ * plumbing underneath stays and the server-side tickets keep working. Flip to true to bring
+ * them back.
+ */
+export const REWARDED_OFFERS = false;
+
 export function rewardedAd(): Promise<'earned' | 'dismissed' | 'unavailable'> {
   if (!adsEnabled()) return Promise.resolve('unavailable');
   return provider().showRewarded().catch(() => 'unavailable' as const);

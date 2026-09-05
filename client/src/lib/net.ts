@@ -10,8 +10,9 @@ import { processEvents, resetEvents, banner, playedCard } from './fx';
 import { track } from './analytics';
 import { countGame } from './ads';
 import { tickStreak } from './streaks';
+import { updateStreakWidget } from './widget';
 import { voiceOnRoomGone } from './voice';
-import { initSocial, syncProfile } from './social';
+import { initSocial, syncProfile, loadTrophies, listenForAuthReturn } from './social';
 import { validTargets } from './rules';
 import { ACTIONS, type ActionDef } from '../theme';
 
@@ -94,6 +95,9 @@ function applyView(v: any) {
   if (v.phase === 'ended' && prev.state && prev.state.phase !== 'ended') {
     countGame();
     tickStreak();   // any finished game keeps the flame lit, solo included — a habit is a habit
+    // The home screen's number: bump_score runs inside the same request that ends the game, so
+    // the first read usually lands; the second covers a view that raced the score write.
+    loadTrophies(); setTimeout(loadTrophies, 2500);
     track('game_end', { players: v.players.length, won: v.winnerId === me });
   }
   // "Play again" goes ended -> playing without ever passing through the lobby, which is the only
@@ -226,6 +230,7 @@ export async function connect() {
   store.set({ me: uid });
   supabase.auth.onAuthStateChange((_e, s) => { uid = s?.user.id || uid; token = s?.access_token || token; });
   if (uid) initSocial(uid);
+  listenForAuthReturn();   // native only: the Google sign-in's way back into the app
   await hello();
   if (!store.get().room) store.set({ connected: true });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && store.get().room) { emitQuiet('ping'); hello(); } });
@@ -421,6 +426,10 @@ export function setLanguage(l: string) {
   document.documentElement.lang = l === 'tn' ? 'ar' : 'en';
   document.documentElement.dir = i18n.dir();
   store.set((s) => ({ lang: i18n.lang, tick: s.tick + 1 }));
+  // The launcher widget's nudge is written in the app's language, so a switch here has to reach
+  // it too — otherwise it keeps speaking the old one until the next game.
+  const st = store.get().streak;
+  if (st) updateStreakWidget({ count: st.count, today: st.today, played: st.played, frozen: st.frozen, freezes: st.freezes, atRisk: st.atRisk });
 }
 export function toggleSound() { store.set({ soundOn: sfx.toggle() }); }
 /**

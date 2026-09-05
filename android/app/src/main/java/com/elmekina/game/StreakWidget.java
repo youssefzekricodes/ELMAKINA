@@ -8,13 +8,19 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
+import android.os.Bundle;
+import android.util.SizeF;
 import android.widget.RemoteViews;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -46,10 +52,39 @@ public class StreakWidget extends AppWidgetProvider {
 
   static final String ACTION_MIDNIGHT = "com.elmekina.game.WIDGET_MIDNIGHT";
 
+  // At and above this height the launcher has given two rows and the tall form fits (it needs
+  // ~110dp); under it the one-row form takes over.
+  private static final int TALL_MIN_DP = 125;
+
   @Override
   public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
-    for (int id : ids) manager.updateAppWidget(id, build(context));
+    for (int id : ids) manager.updateAppWidget(id, forOptions(context, manager.getAppWidgetOptions(id)));
     armMidnight(context);
+  }
+
+  /** The player resized it: re-pick the form for the new height. */
+  @Override
+  public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, Bundle options) {
+    manager.updateAppWidget(id, forOptions(context, options));
+  }
+
+  /**
+   * Which form, for the box the launcher is offering. The options carry BOTH orientations' sizes,
+   * and a 2x2 is a very different shape in each (172x233dp portrait, 332x137dp landscape on a
+   * Pixel). From Android 12 a RemoteViews can hold one layout per size and the launcher picks as
+   * the phone turns; before that the choice is made once, on the smaller height, so nothing clips.
+   */
+  static RemoteViews forOptions(Context context, Bundle options) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && options != null) {
+      ArrayList<SizeF> sizes = options.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
+      if (sizes != null && !sizes.isEmpty()) {
+        Map<SizeF, RemoteViews> bySize = new HashMap<>();
+        for (SizeF size : sizes) bySize.put(size, build(context, size.getHeight() >= TALL_MIN_DP));
+        return new RemoteViews(bySize);
+      }
+    }
+    int minHeightDp = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
+    return build(context, minHeightDp == 0 || minHeightDp >= TALL_MIN_DP);   // no options (preview): the default form
   }
 
   @Override
@@ -58,7 +93,7 @@ public class StreakWidget extends AppWidgetProvider {
     super.onReceive(context, intent);
   }
 
-  static RemoteViews build(Context context) {
+  static RemoteViews build(Context context, boolean tall) {
     SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     int count = prefs.getInt(KEY_COUNT, 0);
     Set<String> played = split(prefs.getString(KEY_PLAYED, ""));
@@ -71,7 +106,7 @@ public class StreakWidget extends AppWidgetProvider {
     if (label == null || label.isEmpty()) label = prefs.getString(KEY_LABEL, "");
     if (label == null || label.isEmpty()) label = context.getString(R.string.widget_default);
 
-    RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_streak);
+    RemoteViews views = new RemoteViews(context.getPackageName(), tall ? R.layout.widget_streak_tall : R.layout.widget_streak);
     views.setImageViewResource(R.id.widget_art, freeze ? R.drawable.widget_freeze : R.drawable.widget_warm);
     views.setTextViewText(R.id.widget_count, String.valueOf(count));
     views.setTextViewText(R.id.widget_label, label);
@@ -93,7 +128,7 @@ public class StreakWidget extends AppWidgetProvider {
   static void refreshAll(Context context) {
     AppWidgetManager manager = AppWidgetManager.getInstance(context);
     int[] ids = manager.getAppWidgetIds(new ComponentName(context, StreakWidget.class));
-    for (int id : ids) manager.updateAppWidget(id, build(context));
+    for (int id : ids) manager.updateAppWidget(id, forOptions(context, manager.getAppWidgetOptions(id)));
     if (ids.length > 0) armMidnight(context);
   }
 

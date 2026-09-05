@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 2x1 launcher cells: a strip, not a card. updatePeriodMillis 0 on purpose: the number can only
+<!-- 3x2 launcher cells by default: about a square on a phone grid (cells are taller than they are
+     wide, so 2x2 came out as a tall card and 2x1 as a thin strip). minWidth 180dp / minHeight 110dp
+     land on the same 3x2 on pre-12 launchers; the player may still drag it down to one row
+     (minResizeHeight), where the one-row layout takes over (see StreakWidget.forOptions). updatePeriodMillis 0 on purpose: the number can only
      move by playing, and playing opens the app, which pushes; the one thing that changes on its own,
      the date, is handled by the widget's own midnight alarm (StreakWidget.java). No polling, no
      battery cost. previewLayout (API 31+) shows the real widget in the picker. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="110dp"
-    android:minHeight="40dp"
-    android:targetCellWidth="2"
-    android:targetCellHeight="1"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/widget_streak"
-    android:previewLayout="@layout/widget_streak"
+    android:initialLayout="@layout/widget_streak_tall"
+    android:previewLayout="@layout/widget_streak_tall"
     android:previewImage="@mipmap/ic_launcher"
     android:description="@string/widget_desc"
-    android:resizeMode="horizontal"
+    android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

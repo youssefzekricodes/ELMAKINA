@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, Modal } from '@heroui/react';
 import { useStore, store } from '../lib/store';
 import { t } from '../i18n';
-import { rewardedAd } from '../lib/ads';
+import { rewardedAd, REWARDED_OFFERS } from '../lib/ads';
 import { saveStreak, isoDay } from '../lib/streaks';
 import { canPinWidget, isWidgetPinned, promptPinWidget } from '../lib/widget';
 import { notify } from '../lib/net';
@@ -146,12 +146,12 @@ export function StreakModal() {
                 <b>{st?.freezes ?? 0}</b> {t('streak.freezes')}
               </span>
             </div>
-            {st?.atRisk && (
+            {REWARDED_OFFERS && st?.atRisk && (
               <Button fullWidth size="lg" variant="primary" isPending={busy} onPress={save} className="streak-save">
                 <Icon name="videocamera" className="size-5" />{t('streak.saveBtn')}
               </Button>
             )}
-            {!st?.atRisk && <p className="streak-how">{t('streak.how')}</p>}
+            {!(REWARDED_OFFERS && st?.atRisk) && <p className="streak-how">{t('streak.how')}</p>}
             {pinned
               ? <p className="streak-pinned"><Icon name="check-circle" className="size-4" />{t('streak.pinned')}</p>
               : pinnable && (

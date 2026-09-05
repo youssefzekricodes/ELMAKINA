@@ -6,7 +6,7 @@ import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
 import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
 import { validTargets } from '../lib/rules';
-import { adBreak, rewardedAd } from '../lib/ads';
+import { adBreak, rewardedAd, REWARDED_OFFERS } from '../lib/ads';
 import { claimTrophyBoost } from '../lib/streaks';
 import { ask } from '../lib/ask';
 import { sfx } from '../lib/sfx';
@@ -67,7 +67,7 @@ function TrophyBoost({ places, me, scored }: { places: Place[]; me: string; scor
   const [state, setState] = useState<'idle' | 'busy' | 'done' | 'gone'>('idle');
   const [bonus, setBonus] = useState(0);
   const mine = places.find((p) => p.id === me);
-  if (!scored || !mine || state === 'gone') return null;
+  if (!REWARDED_OFFERS || !scored || !mine || state === 'gone') return null;
   if (state === 'done') return <p className="boost-done">{t('boost.done', { n: bonus })}<Art name="stars" className="size-4" /></p>;
   const label = mine.delta > 0 ? t('boost.double', { n: mine.delta }) : mine.delta === 0 ? t('boost.plus') : t('boost.undo');
   const claim = async () => {
@@ -144,7 +144,7 @@ function TargetPicker() {
 
 /** The counter button leads with the card that does the countering. The art reads faster than
     "Block as Colonel", and it is exactly the card you need to be holding — or to be bluffing. */
-function BlockBtn({ character, label, desc, why }: { character: string; label: string; desc: string; why?: string }) {
+function BlockBtn({ character, label, desc }: { character: string; label: string; desc: string }) {
   const color = CH[character as keyof typeof CH]?.color || 'var(--warning)';
   const acting = useStore().acting;
   return (
@@ -154,7 +154,6 @@ function BlockBtn({ character, label, desc, why }: { character: string; label: s
     >
       <GameCard c={character} w={26} small className="rx-card" />
       <span>{label}</span>
-      {why && <Html as="i" className="rx-why" html={why} />}
     </button>
   );
 }
@@ -324,53 +323,39 @@ export function Prompt() {
     else if (w.block) effect = t('effect.' + (p!.action.type || 'block'), { name: actor, target: tgt });
     const total = w.claim ? st.timings.challenge : st.timings.block;
     head = <><span className="strip-note">{t('steps.react')}</span><Ring deadline={w.deadline} total={total} tick={urgent} /></>;
-    // Minimal centred claim: small card, one sentence, stacked full-width verdicts.
+    // One row and a column of verdicts. The claim is read in a glance — the card as its label,
+    // the sentence beside it, the target and the outcome as two short lines under it — and the
+    // buttons say only what they do. The version with the target as a diagram of marching
+    // arrows and a consequence written under every button was three explanations of one moment,
+    // and players read none of them in the twelve seconds they had.
+    const targeted = !!(p!.action && p!.action.targetId && !isCounter);
+    const claimer = pl(w.claim ? w.claim.claimerId : p!.actorId);
     body = (
       <div className="claim-min" style={cardC ? { ['--c' as any]: CH[cardC as keyof typeof CH]?.color } : undefined}>
         <TimerBar deadline={w.deadline} total={total} />
-        {cardC && <div className="cm-card"><GameCard c={cardC} w={76} small /></div>}
-        {p!.action && p!.action.targetId && !isCounter ? (
-          // targeted attack: attacker → target, arrow marching between them
-          <div className="cm-vs">
-            <span className="cm-vs-side"><PlayerAvatar p={pl(p!.action.actorId)} size="sm" /><b>{pname(p!.action.actorId)}</b></span>
-            <span className="cm-vs-arrow" aria-hidden="true"><Icon name="alt-arrow-right" className="size-4" /><Icon name="alt-arrow-right" className="size-4" /><Icon name="alt-arrow-right" className="size-4" /></span>
-            <span className="cm-vs-side"><PlayerAvatar p={pl(p!.action.targetId)} size="sm" /><b>{pname(p!.action.targetId)}</b></span>
+        <div className="cm-row">
+          {cardC && <div className="cm-card"><GameCard c={cardC} w={64} small /></div>}
+          <div className="cm-text">
+            <div className="cm-who"><PlayerAvatar p={claimer} size="xs" /><Html as="span" className="cm-title" html={title} /></div>
+            {targeted && (
+              <div className="cm-target"><Icon name="alt-arrow-right" className="size-3.5" /><PlayerAvatar p={pl(p!.action.targetId)} size="xs" /><b>{pname(p!.action.targetId)}</b></div>
+            )}
+            {effect && <Html as="div" className="cm-effect" html={boldNames(shortEffect(effect), [actor, tgt])} />}
           </div>
-        ) : null}
-        <div className="cm-who">{!(p!.action && p!.action.targetId && !isCounter) && <PlayerAvatar p={pl(w.claim ? w.claim.claimerId : p!.actorId)} size="xs" />}<Html as="span" className="cm-title" html={title} /></div>
+        </div>
         {p!.action && p!.action.type === 'colonel' && p!.action.guess && (
           // everyone must see WHAT the Colonel is guessing before the window closes
           <div className="cm-guess" style={{ ['--c' as any]: CH[p!.action.guess as keyof typeof CH]?.color }}>
-            <GameCard c={p!.action.guess} w={52} small />
+            <GameCard c={p!.action.guess} w={44} small />
             <Html as="span" className="cm-guess-tx" html={i18n.html('prompt.colonelGuess', { name: actor, target: tgt, character: cname(p!.action.guess) })} />
           </div>
         )}
-        {/* The consequences moved ONTO the buttons — see cm-btns below. Two sentences floating above
-            three choices made you hold both in your head and work out which belonged to which; a
-            line under the button you are about to press does not. This one stays only for players
-            who have no buttons at all: they still need to know what is about to happen. */}
-        {effect && !(canPass || canBlock || canChallenge) && <Html as="div" className="cm-effect" html={boldNames(effect, [actor, tgt])} />}
         {canPass || canBlock || canChallenge ? (
-          isCounter ? (
-            // Counter layout: calling the bluff comes FIRST as a solid red button; letting it pass follows.
-            <div className="cm-btns">
-              {/* The short form on purpose: counter.why.* was written as a standalone paragraph and ran to
-                  four lines under a button, which pushed the whole panel past the bottom of a 640px
-                  phone. The full version is still a tap away in the rules. */}
-              {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} why={t('prompt.why.block')} />}
-              {canChallenge && <button type="button" className="rx call" disabled={s.acting} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
-              {canPass && <button type="button" className="rx let-pass" disabled={s.acting} onClick={pass}><Icon name="check-circle" className="size-5" /><span>{t('prompt.letPass')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
-            </div>
-          ) : (
           <div className="cm-btns">
-            {/* The short form on purpose: counter.why.* was written as a standalone paragraph and ran to
-                  four lines under a button, which pushed the whole panel past the bottom of a 640px
-                  phone. The full version is still a tap away in the rules. */}
-              {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} why={t('prompt.why.block')} />}
-            {w.claim && <button type="button" className="rx call" disabled={!canChallenge || s.acting} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span><i className="rx-why">{t('prompt.why.call')}</i></button>}
-            {canPass && <button type="button" className="rx pass" disabled={s.acting} onClick={pass}><Icon name="check-circle" className="size-5" /><span>{canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span>{effect && <Html as="i" className="rx-why" html={boldNames(shortEffect(effect), [actor, tgt])} />}</button>}
+            {canBlock && <BlockBtn character={w.block.character} label={blockLabel} desc={blockDesc} />}
+            {w.claim && <button type="button" className="rx call" disabled={!canChallenge || s.acting} onClick={challenge}><Icon name="danger-triangle" className="size-5" /><span>{t('prompt.bluff.btn')}</span></button>}
+            {canPass && <button type="button" className={`rx ${isCounter ? 'let-pass' : 'pass'}`} disabled={s.acting} onClick={pass}><Icon name="check-circle" className="size-5" /><span>{isCounter ? t('prompt.letPass') : canBlock || canChallenge ? t('prompt.pass') : t('prompt.ok')}</span></button>}
           </div>
-          )
         ) : (
           <div className="p-waiting">{w.claim && w.claim.claimerId === me ? t('prompt.waiting.mine') : t('prompt.waiting.others')} {t('prompt.passed', { n: w.passed.length, total: w.eligible.length })}</div>
         )}

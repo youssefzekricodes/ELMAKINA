@@ -18,6 +18,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Google sign-in comes back here. The OAuth round trip runs in a Custom Tab (Google
+                 refuses to sign in inside a WebView), and Supabase redirects to this scheme when it
+                 is done; singleTask above means it lands on the running activity as appUrlOpen
+                 (client/src/lib/social.ts) rather than starting a second copy of the app. The exact
+                 URL, com.elmekina.game://auth/callback, must be on the Supabase redirect allow-list. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.elmekina.game" android:host="auth" />
+            </intent-filter>
         </activity>
 
         <!-- AdMob. The APPLICATION id, not an ad unit — the SDK reads it from here and refuses to

@@ -232,6 +232,31 @@ const traceOf = (db, code) => ({
 });
 const GONE = { room: false, state: false, views: false, members: false };
 
+await test('solo: coming back after walking out closes the bot game instead of resuming it', async () => {
+  const db = memDb();
+  const A = 'aaaaaaaa-0000-0000-0000-000000000001';
+  const { code } = await call(db, A, { op: 'solo', name: 'Solo', bots: 3 });
+  assert.equal(db.rooms.get(code).phase, 'playing');
+  // a short blink (under the presence window) still resumes the game
+  NOW += 20_000;
+  let h = await call(db, A, { op: 'hello' });
+  assert.ok(h.room && h.room.code === code, 'a brief absence resumes');
+  // gone for real: past the presence window, the room is torn down on the way back in
+  NOW += 60_000;
+  h = await call(db, A, { op: 'hello' });
+  assert.equal(h.room, null, 'no room to resume');
+  assert.ok(!db.rooms.has(code) && !db.states.has(code), 'the bot game is gone');
+  assert.equal(await db.getMembership(A), null, 'and so is the membership');
+  // a lobby with other humans is never closed this way
+  const B = 'bbbbbbbb-0000-0000-0000-000000000002';
+  const r = await call(db, A, { op: 'create_room', name: 'Host' });
+  await call(db, B, { op: 'join_room', name: 'Guest', code: r.code });
+  await call(db, B, { op: 'toggle_ready' }); await call(db, A, { op: 'start_game' });
+  NOW += 120_000;
+  h = await call(db, A, { op: 'hello' });
+  assert.ok(h.room && h.room.code === r.code, 'a table with another human resumes');
+});
+
 await test('reap: an abandoned solo/vs-bot room is reaped and every trace of it goes', async () => {
   const db = memDb();
   const A = 'aaaaaaaa-0000-0000-0000-000000000001';

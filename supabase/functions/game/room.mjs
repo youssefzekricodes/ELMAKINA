@@ -193,8 +193,19 @@ async function hello(ctx) {
   if (!m) return { ok: true, room: null, view: null };
   const room = await db.getRoom(m.code);
   if (!room || !room.players.find((p) => p.id === uid)) { await db.removeMember(m.code, uid); return { ok: true, room: null, view: null }; }
-  await db.touchMember(room.code, uid, now);
   const r = new RoomOps(ctx, room); await r.load();
+  // A table of bots is not a table anyone is waiting at. When its one human closed the app
+  // mid-game (no Leave, just gone) and comes back later, resuming a half-played round against
+  // bots is never what they came back for — they land on a game they had already walked out of.
+  // So a bot-only room whose human has been away past the presence window is closed here, on
+  // the way back in, and the player gets the home screen. A blink of bad network (under
+  // PRESENCE_MS) still resumes; a real table with other humans is never touched by this.
+  if (room.phase !== 'lobby' && humans(room).every((p) => p.id === uid)) {
+    const me = room.players.find((p) => p.id === uid);
+    const seen = Math.max((me && me.lastSeen) || 0, (r.members && r.members[uid]) || 0);
+    if (now - seen >= PRESENCE_MS) { await reapRoom(db, room.code); return { ok: true, room: null, view: null }; }
+  }
+  await db.touchMember(room.code, uid, now); r.members[uid] = now;
   let changed = r.refreshPresence();
   if (r.game) { if (r.game.tick(now, ACTION_GRACE)) changed = true; if (r.runBots()) changed = true; }
   if (changed) await r.commit();
