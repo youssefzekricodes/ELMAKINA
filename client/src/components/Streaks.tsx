@@ -148,7 +148,7 @@ export function StreakModal() {
             </div>
             {REWARDED_OFFERS && st?.atRisk && (
               <Button fullWidth size="lg" variant="primary" isPending={busy} onPress={save} className="streak-save">
-                <Icon name="videocamera" className="size-5" />{t('streak.saveBtn')}
+                <Icon name="play-circle" className="size-5" />{t('streak.saveBtn')}
               </Button>
             )}
             {!(REWARDED_OFFERS && st?.atRisk) && <p className="streak-how">{t('streak.how')}</p>}

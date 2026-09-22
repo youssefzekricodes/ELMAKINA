@@ -2797,6 +2797,25 @@
   .streak-pill.risk { animation: streak-throb 1.6s ease-in-out infinite; }
   @keyframes streak-throb { 50% { box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 3px 0 #150f0a, 0 0 18px rgba(111,183,255,.55); } }
 
+  /* ── hearts ────────────────────────────────────────────────────────────────── */
+  /* Same furniture as the streak pill beside it. Empty, the heart drains and the pill throbs red:
+     that is the state in which Play will open this card instead of a game. */
+  .heart-pill { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; min-height: 40px; cursor: pointer;
+    border-radius: 999px; border: 1px solid rgba(255,240,214,.22);
+    background: linear-gradient(180deg, rgba(62,46,30,.92), rgba(32,23,15,.92));
+    box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 3px 0 #150f0a, 0 8px 18px rgba(0,0,0,.45); }
+  .heart-ic { width: 20px; height: 17px; transition: filter .2s, opacity .2s; }
+  .heart-ic.spent { filter: grayscale(1) brightness(.6); opacity: .55; }
+  .heart-pill.empty { border-color: color-mix(in srgb, var(--danger) 60%, transparent); animation: heart-throb 1.6s ease-in-out infinite; }
+  @keyframes heart-throb { 50% { box-shadow: inset 0 1px 0 rgba(255,240,214,.12), 0 3px 0 #150f0a, 0 0 18px color-mix(in srgb, var(--danger) 55%, transparent); } }
+  .hearts-body { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 34px; text-align: center; }
+  .hearts-row { display: flex; gap: 14px; justify-content: center; }
+  .hearts-big { width: 58px; height: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.55)); transition: filter .2s, opacity .2s, transform .2s; }
+  .hearts-big.spent { filter: grayscale(1) brightness(.55); opacity: .55; transform: scale(.9); }
+  .hearts-title { margin: 2px 0 0; font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--foreground); }
+  .hearts-how, .hearts-tomorrow { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { .heart-pill.empty { animation: none; } }
+
   /* The card: the uploaded scene as the hero, the number over it. The freeze state swaps to the
      blue art and pushes a cold cast over everything — the whole card reads "on ice". */
   .streak-dialog { overflow: hidden; }

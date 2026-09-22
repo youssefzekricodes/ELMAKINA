@@ -74,13 +74,14 @@ function due(): boolean {
  * the player as "not right now", not as an error.
  */
 /**
- * The rewarded OFFERS — "watch a video to save your streak", "watch a video to double your
- * trophies" — are switched off for now. The buttons are simply not rendered (the streak card
- * and the end screen both check this), so nothing is offered that cannot be delivered; the
- * plumbing underneath stays and the server-side tickets keep working. Flip to true to bring
- * them back.
+ * The rewarded OFFERS. Two are live — "watch a video to save your streak" and "watch a video to
+ * refill your hearts" — because each gives back something the player already had. The third,
+ * the end-screen trophy boost, stays off: it sells score, and that is a different conversation.
+ * Each button checks its own flag and is simply not rendered when off; the plumbing underneath
+ * (and the server-side tickets) stays either way.
  */
-export const REWARDED_OFFERS = false;
+export const REWARDED_OFFERS = true;
+export const TROPHY_BOOST_OFFER = false;
 
 export function rewardedAd(): Promise<'earned' | 'dismissed' | 'unavailable'> {
   if (!adsEnabled()) return Promise.resolve('unavailable');

@@ -6,7 +6,7 @@ import { i18n, t } from '../i18n';
 import { useStore, type LogEntry } from '../lib/store';
 import { block, cancelTargeting, challenge, challengeTarget, closeRoom, decide, leaveRoom, newGame, pass, sendAction, tapTarget } from '../lib/net';
 import { validTargets } from '../lib/rules';
-import { adBreak, rewardedAd, REWARDED_OFFERS } from '../lib/ads';
+import { adBreak, rewardedAd, TROPHY_BOOST_OFFER } from '../lib/ads';
 import { claimTrophyBoost } from '../lib/streaks';
 import { ask } from '../lib/ask';
 import { sfx } from '../lib/sfx';
@@ -67,7 +67,7 @@ function TrophyBoost({ places, me, scored }: { places: Place[]; me: string; scor
   const [state, setState] = useState<'idle' | 'busy' | 'done' | 'gone'>('idle');
   const [bonus, setBonus] = useState(0);
   const mine = places.find((p) => p.id === me);
-  if (!REWARDED_OFFERS || !scored || !mine || state === 'gone') return null;
+  if (!TROPHY_BOOST_OFFER || !scored || !mine || state === 'gone') return null;
   if (state === 'done') return <p className="boost-done">{t('boost.done', { n: bonus })}<Art name="stars" className="size-4" /></p>;
   const label = mine.delta > 0 ? t('boost.double', { n: mine.delta }) : mine.delta === 0 ? t('boost.plus') : t('boost.undo');
   const claim = async () => {
@@ -80,7 +80,7 @@ function TrophyBoost({ places, me, scored }: { places: Place[]; me: string; scor
   };
   return (
     <Button size="md" variant="outline" className="boost-btn" isPending={state === 'busy'} onPress={claim}>
-      <Icon name="videocamera" className="size-4" />{label}
+      <Icon name="play-circle" className="size-4" />{label}
     </Button>
   );
 }

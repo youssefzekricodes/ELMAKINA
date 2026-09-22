@@ -45,7 +45,7 @@ export interface Snapshot {
   unread: number;
   banner: { text: string; id: number; cls?: string } | null;
   cine: Cine | null;            // the full-screen cut-scene playing right now (attack / verdict), or null
-  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | 'streak' | null;
+  modal: 'rules' | 'avatar' | 'chars' | 'guide' | 'invite' | 'streak' | 'hearts' | null;
   // The app's own replacement for window.confirm(); driven through lib/ask.ts.
   ask: { body: string; ok: string; danger: boolean } | null;
   tour: boolean; // guided play-vs-bot: show coach-marks + character rule previews (one game, from the guide)
@@ -57,6 +57,8 @@ export interface Snapshot {
   streak: { count: number; best: number; freezes: number; today: boolean; atRisk: boolean;
             // The week view: the player's local day (YYYY-MM-DD) and the recent days played / frozen.
             day: string; played: string[]; frozen: string[] } | null;
+  // Hearts left today (lib/hearts.ts). null = unknown, which never blocks a game.
+  hearts: { left: number; max: number } | null;
   // A just-extended streak waiting for its full-screen moment; StreakCine consumes and clears it.
   streakCine: { count: number; froze: boolean } | null;
   friends: Friend[];         // accepted friends
@@ -112,7 +114,7 @@ let snap: Snapshot = {
   lang: localStorage.getItem('mekina.lang') || 'tn', soundOn: localStorage.getItem('mekina.sound') !== 'off',
   profile: loadProfile(), name: localStorage.getItem('mekina.name') || '', autoJoinCode: null,
   targeting: null, acting: false, targetId: null, logOpen: false, logCollapsed: false, unread: 0, banner: null, cine: null, modal: null, ask: null, tour: false, learn: loadLearn(), reactions: [],
-  account: null, trophies: 0, streak: null, streakCine: null, friends: [], friendReqs: [], invite: null, searching: false,
+  account: null, trophies: 0, streak: null, hearts: null, streakCine: null, friends: [], friendReqs: [], invite: null, searching: false,
   // No saved name = a brand-new player: the full-screen onboarding runs until a name exists.
   onboarding: !(localStorage.getItem('mekina.name') || '').trim(), updateReady: false, pushOn: false, tick: 0,
 };

@@ -25,6 +25,9 @@ npm run apk              # sync:native + gradle assembleDebug (expects JAVA_HOME
 npm run apk:install      # apk + adb install
 npm run bundle           # release AAB
 npm run android          # scripts/run-android.sh (build + run on device/emulator)
+npm run ios:sim          # sync:native + xcodebuild for the iOS Simulator (ios/App, SPM — no CocoaPods)
+npm run ios:archive      # Release .xcarchive in ios/App/build (needs an Apple signing team set in Xcode)
+npm run open:ios         # open ios/App in Xcode
 
 npm run assets           # regenerate public/img/ from public/assets/ source art (sharp)
 npm run splash           # iOS splash PNGs + the <link> block for index.html

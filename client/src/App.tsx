@@ -22,6 +22,7 @@ import { LogPanel } from './components/LogPanel';
 import { Prompt } from './components/Prompt';
 import { AvatarPicker, CharactersModal, ConfirmDialog, RulesModal } from './components/Modals';
 import { StreakCine, StreakModal } from './components/Streaks';
+import { HeartsModal } from './components/Hearts';
 import { Onboarding } from './components/Onboarding';
 import { UpdateGate } from './components/UpdateGate';
 import { LeaderboardPage, FriendsPage, ProfilePage, PublicRoomsPage, InviteModal, InviteBanner } from './components/Social';
@@ -123,6 +124,7 @@ export default function App() {
       {/* The gate goes on top of everything: no header, no modals, no way to play nameless. */}
       {s.onboarding && <Onboarding />}
       <StreakModal />
+      <HeartsModal />
       <StreakCine />
       <ConfirmDialog />
       <RulesModal />

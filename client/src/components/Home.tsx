@@ -7,6 +7,8 @@ import { signInWithGoogle, signOutAccount } from '../lib/social';
 import { goFullscreen } from '../lib/fullscreen';
 import { adBreak, adDue } from '../lib/ads';
 import { StreakPill } from './Streaks';
+import { HeartPill } from './Hearts';
+import { haveHeart } from '../lib/hearts';
 import { IMG } from '../theme';
 import { Art, GoogleG, Html, Icon, PlayerAvatar } from './ui';
 import { PushPrompt } from './PushPrompt';
@@ -31,6 +33,9 @@ export function Home() {
   const need = () => { if (!name) { notify(t('toast.name')); return false; } return true; };
   const go = async (what: 'create' | 'join' | 'solo' | 'random') => {
     if (!need()) return;
+    // Checked here as well as in lib/net: with no hearts, nothing a start sets in motion — the
+    // fullscreen request, the pre-game interstitial — should fire before the hearts card opens.
+    if (!haveHeart()) return;
     store.set({ tour: false }); // a normal game is not the guided tour
     if (what === 'join') { const c = code.trim().toUpperCase(); if (c.length !== 4) return notify(t('toast.code')); setBusy(what); await joinRoom(name, c); setBusy(null); return; }
     // Solo jumps straight into the game and nobody else is waiting on it, so the interstitial goes
@@ -80,6 +85,7 @@ export function Home() {
               <span className="trophy-lbl">{t('lb.trophies')}</span>
             </button>
             <StreakPill />
+            <HeartPill />
           </div>
           {/* Every destination, one row, every size. Profile carries the set-once controls
               (characters, rules, sound, language) so they need no buttons of their own here. */}

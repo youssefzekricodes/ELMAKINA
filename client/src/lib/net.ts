@@ -10,6 +10,7 @@ import { processEvents, resetEvents, banner, playedCard } from './fx';
 import { track } from './analytics';
 import { countGame } from './ads';
 import { tickStreak } from './streaks';
+import { haveHeart, spendHeart, clearPaid } from './hearts';
 import { updateStreakWidget } from './widget';
 import { voiceOnRoomGone } from './voice';
 import { initSocial, syncProfile, loadTrophies, listenForAuthReturn } from './social';
@@ -106,6 +107,12 @@ function applyView(v: any) {
   // announcements simply never appear. Saying it here, on the transition itself, is exact —
   // fx.ts also spots a counter running backwards, but only when the WHOLE batch is below the mark.
   if (v.phase === 'playing' && prev.state && prev.state.phase === 'ended') resetEvents();
+  // Hearts: a game that is starting costs one — charged here, on the view that shows it running,
+  // so an empty lobby never costs anything. The paid mark (per room) keeps a reload or a
+  // reconnect mid-game from charging again; it is dropped when the game ends, so "play again"
+  // pays like any other start. The guided practice game is free.
+  if (v.phase === 'playing' && (!prev.state || prev.state.phase !== 'playing') && !prev.tour && prev.room) spendHeart(prev.room.code);
+  if (v.phase === 'ended') clearPaid();
   processEvents(v, me);
   const myTurnNow = v.phase === 'playing' && v.pending && v.pending.stage === 'turn' && v.pending.actorId === me;
   if (myTurnNow && (prevTurn !== me || prevStage !== 'turn') && turnSeen !== v.pending.deadline) {
@@ -271,9 +278,10 @@ async function afterJoin(res: any) {
   if (res.view) applyView(res.view);
   return res;
 }
-export async function createRoom(name: string, isPublic = false) { track('room_create', { visibility: isPublic ? 'public' : 'private' }); return afterJoin(await emit('create_room', { name, isPublic, profile: profileOf() })); }
+export async function createRoom(name: string, isPublic = false) { if (!haveHeart()) return { ok: false, error: '', noHearts: true }; track('room_create', { visibility: isPublic ? 'public' : 'private' }); return afterJoin(await emit('create_room', { name, isPublic, profile: profileOf() })); }
 /** Drop into the fullest public lobby with a free seat, or open one and wait for company. */
 export async function quickMatch(name: string) {
+  if (!haveHeart()) return { ok: false, error: '', noHearts: true };
   const r = await emit('quick_match', { name, profile: profileOf() });
   track('quick_match', { matched: !!r.matched });
   return afterJoin(r);
@@ -283,8 +291,8 @@ export async function listPublicRooms(): Promise<{ code: string; host: string; n
   const r = await emit('public_rooms', {});
   return (r && r.rooms) || [];
 }
-export async function joinRoom(name: string, code: string) { const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) { track('room_join'); clearInviteParam(); } return r; }
-export async function playSolo(name: string, guided = false) { track('game_start', { mode: 'solo', guided }); return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
+export async function joinRoom(name: string, code: string) { if (!haveHeart()) return { ok: false, error: '', noHearts: true }; const r = await afterJoin(await emit('join_room', { name, code, profile: profileOf() })); if (r.ok) { track('room_join'); clearInviteParam(); } return r; }
+export async function playSolo(name: string, guided = false) { if (!guided && !haveHeart()) return { ok: false, error: '', noHearts: true }; track('game_start', { mode: 'solo', guided }); return afterJoin(await emit('solo', { name, bots: 3, guided, profile: profileOf() })); }
 export async function leaveRoom() { exiting = true; await emit('leave_room'); exitToHome(); }
 /** Host closes the room for everyone; the others get the rooms-row DELETE over Realtime. */
 export async function closeRoom() { exiting = true; const r = await emit('close_room'); if (r && r.ok) exitToHome(); else exiting = false; return r; }
@@ -311,7 +319,7 @@ export async function setRoomPublic(isPublic: boolean) {
 export const startGame = () => { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); return emit('start_game'); };
 /** Host removes somebody from the lobby (works on bots too). */
 export const kickPlayer = (targetId: string) => lobbyOp('kick', { targetId });
-export async function newGame() { track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
+export async function newGame() { if (!haveHeart()) return { ok: false, error: '', noHearts: true }; track('game_start', { mode: 'online', players: store.get().room?.players.length || 0 }); const r = await emit('new_game'); if (!r.ok) emit('back_to_lobby'); return r; }
 /** Save my look (and optionally rename myself). In a room the server also gets the new name and
     hands back a fresh lobby view, so every other seat re-labels straight away. */
 export function commitProfile(p: Profile, name?: string) {
